@@ -20,3 +20,9 @@ from the examples given in that link.
 -->
 
 <!-- towncrier release notes start -->
+
+## Continuous Timeseries v0.1.0 (2024-12-21)
+
+### 🔧 Trivial/Internal Changes
+
+- [#1](https://github.com/openscm/continuous-timeseries/pull/1)
