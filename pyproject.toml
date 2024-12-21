@@ -1,0 +1,216 @@
+[project]
+name = "continuous-timeseries"
+version = "0.1.0a1"
+description = "Representation of continuous timeseries."
+authors = [
+    { name = "Zebedee Nicholls", email = "zebedee.nicholls@climate-energy-college.org" },
+]
+license = {text = "placeholder"}
+requires-python = ">=3.9"
+dependencies = [
+]
+readme = "README.md"
+## If you apply an OSI-approved licence, you should uncomment the below
+# classifiers = [
+#     "License :: OSI Approved :: BSD License",
+# ]
+
+[project.optional-dependencies]
+plots = [
+    "matplotlib>=3.7.1",
+]
+
+[build-system]
+requires = [
+    "pdm-backend",
+    "pdm-build-locked",
+]
+build-backend = "pdm.backend"
+
+[tool.pdm]
+[tool.pdm.build]
+locked = true
+includes = [
+    "src/continuous_timeseries",
+    "LICENCE",
+]
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "pre-commit>=3.8.0",
+    "mypy>=1.11",
+    "towncrier>=24.8.0",
+    "liccheck>=0.9.2",
+    # Required for liccheck
+    "setuptools>=74.1.2",
+    "pip>=24.2",
+
+]
+docs = [
+    "attrs>=24.0.0",
+    "mkdocs>=1.6.0",
+    "mkdocs-autorefs>=1.2.0",
+    "mkdocs-gen-files>=0.5.0",
+    "mkdocs-literate-nav>=0.6.1",
+    "mkdocs-material>=9.5.34",
+    "mkdocs-section-index>=0.3.9",
+    "mkdocstrings[python]>=0.25.0",
+    "pymdown-extensions>=10.9",
+    "mkdocs-jupyter>=0.24.8",
+    "jupyterlab>=4.2.0",
+    "jupytext>=1.16.3",
+]
+tests = [
+    "pytest>=8.3.3",
+    "coverage>=7.6.0",
+    "pytest-cov>=5.0.0",
+]
+
+
+[tool.coverage.run]
+source = [
+    "src",
+]
+branch = true
+
+[tool.coverage.report]
+fail_under = 90
+skip_empty = true
+show_missing = true
+exclude_also = [
+    "if TYPE_CHECKING",
+]
+
+[tool.mypy]
+strict = true
+disallow_any_unimported = true
+show_error_codes = true
+show_error_context = true
+warn_unreachable = true
+follow_imports = "normal"
+
+[tool.jupytext]
+formats = "ipynb,py:percent"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+
+[tool.ruff]
+src = [
+    "src",
+]
+target-version = "py39"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "D",
+    "PL",
+    "TRY",
+    "NPY",
+    "RUF",
+    "UP",
+    "S",
+]
+unfixable = [
+    "PD002",
+]
+ignore = [
+    "D200",
+    "D400",
+    "UP007",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"test*.py" = [
+    "D",
+    "S101",
+    "PLR2004",
+]
+"docs/*" = [
+    "D100",
+    "E402",
+    "S101",
+]
+"scripts/*" = [
+    "S101",
+]
+"stubs/*" = [
+    "PLR0913",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "src",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.towncrier]
+package = "continuous_timeseries"
+package_dir = "src"
+filename = "docs/changelog.md"
+directory = "changelog/"
+title_format = "## Continuous Timeseries {version} ({project_date})"
+underlines = [
+    "",
+    "",
+    "",
+]
+issue_format = "[#{issue}](https://github.com/openscm/continuous-timeseries/pull/{issue})"
+type = [
+    { directory = "breaking", name = "⚠️ Breaking Changes", showcontent = true },
+    { directory = "deprecation", name = "🗑️ Deprecations", showcontent = true },
+    { directory = "feature", name = "🆕 Features", showcontent = true },
+    { directory = "improvement", name = "🎉 Improvements", showcontent = true },
+    { directory = "fix", name = "🐛 Bug Fixes", showcontent = true },
+    { directory = "docs", name = "📚 Improved Documentation", showcontent = true },
+    { directory = "trivial", name = "🔧 Trivial/Internal Changes", showcontent = false },
+]
+
+[tool.liccheck]
+authorized_licenses = [
+    "bsd",
+    "bsd license",
+    "BSD 3-Clause",
+    "CC0",
+    "apache",
+    "apache 2.0",
+    "apache software",
+    "apache software license",
+    "Apache License, Version 2.0",
+    "Historical Permission Notice and Disclaimer (HPND)",
+    "isc license",
+    "isc license (iscl)",
+    "gnu lgpl",
+    "lgpl with exceptions or zpl",
+    "LGPLv2+",
+    "GNU Lesser General Public License v2 (LGPLv2)",
+    "GNU Lesser General Public License v2 or later (LGPLv2+)",
+    "mit",
+    "mit license",
+    "Mozilla Public License 2.0 (MPL 2.0)",
+    "python software foundation",
+    "python software foundation license",
+    "zpl 2.1",
+]
+unauthorized_licenses = [
+    "agpl",
+    "gnu agpl",
+    "gpl v3",
+    "gplv3",
+    "gpl v2",
+    "gplv2",
+    "gpl v1",
+    "gplv1",
+]
