@@ -5,15 +5,15 @@ description = "Representation of continuous timeseries."
 authors = [
     { name = "Zebedee Nicholls", email = "zebedee.nicholls@climate-energy-college.org" },
 ]
-license = {text = "placeholder"}
+license = {text = "3-Clause BSD License"}
 requires-python = ">=3.9"
 dependencies = [
 ]
 readme = "README.md"
-## If you apply an OSI-approved licence, you should uncomment the below
-# classifiers = [
-#     "License :: OSI Approved :: BSD License",
-# ]
+# If you apply an OSI-approved licence, you should uncomment the below
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+]
 
 [project.optional-dependencies]
 plots = [
