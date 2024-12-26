@@ -4,7 +4,7 @@ ci:
   autoupdate_schedule: quarterly
   autoupdate_branch: pre-commit-autoupdate
   # Currently network access isn't supported in the pre-commit CI product.
-  skip: [pdm-lock-check, pdm-export, pdm-sync]
+  skip: [uv-lock, uv-export, pdm-lock-check]
 
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
@@ -38,6 +38,25 @@ repos:
       - id: ruff
         args: [ --fix, --exit-non-zero-on-fix ]
       - id: ruff-format
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 0.5.11
+    hooks:
+      - id: uv-lock
+        name: uv-lock-check
+        args: ["--check"]
+      # Put requirements.txt files in the repo too
+      - id: uv-export
+        name: export-requirements
+        args: ["-o", "requirements-locked.txt", "--no-hashes", "--no-dev", "--no-emit-project"]
+      - id: uv-export
+        name: export-requirements-optional
+        args: ["-o", "requirements-incl-optional-locked.txt", "--no-hashes", "--no-dev", "--no-emit-project", "--all-extras"]
+      - id: uv-export
+        name: export-requirements-docs
+        args: ["-o", "requirements-docs-locked.txt", "--no-hashes", "--no-dev", "--no-emit-project", "--all-extras", "--group", "docs"]
+      # # Not released yet
+      # - id: uv-sync
   - repo: https://github.com/pdm-project/pdm
     rev: 2.22.1
     hooks:
@@ -45,15 +64,4 @@ repos:
       # We need the pdm lock file too
       # so that we can build the locked version of the package.
       - id: pdm-lock-check
-        args: ["--group", ":all", "--group", "all-dev", "--dev", "--strategy", "inherit_metadata"]
-      # Put requirements.txt files in the repo too
-      - id: pdm-export
-        name: export-requirements
-        args: ["-o", "requirements-locked.txt", "--without-hashes", "--prod"]
-      - id: pdm-export
-        name: export-requirements-optional
-        args: ["-o", "requirements-incl-optional-locked.txt", "--without-hashes", "--prod", "--group", ":all"]
-      - id: pdm-export
-        name: export-requirements-docs
-        args: ["-o", "requirements-docs-locked.txt", "--without-hashes", "--group", ":all", "--group", "docs", "--dev"]
-      - id: pdm-sync
+        args: ["--group", ":all", "--strategy", "inherit_metadata"]
