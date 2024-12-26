@@ -55,5 +55,5 @@ repos:
         args: ["-o", "requirements-incl-optional-locked.txt", "--without-hashes", "--prod", "--group", ":all"]
       - id: pdm-export
         name: export-requirements-docs
-        args: ["-o", "requirements-docs-locked.txt", "--without-hashes", "--group", ":all", "--group", "docs"]
+        args: ["-o", "requirements-docs-locked.txt", "--without-hashes", "--group", ":all", "--group", "docs", "--dev"]
       - id: pdm-sync
