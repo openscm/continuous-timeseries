@@ -11,7 +11,10 @@ defaults:
 jobs:
   draft-release:
     name: Create draft release
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ "ubuntu-latest" ]
+        python-version: [ "3.9" ]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -20,7 +23,9 @@ jobs:
       - name: Setup PDM
         uses: pdm-project/setup-pdm@v4
         with:
-          python-version: "3.9"
+          python-version: ${{ matrix.python-version }}
+          # Don't need to install the package itself
+          run-pdm-install: false
       - name: Add version to environment
         run: |
           PROJECT_VERSION=`sed -ne 's/^version = "\([0-9\.a]*\)"/\1/p' pyproject.toml`

@@ -2,7 +2,7 @@
 # We make sure that we run the tests that apply to the version we installed,
 # rather than the latest tests in main.
 # The reason we do this, is that we want this workflow to test
-# that installing from PyPI/conda leads to a correct installation.
+# that installing from PyPI leads to a correct installation.
 # If we tested against main, the tests could fail
 # because the tests from main require the new features in main to pass.
 name: Test installation PyPI

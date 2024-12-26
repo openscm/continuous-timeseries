@@ -4,6 +4,7 @@ Operations
 This module is just there to help with doc building etc. on project creation.
 You will probably delete it early in the project.
 """
+
 from __future__ import annotations
 
 

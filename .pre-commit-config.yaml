@@ -9,7 +9,7 @@ ci:
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v4.5.0"
+    rev: "v5.0.0"
     hooks:
       - id: check-added-large-files
       - id: check-ast
@@ -33,7 +33,7 @@ repos:
         language: fail
         files: "\\.rej$"
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.1.8"
+    rev: "v0.8.4"
     hooks:
       - id: ruff
         args: [ --fix, --exit-non-zero-on-fix ]
@@ -43,17 +43,17 @@ repos:
     hooks:
       # Check that the lock file is up to date.
       # We need the pdm lock file too
-      # so that we can build locked version of the package.
+      # so that we can build the locked version of the package.
       - id: pdm-lock-check
-        args: ["--dev", "-G", ":all", "--strategy", "inherit_metadata" ]
+        args: ["--group", ":all", "--group", "all-dev", "--dev", "--strategy", "inherit_metadata"]
       # Put requirements.txt files in the repo too
       - id: pdm-export
         name: export-requirements
         args: ["-o", "requirements-locked.txt", "--without-hashes", "--prod"]
       - id: pdm-export
         name: export-requirements-optional
-        args: ["-o", "requirements-incl-optional-locked.txt", "--without-hashes", "--prod", "-G", ":all"]
+        args: ["-o", "requirements-incl-optional-locked.txt", "--without-hashes", "--prod", "--group", ":all"]
       - id: pdm-export
         name: export-requirements-docs
-        args: ["-o", "requirements-docs-locked.txt", "--without-hashes", "-G", ":all", "-G", "docs"]
+        args: ["-o", "requirements-docs-locked.txt", "--without-hashes", "--group", ":all", "--group", "docs"]
       - id: pdm-sync

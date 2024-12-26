@@ -12,13 +12,6 @@ Representation of continuous timeseries.
 [![PyPI](https://img.shields.io/pypi/v/continuous-timeseries.svg)](https://pypi.org/project/continuous-timeseries/)
 [![PyPI install](https://github.com/openscm/continuous-timeseries/actions/workflows/install-pypi.yaml/badge.svg?branch=main)](https://github.com/openscm/continuous-timeseries/actions/workflows/install-pypi.yaml)
 
-<!--- If you release on conda, you can use this
-**Conda :**
-[![Conda](https://img.shields.io/conda/vn/conda-forge/continuous-timeseries.svg)](https://anaconda.org/conda-forge/continuous-timeseries)
-[![Conda platforms](https://img.shields.io/conda/pn/conda-forge/continuous-timeseries.svg)](https://anaconda.org/conda-forge/continuous-timeseries)
-[![Conda install](https://github.com/openscm/continuous-timeseries/actions/workflows/install-conda.yaml/badge.svg?branch=main)](https://github.com/openscm/continuous-timeseries/actions/workflows/install-conda.yaml)
--->
-
 **Tests :**
 [![CI](https://github.com/openscm/continuous-timeseries/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/openscm/continuous-timeseries/actions/workflows/ci.yaml)
 [![Coverage](https://codecov.io/gh/openscm/continuous-timeseries/branch/main/graph/badge.svg)](https://codecov.io/gh/openscm/continuous-timeseries)
@@ -67,18 +60,6 @@ because of breaking updates to dependencies.
 
 The locked version of Continuous Timeseries can be installed with
 
-<!--- If you release on conda, you can use this
-=== "mamba"
-    ```sh
-    mamba install -c conda-forge continuous-timeseries-locked
-    ```
-
-=== "conda"
-    ```sh
-    conda install -c conda-forge continuous-timeseries-locked
-    ```
-
--->
 === "pip"
     ```sh
     pip install continuous-timeseries[locked]
@@ -103,18 +84,6 @@ please [raise an issue](https://github.com/openscm/continuous-timeseries/issues)
 
 The (non-locked) version of Continuous Timeseries can be installed with
 
-<!--- If you release on conda, you can use this
-=== "mamba"
-    ```sh
-    mamba install -c conda-forge continuous-timeseries
-    ```
-
-=== "conda"
-    ```sh
-    conda install -c conda-forge continuous-timeseries
-    ```
-
--->
 === "pip"
     ```sh
     pip install continuous-timeseries
@@ -122,18 +91,6 @@ The (non-locked) version of Continuous Timeseries can be installed with
 
 Additional dependencies can be installed using
 
-<!--- If you release on conda, you can use this
-=== "mamba"
-    If you are installing with mamba, we recommend
-    installing the extras by hand because there is no stable
-    solution yet (see [conda issue #7502](https://github.com/conda/conda/issues/7502))
-
-=== "conda"
-    If you are installing with conda, we recommend
-    installing the extras by hand because there is no stable
-    solution yet (see [conda issue #7502](https://github.com/conda/conda/issues/7502))
-
--->
 === "pip"
     ```sh
     # To add plotting dependencies
