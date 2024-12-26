@@ -6,7 +6,7 @@ email: zebedee.nicholls@climate-energy-college.org
 include_cli: false
 name: Zebedee Nicholls
 notebook_based_docs: true
-package_manager: pdm
+package_manager: uv
 pandas_doctests: false
 plot_dependencies: true
 project_description_short: Representation of continuous timeseries.
