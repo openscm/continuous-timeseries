@@ -48,13 +48,13 @@ repos:
       # Put requirements.txt files in the repo too
       - id: uv-export
         name: export-requirements
-        args: ["-o", "requirements-locked.txt", "--without-hashes", "--prod"]
+        args: ["-o", "requirements-locked.txt", "--no-hashes", "--no-dev", "--no-emit-project"]
       - id: uv-export
         name: export-requirements-optional
-        args: ["-o", "requirements-incl-optional-locked.txt", "--without-hashes", "--prod", "--group", ":all"]
+        args: ["-o", "requirements-incl-optional-locked.txt", "--no-hashes", "--no-dev", "--no-emit-project", "--all-extras"]
       - id: uv-export
         name: export-requirements-docs
-        args: ["-o", "requirements-docs-locked.txt", "--without-hashes", "--group", ":all", "--group", "docs"]
+        args: ["-o", "requirements-docs-locked.txt", "--no-hashes", "--no-dev", "--no-emit-project", "--all-extras", "--group", "docs"]
       # # Not released yet
       # - id: uv-sync
   - repo: https://github.com/pdm-project/pdm
