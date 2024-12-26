@@ -22,7 +22,10 @@ jobs:
   bump_version:
     name: "Bump version and create changelog"
     if: "!startsWith(github.event.head_commit.message, 'bump:')"
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ "ubuntu-latest" ]
+        python-version: [ "3.9" ]
     env:
       CI_COMMIT_EMAIL: "ci-runner@continuous-timeseries.invalid"
     steps:
@@ -33,9 +36,9 @@ jobs:
           token: "${{ secrets.PERSONAL_ACCESS_TOKEN }}"
 
       - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
+        uses: pdm-project/setup-pdm@v4.1
         with:
-          python-version: "3.9"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install pdm-bump
         run: |

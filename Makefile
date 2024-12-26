@@ -36,7 +36,6 @@ ruff-fixes:  ## fix the code using ruff
 	pdm run ruff check src tests scripts docs --fix
 	pdm run ruff format src tests scripts docs
 
-
 .PHONY: test
 test:  ## run the tests
 	pdm run pytest src tests -r a -v --doctest-modules --cov=src
@@ -80,6 +79,6 @@ licence-check:  ## Check that licences of the dependencies are suitable
 
 .PHONY: virtual-environment
 virtual-environment:  ## update virtual environment, create a new one if it doesn't already exist
-	pdm lock --dev --group :all --strategy inherit_metadata
+	pdm lock --group :all --group all-dev --dev --strategy inherit_metadata
 	pdm install --dev --group :all
 	pdm run pre-commit install
