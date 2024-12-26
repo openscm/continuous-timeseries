@@ -26,6 +26,7 @@ jobs:
       matrix:
         os: [ "ubuntu-latest" ]
         python-version: [ "3.9" ]
+    runs-on: "${{ matrix.os }}"
     env:
       CI_COMMIT_EMAIL: "ci-runner@continuous-timeseries.invalid"
     steps:

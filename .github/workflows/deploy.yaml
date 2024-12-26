@@ -19,6 +19,7 @@ jobs:
       matrix:
         os: [ "ubuntu-latest" ]
         python-version: [ "3.9" ]
+    runs-on: "${{ matrix.os }}"
     permissions:
       # this permission is mandatory for trusted publishing with PyPI
       id-token: write

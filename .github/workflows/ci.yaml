@@ -9,7 +9,11 @@ on:
 jobs:
   mypy:
     if: ${{ !github.event.pull_request.draft }}
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ "ubuntu-latest" ]
+        python-version: [ "3.9" ]
+    runs-on: "${{ matrix.os }}"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
