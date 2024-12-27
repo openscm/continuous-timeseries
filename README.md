@@ -99,12 +99,12 @@ Additional dependencies can be installed using
 
 ### For developers
 
-For development, we rely on [uv](https://docs.astral.sh/uv/)
+For development, we rely on [pdm](https://pdm-project.org/en/latest/)
 for all our dependency management.
-To get started, you will need to make sure that uv is installed
-([instructions here](https://docs.astral.sh/uv/getting-started/installation/)
-(we found that the self-managed install was best,
-particularly for upgrading uv later).
+To get started, you will need to make sure that pdm is installed
+([instructions here](https://pdm-project.org/en/latest/#installation),
+although we found that installing with [pipx](https://pipx.pypa.io/stable/installation/)
+worked perfectly for us).
 
 For all of our work, we use our `Makefile`.
 You can read the instructions out and run the commands by hand if you wish,
