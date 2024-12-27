@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         os: [ "ubuntu-latest" ]
-        python-version: [ "3.9" ]
+        python-version: [ "3.11" ]
     runs-on: "${{ matrix.os }}"
     permissions:
       # this permission is mandatory for trusted publishing with PyPI
@@ -28,13 +28,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Setup uv
-        id: setup-uv
-        uses: astral-sh/setup-uv@v4
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v4.1
         with:
-          version: "0.5.11"
           python-version: ${{ matrix.python-version }}
       - name: Publish to PyPI
         run: |
-          uv build
-          uv publish
+          pdm publish
