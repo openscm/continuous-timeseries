@@ -334,8 +334,12 @@ wheels = [
 
 [[package]]
 name = "continuous-timeseries"
-version = "0.1.5"
+version = "0.1.7"
 source = { editable = "." }
+dependencies = [
+    { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "numpy", version = "2.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+]
 
 [package.optional-dependencies]
 plots = [
@@ -396,7 +400,10 @@ tests = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "matplotlib", marker = "extra == 'plots'", specifier = ">=3.7.1" }]
+requires-dist = [
+    { name = "matplotlib", marker = "extra == 'plots'", specifier = ">=3.7.1" },
+    { name = "numpy" },
+]
 
 [package.metadata.requires-dev]
 all-dev = [
