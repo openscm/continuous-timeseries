@@ -5,7 +5,7 @@
 groups = ["default", "all-dev", "dev", "docs", "plots", "tests"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:d8c8cac8c6833e23c619280059caa5e66d946daefb8d9760f4a55dcdc7486415"
+content_hash = "sha256:96b9fe8e0df9331aef97b1a84c91f806cc80c567dd205a5c2de859301e506fcc"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1996,7 +1996,7 @@ name = "numpy"
 version = "2.0.2"
 requires_python = ">=3.9"
 summary = "Fundamental package for array computing in Python"
-groups = ["plots"]
+groups = ["default", "plots"]
 files = [
     {file = "numpy-2.0.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:51129a29dbe56f9ca83438b706e2e69a39892b5eda6cedcb6b0c9fdc9b0d3ece"},
     {file = "numpy-2.0.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:f15975dfec0cf2239224d80e32c3170b1d168335eaedee69da84fbe9f1f9cd04"},
