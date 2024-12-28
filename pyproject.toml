@@ -49,6 +49,7 @@ docs = [
     "jupyterlab>=4.2.0",
     "jupytext>=1.16.3",
     "openscm-units>=0.6.3",
+    "scipy>=1.13.1",
 ]
 tests = [
     "pytest>=8.3.3",
