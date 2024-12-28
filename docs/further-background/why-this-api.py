@@ -50,7 +50,7 @@ years = Q(np.array([1850, 1900, 1950, 2000, 2010, 2020, 2030, 2040, 2050]), "yr"
 # - should they be interpolated linearly?
 
 # %% [markdown]
-# If we take a more complicated example, 
+# If we take a more complicated example,
 # like emissions over the COVID period (around 2020),
 # the issue becomes clearer.
 
@@ -69,7 +69,7 @@ ax.grid()
 # %% [markdown]
 # When you first look at this plot, everything seems fine.
 # However, if you look more closely, you realise something:
-# the way this data is plotted, 
+# the way this data is plotted,
 # it looks like emissions started to drop sharply in 2019, not 2020.
 # Put another way, this makes it look like the COVID dip was centred
 # around 1 Jan 2020, when we know it is centred more around July 2020.
@@ -117,7 +117,8 @@ emissions
 
 # %%
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any
+from typing import Any
+
 
 def get_attribute_str_value(instance: Any, attribute: str) -> str:
     """
@@ -315,12 +316,13 @@ def to_html(instance: Any, exposed_attributes: Iterable[str]) -> str:
     )
 
 
-
 # %%
-import pint
-from attrs import define
 from enum import StrEnum
 from typing import Protocol
+
+import pint
+from attrs import define
+
 
 class InterpolatorLike(Protocol):
     """Interpolator-like"""
@@ -341,14 +343,15 @@ class InterpolatorLike(Protocol):
             Interpolated values
         """
 
+
 @define
 class InterpolatorPiecewiseConstantPreviousLeftInclusive:
     time: pint.UnitRegistry.Quantity  # array
     """Time points"""
-    
+
     y_values: pint.UnitRegistry.Quantity  # array
     """Values"""
-    
+
     allow_extrapolation: bool
     """Should extrapolation be allowed"""
 
@@ -368,21 +371,24 @@ class InterpolatorPiecewiseConstantPreviousLeftInclusive:
             Interpolated values
         """
         # TODO: extrapolation checks
-        res_idxs = np.searchsorted(a=self.time, v=np.atleast_1d(time_target), side="right") - 1
+        res_idxs = (
+            np.searchsorted(a=self.time, v=np.atleast_1d(time_target), side="right") - 1
+        )
         # Fix up any overrun
         res_idxs[res_idxs == -1] = 0
         res = self.y_values[res_idxs]
 
         return res
-        
+
+
 @define
 class InterpolatorPiecewiseConstantPreviousLeftExclusive:
     time: pint.UnitRegistry.Quantity  # array
     """Time points"""
-    
+
     y_values: pint.UnitRegistry.Quantity  # array
     """Values"""
-    
+
     allow_extrapolation: bool
     """Should extrapolation be allowed"""
 
@@ -401,22 +407,24 @@ class InterpolatorPiecewiseConstantPreviousLeftExclusive:
         :
             Interpolated values
         """
-        res_idxs = np.searchsorted(a=self.time, v=np.atleast_1d(time_target), side="left") - 1
+        res_idxs = (
+            np.searchsorted(a=self.time, v=np.atleast_1d(time_target), side="left") - 1
+        )
         # Fix up any overrun
         res_idxs[res_idxs == -1] = 0
         res = self.y_values[res_idxs]
 
         return res
 
-        
+
 @define
 class InterpolatorPiecewiseConstantNextLeftInclusive:
     time: pint.UnitRegistry.Quantity  # array
     """Time points"""
-    
+
     y_values: pint.UnitRegistry.Quantity  # array
     """Values"""
-    
+
     allow_extrapolation: bool
     """Should extrapolation be allowed"""
 
@@ -435,22 +443,24 @@ class InterpolatorPiecewiseConstantNextLeftInclusive:
         :
             Interpolated values
         """
-        res_idxs = np.searchsorted(a=self.time, v=np.atleast_1d(time_target), side="right")
+        res_idxs = np.searchsorted(
+            a=self.time, v=np.atleast_1d(time_target), side="right"
+        )
         # Fix up any overrun
         res_idxs[res_idxs == self.time.size] = self.time.size - 1
         res = self.y_values[res_idxs]
 
         return res
-        
-        
+
+
 @define
 class InterpolatorPiecewiseConstantNextLeftExclusive:
     time: pint.UnitRegistry.Quantity  # array
     """Time points"""
-    
+
     y_values: pint.UnitRegistry.Quantity  # array
     """Values"""
-    
+
     allow_extrapolation: bool
     """Should extrapolation be allowed"""
 
@@ -469,7 +479,9 @@ class InterpolatorPiecewiseConstantNextLeftExclusive:
         :
             Interpolated values
         """
-        res_idxs = np.searchsorted(a=self.time, v=np.atleast_1d(time_target), side="left")
+        res_idxs = np.searchsorted(
+            a=self.time, v=np.atleast_1d(time_target), side="left"
+        )
         # Fix up any overrun
         res_idxs[res_idxs == self.time.size] = self.time.size - 1
         res = self.y_values[res_idxs]
@@ -481,10 +493,10 @@ class InterpolatorPiecewiseConstantNextLeftExclusive:
 class InterpolatorLinear:
     time: pint.UnitRegistry.Quantity  # array
     """Time points"""
-    
+
     y_values: pint.UnitRegistry.Quantity  # array
     """Values"""
-    
+
     allow_extrapolation: bool
     """Should extrapolation be allowed"""
 
@@ -504,15 +516,20 @@ class InterpolatorLinear:
             Interpolated values
         """
         coeffs = np.zeros((2, self.y_values.size - 1))
-        coeffs[0, :] = ((self.y_values[1:] - self.y_values[:-1]) / (self.time[1:] - self.time[:-1])).m
+        coeffs[0, :] = (
+            (self.y_values[1:] - self.y_values[:-1]) / (self.time[1:] - self.time[:-1])
+        ).m
         coeffs[1, :] = self.y_values[:-1].m
-        x = self.time
-        
-        ppoly = scipy.interpolate.PPoly(c=coeffs, x=x, extrapolate=self.allow_extrapolation)
+        x = self.time.m
+
+        ppoly = scipy.interpolate.PPoly(
+            c=coeffs, x=x, extrapolate=self.allow_extrapolation
+        )
         res = ppoly(time_target.m) * self.y_values.u
 
         return res
-        
+
+
 class InterpolationOption(StrEnum):
     """
     Interpolation options
@@ -530,14 +547,18 @@ class InterpolationOption(StrEnum):
     Cubic = "cubic"
     """Cubic interpolation is assumed between points"""
 
-    PiecewiseConstantPreviousLeftInclusive = "piecewise_constant_previous_left_inclusive"
+    PiecewiseConstantPreviousLeftInclusive = (
+        "piecewise_constant_previous_left_inclusive"
+    )
     """
     Between t(i) and t(i + 1), the value is equal to y(i)
 
     At t(i), the value is equal to y(i).
     """
 
-    PiecewiseConstantPreviousLeftExclusive = "piecewise_constant_previous_left_exclusive"
+    PiecewiseConstantPreviousLeftExclusive = (
+        "piecewise_constant_previous_left_exclusive"
+    )
     """
     Between t(i) and t(i + 1), the value is equal to y(i)
 
@@ -571,7 +592,7 @@ def create_interpolator(
             y_values=y_values,
             allow_extrapolation=allow_extrapolation,
         )
-        
+
     if kind == InterpolationOption.PiecewiseConstantPreviousLeftExclusive:
         return InterpolatorPiecewiseConstantPreviousLeftExclusive(
             time=time,
@@ -584,14 +605,14 @@ def create_interpolator(
             y_values=y_values,
             allow_extrapolation=allow_extrapolation,
         )
-        
+
     if kind == InterpolationOption.PiecewiseConstantNextLeftExclusive:
         return InterpolatorPiecewiseConstantNextLeftExclusive(
             time=time,
             y_values=y_values,
             allow_extrapolation=allow_extrapolation,
         )
-        
+
     if kind == InterpolationOption.Linear:
         return InterpolatorLinear(
             time=time,
@@ -605,25 +626,25 @@ def create_interpolator(
 # %%
 from typing import Any
 
-import attr
-import matplotlib.pyplot
 import matplotlib.axes
+import matplotlib.pyplot
 import pint
 from attrs import define, field
+
 
 @define
 class ValuesBounded:
     """
     Container for values that supports retrieving bounds too
-    
+
     The bounds are defined by the values,
     with the `last_bound_value` attribute
     resolving any ambiguity about what value to use for the last bound.
-    
+
     When handling time values, this lets us define the extent of the last time step.
     When handling other values, it provides a key piece of information needed
     to do interpolation/integration/differentiation unambiguosly.
-    
+
     However, you must remember that this container is quite low-level.
     As a result, it does not provide all the information required to do operations,
     such as interpolation/integration/differentiation, unambiguosly.
@@ -639,11 +660,11 @@ class ValuesBounded:
     For example, one result of this construction is
     that the bounds are always contiguous.
     In other words, we can have a bounds concept and API
-    without the headaches of having to handle arbitrary bounds, 
+    without the headaches of having to handle arbitrary bounds,
     particularly those that have gaps.
     This is clearly a design trade-off,
     although one we think could be undone later if needed.
-    
+
     One other consequence of this container's structure is
     that we can’t have bounds which start before the first value
     (in the case of time, this means the start of the first timestep
@@ -656,7 +677,7 @@ class ValuesBounded:
     """
     Values
     """
-    
+
     value_last_bound: pint.UnitRegistry.Quantity  # scalar
     """
     Value to use for the last value to use in the bounds array
@@ -708,8 +729,8 @@ class ValuesBounded:
             Values, including `self.value_last_bound`
         """
         return np.hstack([self.values, self.value_last_bound])
-        
-        
+
+
 @define
 class TimeAxis:
     """
@@ -720,31 +741,31 @@ class TimeAxis:
     """
     Values
     """
-    
+
     value_last_bound: pint.UnitRegistry.Quantity = field()  # scalar
     """
     Value to use for the last value to use in the bounds array
 
     Required to avoid ambiguity in this value
     """
-    
+
     @values.validator
     def values_validator(
-        self, 
-        # attribute: attr.Attribute[Any], 
-        attribute, 
+        self,
+        # attribute: attr.Attribute[Any],
+        attribute,
         value: pint.UnitRegistry.Quantity,  # array
     ) -> None:
         delta = value[1:] - value[:-1]
         if (delta <= 0).any():
             msg = f"values must be strictly monotonic, received: {value=}"
             raise ValueError(msg)
-    
+
     @value_last_bound.validator
     def value_last_bound_validator(
-        self, 
-        # attribute: attr.Attribute[Any], 
-        attribute, 
+        self,
+        # attribute: attr.Attribute[Any],
+        attribute,
         value: pint.UnitRegistry.Quantity,  # scalar
     ) -> None:
         if value <= self.values[-1]:
@@ -805,7 +826,7 @@ class TimeAxis:
         Get the bounds of the time steps in two-dimensions
 
         Can be useful for some operations
-        
+
         Returns
         -------
         :
@@ -836,6 +857,22 @@ class Timeseries:
 
     interpolation: InterpolationOption
     """Interpolation to apply to the timeseries"""
+
+    # Change API to just carry this around always.
+    # Make `from_values` a class method or something
+    # so user doesn't have to make it.
+    # Validation would be checking that the polynomial,
+    # evaluated at `self.time` gives the expected values.
+    # This could also be a separate method
+    # (e.g. `self.validate_polynomial_values_consistency`).
+    # Or, just don't carry the stuff you can infer around
+    # and only use that for __str__, __repr__ etc.
+    piecewise_polynomial: scipy.interpolate.PPoly | None = None
+    """
+    If supplied, the piecewise polynomial that represents this timeseries.
+
+    If not supplied, we will create this as needed.
+    """
 
     def __str__(self) -> str:
         """
@@ -870,12 +907,59 @@ class Timeseries:
             tuple(a.name for a in self.__attrs_attrs__),
         )
 
+    @property
+    def values_at_bounds(self) -> pint.UnitRegistry.Quantity:  # array
+        """
+        Get the values at the bounds defined by `self.time`
+
+        Returns
+        -------
+        :
+            Values at the bounds defined by `self.time`
+        """
+        return self.interpolate(self.time).values.all_values
+
+    @classmethod
+    def from_integration_result(cls, integration_result, name: str):
+        # def from_integration_result(cls, integration_result: IntegrationResult, name: str) -> Timeseries:
+        time = TimeAxis(
+            values=integration_result.time_bounds[:-1],
+            value_last_bound=integration_result.time_bounds[-1],
+        )
+        values = ValuesBounded(
+            values=integration_result.integral_at_bounds[:-1],
+            value_last_bound=integration_result.integral_at_bounds[-1],
+        )
+
+        return cls(
+            name=name,
+            time=time,
+            values=values,
+            interpolation=integration_result.interpolation,
+            piecewise_polynomial=integration_result.piecewise_polynomial,
+        )
+
     # def interpolate(self, time_axis_new: TimeAxis, allow_extrapolation: bool = False) -> Timeseries:
     def interpolate(self, time_axis_new: TimeAxis, allow_extrapolation: bool = False):
-        interpolator = self.get_interpolator(allow_extrapolation=allow_extrapolation)
-        
-        values_interp = interpolator.interpolate(time_axis_new.values)
-        value_last_bound_interp = interpolator.interpolate(time_axis_new.value_last_bound)
+        if self.piecewise_polynomial is not None:
+            values_interp = (
+                self.piecewise_polynomial(time_axis_new.values.m)
+                * time_axis_new.values.u
+            )
+            value_last_bound_interp = (
+                self.piecewise_polynomial(time_axis_new.value_last_bound.m)
+                * time_axis_new.value_last_bound.u
+            )
+
+        else:
+            interpolator = self.get_interpolator(
+                allow_extrapolation=allow_extrapolation
+            )
+
+            values_interp = interpolator.interpolate(time_axis_new.values)
+            value_last_bound_interp = interpolator.interpolate(
+                time_axis_new.value_last_bound
+            )
 
         res = Timeseries(
             name=self.name,
@@ -885,25 +969,45 @@ class Timeseries:
                 value_last_bound=value_last_bound_interp,
             ),
             interpolation=self.interpolation,
+            piecewise_polynomial=self.piecewise_polynomial,
         )
 
         return res
 
+    # def interpolate(self, time_axis_new: TimeAxis, allow_extrapolation: bool = False) -> Timeseries:
+    def integrate(
+        self,
+        integration_constant: pint.UnitRegistry.Quantity,  # scalar
+        name_res: str | None = None,
+    ):
+        # ) -> Timeseries:
+        if name_res is None:
+            name_res = f"{self.name}_integral"
+
+        integrate_res = integrate(
+            time_bounds=self.time.bounds,
+            y_at_bounds=self.values_at_bounds,
+            interpolation=self.interpolation,
+            integration_constant=integration_constant,
+        )
+
+        return type(self).from_integration_result(integrate_res, name=name_res)
+
     def get_interpolator(self, allow_extrapolation: bool = False) -> InterpolatorLike:
         time_interp = self.time.bounds
         y_interp = self.values.all_values
-        
+
         interpolator = create_interpolator(
             time=time_interp,
             y_values=y_interp,
             kind=self.interpolation,
             allow_extrapolation=allow_extrapolation,
         )
-        
+
         return interpolator
 
     def plot(
-        self, 
+        self,
         ax: matplotlib.axes.Axes | None = None,
         show_discrete: bool = False,
         res_increase: int = 1000,
@@ -918,40 +1022,48 @@ class Timeseries:
 
         if discrete_kwargs is None:
             discrete_kwargs = {}
-    
+
         # Interpolate.
         # Then plot interpolated using linear joins
         # (as far as I can tell, this is the only general way to do this,
         # although it is slower than using e.g. step for piecewise constant stuff).)
-        show_time_points = np.unique(
-            np.concatenate([
-                np.linspace(self.time.values[0].m, self.time.value_last_bound.m, res_increase),
-                self.time.bounds.m,
-            ])
-        ) * self.time.values.u
-        
+        show_time_points = (
+            np.unique(
+                np.concatenate(
+                    [
+                        np.linspace(
+                            self.time.values[0].m,
+                            self.time.value_last_bound.m,
+                            res_increase,
+                        ),
+                        self.time.bounds.m,
+                    ]
+                )
+            )
+            * self.time.values.u
+        )
+
         show_time_points = np.sort(show_time_points)
         interpolated_times = TimeAxis(
             values=show_time_points[:-1],
             value_last_bound=self.time.value_last_bound,
         )
-        
+
         interpolated = self.interpolate(interpolated_times)
         ax.plot(
             interpolated.time.bounds.m,
-            interpolated.values.all_values.m,
+            interpolated.values_at_bounds.m,
             **plot_kwargs,
         )
-        
+
         if show_discrete:
-            interp_self = self.interpolate(self.time)
             ax.scatter(
-                interp_self.time.bounds.m,
-                interp_self.values.all_values.m,
+                self.time.bounds.m,
+                self.values_at_bounds.m,
                 **discrete_kwargs,
             )
             # add difference between values and value_last_bound?
-        
+
         return ax
 
 
@@ -977,11 +1089,11 @@ covid_emissions = Timeseries(
     name="co2_emissions",
     time=TimeAxis(
         values=Q(np.array([2018, 2019, 2020, 2021, 2022, 2023]), "yr"),
-        value_last_bound=Q(2024, "yr")
+        value_last_bound=Q(2024, "yr"),
     ),
     values=ValuesBounded(
         values=Q(np.array([10.2, 10.3, 9.5, 10.1, 10.3, 10.5]), "GtC / yr"),
-        value_last_bound=Q(10.6, "GtC / yr")
+        value_last_bound=Q(10.6, "GtC / yr"),
     ),
     interpolation=InterpolationOption.PiecewiseConstantPreviousLeftInclusive,
 )
@@ -995,9 +1107,14 @@ covid_emissions
 # )
 # covid_emissions.interpolate(time_axis_new=time_axis_new_example)
 
+# %% [markdown]
+# We can visualise the implications of different interpolation options like the below.
+
+# %%
+covid_emissions
+
 # %%
 fig, ax = plt.subplots(figsize=(12, 8))
-# plot(covid_emissions, ax=ax)
 
 for interp_option, marker in (
     (InterpolationOption.PiecewiseConstantPreviousLeftInclusive, "o"),
@@ -1007,8 +1124,8 @@ for interp_option, marker in (
     (InterpolationOption.Linear, "v"),
 ):
     evolve(covid_emissions, interpolation=interp_option).plot(
-        ax=ax, 
-        show_discrete=True, 
+        ax=ax,
+        show_discrete=True,
         plot_kwargs=dict(alpha=0.4, label=interp_option),
         discrete_kwargs=dict(alpha=0.4, label=interp_option, marker=marker, s=130),
     )
@@ -1016,8 +1133,243 @@ for interp_option, marker in (
 ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
 ax.grid()
 
-# %%
+# %% [markdown]
+# These different interpolation options have a much clearer impact once we interpolate.
+#
+# For this, we also pick slightly different emissions.
 
 # %%
+integration_demo_emissions = Timeseries(
+    name="co2_emissions",
+    time=TimeAxis(
+        values=Q(np.array([1850, 1900, 2000]), "yr"), value_last_bound=Q(2100, "yr")
+    ),
+    values=ValuesBounded(
+        values=Q(np.array([0, 10.0, 0.0]), "GtC / yr"),
+        value_last_bound=Q(2.5, "GtC / yr"),
+    ),
+    interpolation=InterpolationOption.PiecewiseConstantPreviousLeftInclusive,
+)
+
+# %%
+from attrs import define
+
+
+@define
+class IntegrationResult:
+    """Result of performing an integration"""
+
+    time_bounds: pint.UnitRegistry.Quantity  # array
+    """Time bounds on which the integration was performed"""
+
+    integral_at_bounds: pint.UnitRegistry.Quantity  # array
+    """Integral value at the boudns defined by time_bounds"""
+
+    interpolation: InterpolationOption
+    """Interpolation that applies to the integration result"""
+
+    piecewise_polynomial: scipy.interpolate.PPoly | None = None
+    """
+    The piecewise polynomial that represents the integration result
+    """
+
+
+def integrate_piecewise_constant_previous_left_inclusive(
+    time_bounds: pint.UnitRegistry.Quantity,  # array
+    y_at_bounds: pint.UnitRegistry.Quantity,  # array
+    integration_constant: pint.UnitRegistry.Quantity,  # scalar
+) -> IntegrationResult:
+    time_step = time_bounds[1:] - time_bounds[:-1]
+    # Previous left-inclusive interpolation so can ignore y_at_bounds[-1]
+    window_integrals = y_at_bounds[:-1] * time_step
+
+    integral_at_bounds = np.hstack(
+        [integration_constant, np.cumsum(window_integrals) + integration_constant]
+    )
+
+    res = IntegrationResult(
+        time_bounds=time_bounds,
+        integral_at_bounds=integral_at_bounds,
+        interpolation=InterpolationOption.Linear,
+    )
+
+    return res
+
+
+def integrate_piecewise_constant_previous_left_exclusive(
+    time_bounds: pint.UnitRegistry.Quantity,  # array
+    y_at_bounds: pint.UnitRegistry.Quantity,  # array
+    integration_constant: pint.UnitRegistry.Quantity,  # scalar
+) -> IntegrationResult:
+    time_step = time_bounds[1:] - time_bounds[:-1]
+    # Previous left-exclusive interpolation so can ignore y_at_bounds[0]
+    window_integrals = y_at_bounds[1:] * time_step
+
+    integral_at_bounds = np.hstack(
+        [integration_constant, np.cumsum(window_integrals) + integration_constant]
+    )
+
+    res = IntegrationResult(
+        time_bounds=time_bounds,
+        integral_at_bounds=integral_at_bounds,
+        interpolation=InterpolationOption.Linear,
+    )
+
+    return res
+
+
+def integrate_piecewise_constant_next_left_inclusive(
+    time_bounds: pint.UnitRegistry.Quantity,  # array
+    y_at_bounds: pint.UnitRegistry.Quantity,  # array
+    integration_constant: pint.UnitRegistry.Quantity,  # scalar
+) -> IntegrationResult:
+    time_step = time_bounds[1:] - time_bounds[:-1]
+    # Next left-inclusive interpolation so can ignore y_at_bounds[-1]
+    window_integrals = y_at_bounds[:-1] * time_step
+
+    integral_at_bounds = np.hstack(
+        [integration_constant, np.cumsum(window_integrals) + integration_constant]
+    )
+
+    res = IntegrationResult(
+        time_bounds=time_bounds,
+        integral_at_bounds=integral_at_bounds,
+        interpolation=InterpolationOption.Linear,
+    )
+
+    return res
+
+
+def integrate_piecewise_constant_next_left_exclusive(
+    time_bounds: pint.UnitRegistry.Quantity,  # array
+    y_at_bounds: pint.UnitRegistry.Quantity,  # array
+    integration_constant: pint.UnitRegistry.Quantity,  # scalar
+) -> IntegrationResult:
+    time_step = time_bounds[1:] - time_bounds[:-1]
+    # Next left-exclusive interpolation so can ignore y_at_bounds[0]
+    window_integrals = y_at_bounds[1:] * time_step
+
+    integral_at_bounds = np.hstack(
+        [integration_constant, np.cumsum(window_integrals) + integration_constant]
+    )
+
+    res = IntegrationResult(
+        time_bounds=time_bounds,
+        integral_at_bounds=integral_at_bounds,
+        interpolation=InterpolationOption.Linear,
+    )
+
+    return res
+
+
+def integrate_linear(
+    time_bounds: pint.UnitRegistry.Quantity,  # array
+    y_at_bounds: pint.UnitRegistry.Quantity,  # array
+    integration_constant: pint.UnitRegistry.Quantity,  # scalar
+) -> IntegrationResult:
+    # TODO: split out `create_linear` or something somewhere
+    coeffs = np.zeros((2, y_at_bounds.size - 1))
+    coeffs[0, :] = (
+        (y_at_bounds[1:] - y_at_bounds[:-1]) / (time_bounds[1:] - time_bounds[:-1])
+    ).m
+    coeffs[1, :] = y_at_bounds[:-1].m
+    x = time_bounds.m
+
+    ppoly = scipy.interpolate.PPoly(c=coeffs, x=x, extrapolate=False)
+    tmp = ppoly.antiderivative()
+    c_new = tmp.c
+    c_new[2, :] += integration_constant.m
+    indefinite_integral = scipy.interpolate.PPoly(
+        c=c_new, x=tmp.x, extrapolate=tmp.extrapolate
+    )
+
+    integral_at_bounds = (
+        indefinite_integral(time_bounds.m) * y_at_bounds.u * time_bounds.u
+    )
+
+    res = IntegrationResult(
+        time_bounds=time_bounds,
+        integral_at_bounds=integral_at_bounds,
+        interpolation=InterpolationOption.Quadratic,
+        piecewise_polynomial=indefinite_integral,
+    )
+
+    return res
+
+
+def integrate(
+    time_bounds: pint.UnitRegistry.Quantity,  # array
+    y_at_bounds: pint.UnitRegistry.Quantity,  # array
+    interpolation: InterpolationOption,
+    integration_constant: pint.UnitRegistry.Quantity,  # scalar
+) -> IntegrationResult:
+    if interpolation == InterpolationOption.PiecewiseConstantPreviousLeftInclusive:
+        return integrate_piecewise_constant_previous_left_inclusive(
+            time_bounds=time_bounds,
+            y_at_bounds=y_at_bounds,
+            integration_constant=integration_constant,
+        )
+
+    if interpolation == InterpolationOption.PiecewiseConstantPreviousLeftExclusive:
+        return integrate_piecewise_constant_previous_left_exclusive(
+            time_bounds=time_bounds,
+            y_at_bounds=y_at_bounds,
+            integration_constant=integration_constant,
+        )
+
+    if interpolation == InterpolationOption.PiecewiseConstantNextLeftInclusive:
+        return integrate_piecewise_constant_next_left_inclusive(
+            time_bounds=time_bounds,
+            y_at_bounds=y_at_bounds,
+            integration_constant=integration_constant,
+        )
+
+    if interpolation == InterpolationOption.PiecewiseConstantNextLeftExclusive:
+        return integrate_piecewise_constant_next_left_exclusive(
+            time_bounds=time_bounds,
+            y_at_bounds=y_at_bounds,
+            integration_constant=integration_constant,
+        )
+
+    if interpolation == InterpolationOption.Linear:
+        return integrate_linear(
+            time_bounds=time_bounds,
+            y_at_bounds=y_at_bounds,
+            integration_constant=integration_constant,
+        )
+
+    raise NotImplementedError(interpolation)
+
+
+# %%
+fig, axes = plt.subplots(figsize=(12, 8), nrows=2)
+
+for interp_option, marker in (
+    (InterpolationOption.PiecewiseConstantPreviousLeftInclusive, "o"),
+    (InterpolationOption.PiecewiseConstantPreviousLeftExclusive, "o"),
+    (InterpolationOption.PiecewiseConstantNextLeftInclusive, "x"),
+    (InterpolationOption.PiecewiseConstantNextLeftExclusive, "x"),
+    (InterpolationOption.Linear, "v"),
+):
+    evolve(integration_demo_emissions, interpolation=interp_option).plot(
+        ax=axes[0],
+        show_discrete=True,
+        plot_kwargs=dict(alpha=0.4, label=interp_option),
+        discrete_kwargs=dict(alpha=0.4, label=interp_option, marker=marker, s=130),
+    )
+
+    evolve(integration_demo_emissions, interpolation=interp_option).integrate(
+        integration_constant=Q(500, "GtC")
+        # integration_constant=Q(0, "GtC")
+    ).plot(
+        ax=axes[1],
+        show_discrete=True,
+        plot_kwargs=dict(alpha=0.4, label=interp_option),
+        discrete_kwargs=dict(alpha=0.4, label=interp_option, marker=marker, s=130),
+    )
+
+for ax in axes:
+    ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
+    ax.grid()
 
 # %%
