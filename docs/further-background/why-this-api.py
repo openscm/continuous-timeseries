@@ -149,14 +149,14 @@ class InterpolationOption(StrEnum):
     At t(i), the value is equal to y(i - 1).
     """
 
-    PiecewiseConstantNextLeftClosed = "piecewise_constant_next_left_inclusive"
+    PiecewiseConstantNextLeftClosed = "piecewise_constant_next_left_closed"
     """
     Between t(i) and t(i + 1), the value is equal to y(i + 1)
 
     At t(i), the value is equal to y(i + 1).
     """
 
-    PiecewiseConstantNextLeftOpen = "piecewise_constant_next_left_exclusive"
+    PiecewiseConstantNextLeftOpen = "piecewise_constant_next_left_open"
     """
     Between t(i) and t(i + 1), the value is equal to y(i + 1)
 
@@ -271,6 +271,16 @@ class ValuesBounded:
         """
         return np.hstack([self.values, self.value_last_bound])
 
+    @classmethod
+    def from_all_values(
+        cls,
+        all_values: pint.UnitRegistry.Quantity,  # array
+    ):
+        return cls(
+            values=all_values[:-1],
+            value_last_bound=all_values[-1],
+        )
+
 
 @define
 class TimeAxis:
@@ -377,6 +387,16 @@ class TimeAxis:
         starts = self.values
         ends = np.hstack([self.values[1:], self.value_last_bound])
         return np.vstack([starts, ends]).T
+
+    @classmethod
+    def from_bounds(
+        cls,
+        bounds: pint.UnitRegistry.Quantity,  # array
+    ):
+        return cls(
+            values=bounds[:-1],
+            value_last_bound=bounds[-1],
+        )
 
 
 @define
@@ -602,7 +622,7 @@ class TimeseriesContinuous:
         self,
         times: TimeAxis | pint.UnitRegistry.Quantity,  # array
         ax: matplotlib.axes.Axes | None = None,
-        res_increase: int = 100,
+        res_increase: int = 500,
         **kwargs: Any,
     ) -> matplotlib.axes.Axes:
         if ax is None:
@@ -1188,3 +1208,196 @@ ax.grid()
 stepwise_forcing_annual_start_continuous.interpolate(
     Q([1849.5, 1850.0, 1850.00001], "yr")
 )
+
+
+# %%
+@define
+class Timeseries:
+    """Timeseries representation"""
+
+    time: TimeAxis
+    """Time axis of the timeseries"""
+
+    continuous: TimeseriesContinuous
+    """Continuous version of the timeseries"""
+
+    # TODO: str, repr, html
+
+    @property
+    def name(self) -> str:
+        """
+        Name of the timeseries
+        """
+        return self.continuous.name
+
+    @property
+    def discrete(self) -> TimeseriesDiscrete:
+        """
+        Discrete view of the timeseries
+        """
+        values = ValuesBounded.from_all_values(self.continuous.interpolate(self.time))
+
+        return TimeseriesDiscrete(
+            name=self.name,
+            time=self.time,
+            values=values,
+        )
+
+    @classmethod
+    def from_arrays(
+        cls,
+        all_values: pint.UnitRegistry.Quantity,  # array
+        time_bounds: pint.UnitRegistry.Quantity,  # array
+        interpolation: InterpolationOption,
+        name: str,
+    ):
+        values = ValuesBounded.from_all_values(all_values)
+        time = TimeAxis.from_bounds(time_bounds)
+
+        discrete = TimeseriesDiscrete(
+            name=name,
+            time=time,
+            values=values,
+        )
+        continuous = discrete_to_continuous(
+            discrete=discrete,
+            interpolation=interpolation,
+        )
+
+        return cls(
+            time=time,
+            continuous=continuous,
+        )
+
+    def integrate(
+        self,
+        integration_constant: pint.UnitRegistry.Quantity,  # scalar
+        name_res: str | None = None,
+    ):
+        integral = self.continuous.integrate(
+            integration_constant=integration_constant,
+            name_res=name_res,
+        )
+
+        return type(self)(
+            time=self.time,
+            continuous=integral,
+        )
+
+    def plot(
+        self,
+        ax: matplotlib.axes.Axes | None = None,
+        show_continuous: bool = True,
+        continuous_kwargs: dict[str, Any] | None = None,
+        show_discrete: bool = False,
+        discrete_kwargs: dict[str, Any] | None = None,
+        set_xlabel: bool = False,
+        set_ylabel: bool = False,
+    ) -> matplotlib.axes.Axes:
+        if ax is None:
+            _, ax = plt.subplots()
+
+        if continuous_kwargs is None:
+            continuous_kwargs = {}
+
+        if discrete_kwargs is None:
+            discrete_kwargs = {}
+
+        if show_continuous:
+            if "label" not in continuous_kwargs:
+                continuous_kwargs["label"] = self.name
+
+            self.continuous.plot(
+                ax=ax,
+                times=self.time,
+                **continuous_kwargs,
+            )
+
+        if show_discrete:
+            if "label" not in discrete_kwargs:
+                discrete_kwargs["label"] = f"{self.name} discrete points"
+
+            self.discrete.plot(
+                ax=ax,
+                **discrete_kwargs,
+            )
+
+        if set_xlabel:
+            ax.set_xlabel(self.continuous.time_units)
+
+        if set_ylabel:
+            ax.set_ylabel(self.continuous.values_units)
+
+        return ax
+
+    def update_interpolation(self, interpolation: InterpolationOption):
+        continuous = discrete_to_continuous(
+            discrete=self.discrete,
+            interpolation=interpolation,
+        )
+
+        return type(self)(
+            time=self.time,
+            continuous=continuous,
+        )
+
+
+# %%
+base = Timeseries.from_arrays(
+    all_values=Q([1, 2, 10, 20], "m"),
+    time_bounds=Q([1750, 1850, 1900, 2000], "yr"),
+    interpolation=InterpolationOption.Linear,
+    name="base",
+)
+
+# %%
+fig, axes = plt.subplots(nrows=2, figsize=(12, 8))
+
+
+base = Timeseries.from_arrays(
+    all_values=Q([1, 2, 10, 20], "m"),
+    time_bounds=Q([1750, 1850, 1900, 2000], "yr"),
+    interpolation=InterpolationOption.Linear,
+    name="base",
+)
+base.plot(
+    ax=axes[0],
+    show_continuous=False,
+    show_discrete=True,
+    set_xlabel=True,
+    set_ylabel=True,
+)
+for interp_option in (
+    InterpolationOption.Linear,
+    # InterpolationOption.Quadratic,
+    InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+    InterpolationOption.PiecewiseConstantNextLeftClosed,
+    InterpolationOption.PiecewiseConstantPreviousLeftOpen,
+    InterpolationOption.PiecewiseConstantNextLeftOpen,
+):
+    ts = base.update_interpolation(interp_option)
+    ts.plot(
+        ax=axes[0],
+        continuous_kwargs=dict(
+            label=interp_option,
+            res_increase=1000,
+            # res_increase=30,
+            alpha=0.4,
+        ),
+    )
+    ts.integrate(Q(3, "m yr")).plot(
+        ax=axes[1],
+        continuous_kwargs=dict(
+            label=f"integrated {interp_option}",
+            res_increase=1000,
+            alpha=0.4,
+        ),
+    )
+
+for ax in axes:
+    ax.grid()
+    ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
+
+fig.tight_layout()
+
+# %%
