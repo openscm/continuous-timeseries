@@ -25,7 +25,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import openscm_units
 import scipy.interpolate
-from attrs import evolve
 
 # %%
 UR = openscm_units.unit_registry
@@ -116,418 +115,7 @@ emissions
 # Our proposed API to solve this is the below
 
 # %%
-from collections.abc import Iterable
-from typing import Any
-
-
-def get_attribute_str_value(instance: Any, attribute: str) -> str:
-    """
-    Get the string version of an attribute's value
-
-    Parameters
-    ----------
-    instance
-        Instance from which to get the attribute
-
-    attribute
-        Attribute for which to get the value
-
-    Returns
-    -------
-    :
-        String version of the attribute's value
-    """
-    return f"{attribute}={getattr(instance, attribute)}"
-
-
-def to_str(instance: Any, exposed_attributes: Iterable[str]) -> str:
-    """
-    Convert an instance to its string representation
-
-    Parameters
-    ----------
-    instance
-        Instance to convert
-
-    exposed_attributes
-        Attributes from Fortran that the instance exposes
-
-    Returns
-    -------
-    :
-        String representation of the instance
-    """
-    if not exposed_attributes:
-        return repr(instance)
-
-    attribute_values = [
-        get_attribute_str_value(instance, v) for v in exposed_attributes
-    ]
-
-    return f"{repr(instance)[:-1]}, {', '.join(attribute_values)})"
-
-
-def to_pretty(
-    instance: Any,
-    exposed_attributes: Iterable[str],
-    p: Any,
-    cycle: bool,
-    indent: int = 4,
-) -> None:
-    """
-    Pretty-print an instance
-
-    Parameters
-    ----------
-    instance
-        Instance to convert
-
-    exposed_attributes
-        Attributes from Fortran that the instance exposes
-
-    p
-        Pretty printing object
-
-    cycle
-        Whether the pretty printer has detected a cycle or not.
-
-    indent
-        Indent to apply to the pretty printing group
-    """
-    if not exposed_attributes:
-        p.text(str(instance))
-        return
-
-    with p.group(indent, f"{repr(instance)[:-1]}", ")"):
-        for att in exposed_attributes:
-            p.text(",")
-            p.breakable()
-
-            p.text(get_attribute_str_value(instance, att))
-
-
-def add_attribute_row(
-    attribute_name: str, attribute_value: str, attribute_rows: list[str]
-) -> list[str]:
-    """
-    Add a row for displaying an attribute's value to a list of rows
-
-    Parameters
-    ----------
-    attribute_name
-        Attribute's name
-
-    attribute_value
-        Attribute's value
-
-    attribute_rows
-        Existing attribute rows
-
-
-    Returns
-    -------
-        Attribute rows, with the new row appended
-    """
-    attribute_rows.append(
-        f"<tr><th>{attribute_name}</th><td style='text-align:left;'>{attribute_value}</td></tr>"  # noqa: E501
-    )
-
-    return attribute_rows
-
-
-def to_html(instance: Any, exposed_attributes: Iterable[str]) -> str:
-    """
-    Convert an instance to its html representation
-
-    Parameters
-    ----------
-    instance
-        Instance to convert
-
-    exposed_attributes
-        Attributes from Fortran that the instance exposes
-
-    Returns
-    -------
-    :
-        HTML representation of the instance
-    """
-    if not exposed_attributes:
-        return str(instance)
-
-    instance_class_name = repr(instance).split("(")[0]
-
-    attribute_rows: list[str] = []
-    for att in exposed_attributes:
-        att_val = getattr(instance, att)
-
-        try:
-            att_val = att_val._repr_html_()
-        except AttributeError:
-            att_val = str(att_val)
-
-        attribute_rows = add_attribute_row(att, att_val, attribute_rows)
-
-    attribute_rows_for_table = "\n          ".join(attribute_rows)
-
-    css_style = """.fgen-wrap {
-  /*font-family: monospace;*/
-  width: 540px;
-}
-
-.fgen-header {
-  padding: 6px 0 6px 3px;
-  border-bottom: solid 1px #777;
-  color: #555;;
-}
-
-.fgen-header > div {
-  display: inline;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.fgen-basefinalizable-cls,
-.fgen-basefinalizable-instance-index {
-  margin-left: 2px;
-  margin-right: 10px;
-}
-
-.fgen-basefinalizable-cls {
-  font-weight: bold;
-  color: #000000;
-}"""
-
-    return "\n".join(
-        [
-            "<div>",
-            "  <style>",
-            f"{css_style}",
-            "  </style>",
-            "  <div class='fgen-wrap'>",
-            "    <div class='fgen-header'>",
-            "        <table><tbody>",
-            f"          {attribute_rows_for_table}",
-            "        </tbody></table>",
-            "    </div>",
-            "  </div>",
-            "</div>",
-        ]
-    )
-
-
-# %%
 from enum import StrEnum
-from typing import Protocol
-
-import pint
-from attrs import define
-
-
-class InterpolatorLike(Protocol):
-    """Interpolator-like"""
-
-    # def interpolate(self, time_target: TimeAxis) -> pint.UnitRegistry.Quantity:  # array
-    def interpolate(self, time_target) -> pint.UnitRegistry.Quantity:  # array
-        """
-        Interpolate
-
-        Parameters
-        ----------
-        time_target
-            Target time onto which to interpolate
-
-        Returns
-        -------
-        :
-            Interpolated values
-        """
-
-
-@define
-class InterpolatorPiecewiseConstantPreviousLeftInclusive:
-    time: pint.UnitRegistry.Quantity  # array
-    """Time points"""
-
-    y_values: pint.UnitRegistry.Quantity  # array
-    """Values"""
-
-    allow_extrapolation: bool
-    """Should extrapolation be allowed"""
-
-    # def interpolate(self, time_target: TimeAxis) -> pint.UnitRegistry.Quantity:  # array
-    def interpolate(self, time_target) -> pint.UnitRegistry.Quantity:  # array
-        """
-        Interpolate
-
-        Parameters
-        ----------
-        time_target
-            Target time onto which to interpolate
-
-        Returns
-        -------
-        :
-            Interpolated values
-        """
-        # TODO: extrapolation checks
-        res_idxs = (
-            np.searchsorted(a=self.time, v=np.atleast_1d(time_target), side="right") - 1
-        )
-        # Fix up any overrun
-        res_idxs[res_idxs == -1] = 0
-        res = self.y_values[res_idxs]
-
-        return res
-
-
-@define
-class InterpolatorPiecewiseConstantPreviousLeftExclusive:
-    time: pint.UnitRegistry.Quantity  # array
-    """Time points"""
-
-    y_values: pint.UnitRegistry.Quantity  # array
-    """Values"""
-
-    allow_extrapolation: bool
-    """Should extrapolation be allowed"""
-
-    # def interpolate(self, time_target: TimeAxis) -> pint.UnitRegistry.Quantity:  # array
-    def interpolate(self, time_target) -> pint.UnitRegistry.Quantity:  # array
-        """
-        Interpolate
-
-        Parameters
-        ----------
-        time_target
-            Target time onto which to interpolate
-
-        Returns
-        -------
-        :
-            Interpolated values
-        """
-        res_idxs = (
-            np.searchsorted(a=self.time, v=np.atleast_1d(time_target), side="left") - 1
-        )
-        # Fix up any overrun
-        res_idxs[res_idxs == -1] = 0
-        res = self.y_values[res_idxs]
-
-        return res
-
-
-@define
-class InterpolatorPiecewiseConstantNextLeftInclusive:
-    time: pint.UnitRegistry.Quantity  # array
-    """Time points"""
-
-    y_values: pint.UnitRegistry.Quantity  # array
-    """Values"""
-
-    allow_extrapolation: bool
-    """Should extrapolation be allowed"""
-
-    # def interpolate(self, time_target: TimeAxis) -> pint.UnitRegistry.Quantity:  # array
-    def interpolate(self, time_target) -> pint.UnitRegistry.Quantity:  # array
-        """
-        Interpolate
-
-        Parameters
-        ----------
-        time_target
-            Target time onto which to interpolate
-
-        Returns
-        -------
-        :
-            Interpolated values
-        """
-        res_idxs = np.searchsorted(
-            a=self.time, v=np.atleast_1d(time_target), side="right"
-        )
-        # Fix up any overrun
-        res_idxs[res_idxs == self.time.size] = self.time.size - 1
-        res = self.y_values[res_idxs]
-
-        return res
-
-
-@define
-class InterpolatorPiecewiseConstantNextLeftExclusive:
-    time: pint.UnitRegistry.Quantity  # array
-    """Time points"""
-
-    y_values: pint.UnitRegistry.Quantity  # array
-    """Values"""
-
-    allow_extrapolation: bool
-    """Should extrapolation be allowed"""
-
-    # def interpolate(self, time_target: TimeAxis) -> pint.UnitRegistry.Quantity:  # array
-    def interpolate(self, time_target) -> pint.UnitRegistry.Quantity:  # array
-        """
-        Interpolate
-
-        Parameters
-        ----------
-        time_target
-            Target time onto which to interpolate
-
-        Returns
-        -------
-        :
-            Interpolated values
-        """
-        res_idxs = np.searchsorted(
-            a=self.time, v=np.atleast_1d(time_target), side="left"
-        )
-        # Fix up any overrun
-        res_idxs[res_idxs == self.time.size] = self.time.size - 1
-        res = self.y_values[res_idxs]
-
-        return res
-
-
-@define
-class InterpolatorLinear:
-    time: pint.UnitRegistry.Quantity  # array
-    """Time points"""
-
-    y_values: pint.UnitRegistry.Quantity  # array
-    """Values"""
-
-    allow_extrapolation: bool
-    """Should extrapolation be allowed"""
-
-    # def interpolate(self, time_target: TimeAxis) -> pint.UnitRegistry.Quantity:  # array
-    def interpolate(self, time_target) -> pint.UnitRegistry.Quantity:  # array
-        """
-        Interpolate
-
-        Parameters
-        ----------
-        time_target
-            Target time onto which to interpolate
-
-        Returns
-        -------
-        :
-            Interpolated values
-        """
-        coeffs = np.zeros((2, self.y_values.size - 1))
-        coeffs[0, :] = (
-            (self.y_values[1:] - self.y_values[:-1]) / (self.time[1:] - self.time[:-1])
-        ).m
-        coeffs[1, :] = self.y_values[:-1].m
-        x = self.time.m
-
-        ppoly = scipy.interpolate.PPoly(
-            c=coeffs, x=x, extrapolate=self.allow_extrapolation
-        )
-        res = ppoly(time_target.m) * self.y_values.u
-
-        return res
 
 
 class InterpolationOption(StrEnum):
@@ -547,80 +135,33 @@ class InterpolationOption(StrEnum):
     Cubic = "cubic"
     """Cubic interpolation is assumed between points"""
 
-    PiecewiseConstantPreviousLeftInclusive = (
-        "piecewise_constant_previous_left_inclusive"
-    )
+    PiecewiseConstantPreviousLeftClosed = "piecewise_constant_previous_left_closed"
     """
     Between t(i) and t(i + 1), the value is equal to y(i)
 
     At t(i), the value is equal to y(i).
     """
 
-    PiecewiseConstantPreviousLeftExclusive = (
-        "piecewise_constant_previous_left_exclusive"
-    )
+    PiecewiseConstantPreviousLeftOpen = "piecewise_constant_previous_left_open"
     """
     Between t(i) and t(i + 1), the value is equal to y(i)
 
     At t(i), the value is equal to y(i - 1).
     """
 
-    PiecewiseConstantNextLeftInclusive = "piecewise_constant_next_left_inclusive"
+    PiecewiseConstantNextLeftClosed = "piecewise_constant_next_left_inclusive"
     """
     Between t(i) and t(i + 1), the value is equal to y(i + 1)
 
     At t(i), the value is equal to y(i + 1).
     """
 
-    PiecewiseConstantNextLeftExclusive = "piecewise_constant_next_left_exclusive"
+    PiecewiseConstantNextLeftOpen = "piecewise_constant_next_left_exclusive"
     """
     Between t(i) and t(i + 1), the value is equal to y(i + 1)
 
     At t(i), the value is equal to y(i).
     """
-
-
-def create_interpolator(
-    time: pint.UnitRegistry.Quantity,  # array
-    y_values: pint.UnitRegistry.Quantity,  # array
-    kind: InterpolationOption,
-    allow_extrapolation: bool = False,
-) -> InterpolatorLike:
-    if kind == InterpolationOption.PiecewiseConstantPreviousLeftInclusive:
-        return InterpolatorPiecewiseConstantPreviousLeftInclusive(
-            time=time,
-            y_values=y_values,
-            allow_extrapolation=allow_extrapolation,
-        )
-
-    if kind == InterpolationOption.PiecewiseConstantPreviousLeftExclusive:
-        return InterpolatorPiecewiseConstantPreviousLeftExclusive(
-            time=time,
-            y_values=y_values,
-            allow_extrapolation=allow_extrapolation,
-        )
-    if kind == InterpolationOption.PiecewiseConstantNextLeftInclusive:
-        return InterpolatorPiecewiseConstantNextLeftInclusive(
-            time=time,
-            y_values=y_values,
-            allow_extrapolation=allow_extrapolation,
-        )
-
-    if kind == InterpolationOption.PiecewiseConstantNextLeftExclusive:
-        return InterpolatorPiecewiseConstantNextLeftExclusive(
-            time=time,
-            y_values=y_values,
-            allow_extrapolation=allow_extrapolation,
-        )
-
-    if kind == InterpolationOption.Linear:
-        return InterpolatorLinear(
-            time=time,
-            y_values=y_values,
-            allow_extrapolation=allow_extrapolation,
-        )
-
-    raise NotImplementedError(kind)
 
 
 # %%
@@ -685,38 +226,38 @@ class ValuesBounded:
     Required to avoid ambiguity in this value
     """
 
-    def __str__(self) -> str:
-        """
-        Get string representation of self
-        """
-        return to_str(
-            self,
-            tuple(a.name for a in self.__attrs_attrs__),
-        )
+    # def __str__(self) -> str:
+    #     """
+    #     Get string representation of self
+    #     """
+    #     return to_str(
+    #         self,
+    #         tuple(a.name for a in self.__attrs_attrs__),
+    #     )
 
-    def _repr_pretty_(self, p: Any, cycle: bool) -> None:
-        """
-        Get pretty representation of self
+    # def _repr_pretty_(self, p: Any, cycle: bool) -> None:
+    #     """
+    #     Get pretty representation of self
 
-        Used by IPython notebooks and other tools
-        """
-        to_pretty(
-            self,
-            tuple(a.name for a in self.__attrs_attrs__),
-            p=p,
-            cycle=cycle,
-        )
+    #     Used by IPython notebooks and other tools
+    #     """
+    #     to_pretty(
+    #         self,
+    #         tuple(a.name for a in self.__attrs_attrs__),
+    #         p=p,
+    #         cycle=cycle,
+    #     )
 
-    def _repr_html_(self) -> str:
-        """
-        Get html representation of self
+    # def _repr_html_(self) -> str:
+    #     """
+    #     Get html representation of self
 
-        Used by IPython notebooks and other tools
-        """
-        return to_html(
-            self,
-            tuple(a.name for a in self.__attrs_attrs__),
-        )
+    #     Used by IPython notebooks and other tools
+    #     """
+    #     return to_html(
+    #         self,
+    #         tuple(a.name for a in self.__attrs_attrs__),
+    #     )
 
     @property
     def all_values(self) -> pint.UnitRegistry.Quantity:  # array
@@ -775,38 +316,38 @@ class TimeAxis:
             )
             raise ValueError(msg)
 
-    def __str__(self) -> str:
-        """
-        Get string representation of self
-        """
-        return to_str(
-            self,
-            tuple(a.name for a in self.__attrs_attrs__),
-        )
+    # def __str__(self) -> str:
+    #     """
+    #     Get string representation of self
+    #     """
+    #     return to_str(
+    #         self,
+    #         tuple(a.name for a in self.__attrs_attrs__),
+    #     )
 
-    def _repr_pretty_(self, p: Any, cycle: bool) -> None:
-        """
-        Get pretty representation of self
+    # def _repr_pretty_(self, p: Any, cycle: bool) -> None:
+    #     """
+    #     Get pretty representation of self
 
-        Used by IPython notebooks and other tools
-        """
-        to_pretty(
-            self,
-            tuple(a.name for a in self.__attrs_attrs__),
-            p=p,
-            cycle=cycle,
-        )
+    #     Used by IPython notebooks and other tools
+    #     """
+    #     to_pretty(
+    #         self,
+    #         tuple(a.name for a in self.__attrs_attrs__),
+    #         p=p,
+    #         cycle=cycle,
+    #     )
 
-    def _repr_html_(self) -> str:
-        """
-        Get html representation of self
+    # def _repr_html_(self) -> str:
+    #     """
+    #     Get html representation of self
 
-        Used by IPython notebooks and other tools
-        """
-        return to_html(
-            self,
-            tuple(a.name for a in self.__attrs_attrs__),
-        )
+    #     Used by IPython notebooks and other tools
+    #     """
+    #     return to_html(
+    #         self,
+    #         tuple(a.name for a in self.__attrs_attrs__),
+    #     )
 
     @property
     def bounds(self) -> pint.UnitRegistry.Quantity:  # array
@@ -839,9 +380,9 @@ class TimeAxis:
 
 
 @define
-class Timeseries:
+class TimeseriesDiscrete:
     """
-    Representation of a continuous timeseries
+    Representation of a discrete timeseries
 
     At the moment, this only supports one-dimensional timeseries.
     """
@@ -855,237 +396,270 @@ class Timeseries:
     values: ValuesBounded
     """Values that define the timeseries"""
 
-    interpolation: InterpolationOption
-    """Interpolation to apply to the timeseries"""
+    # def __str__(self) -> str:
+    #     """
+    #     Get string representation of self
+    #     """
+    #     return to_str(
+    #         self,
+    #         tuple(a.name for a in self.__attrs_attrs__),
+    #     )
 
-    # Change API to just carry this around always.
-    # Make `from_values` a class method or something
-    # so user doesn't have to make it.
-    # Validation would be checking that the polynomial,
-    # evaluated at `self.time` gives the expected values.
-    # This could also be a separate method
-    # (e.g. `self.validate_polynomial_values_consistency`).
-    # Or, just don't carry the stuff you can infer around
-    # and only use that for __str__, __repr__ etc.
-    piecewise_polynomial: scipy.interpolate.PPoly | None = None
-    """
-    If supplied, the piecewise polynomial that represents this timeseries.
+    # def _repr_pretty_(self, p: Any, cycle: bool) -> None:
+    #     """
+    #     Get pretty representation of self
 
-    If not supplied, we will create this as needed.
-    """
+    #     Used by IPython notebooks and other tools
+    #     """
+    #     to_pretty(
+    #         self,
+    #         tuple(a.name for a in self.__attrs_attrs__),
+    #         p=p,
+    #         cycle=cycle,
+    #     )
 
-    def __str__(self) -> str:
-        """
-        Get string representation of self
-        """
-        return to_str(
-            self,
-            tuple(a.name for a in self.__attrs_attrs__),
+    # def _repr_html_(self) -> str:
+    #     """
+    #     Get html representation of self
+
+    #     Used by IPython notebooks and other tools
+    #     """
+    #     return to_html(
+    #         self,
+    #         tuple(a.name for a in self.__attrs_attrs__),
+    #     )
+
+    def to_continuous_timeseries(
+        self,
+        interpolation: InterpolationOption,
+    ):
+        # ) -> TimeseriesContinuous:
+        return discrete_to_continuous(
+            discrete=self,
+            interpolation=interpolation,
         )
 
-    def _repr_pretty_(self, p: Any, cycle: bool) -> None:
-        """
-        Get pretty representation of self
+    def plot(
+        self,
+        ax: matplotlib.axes.Axes | None = None,
+        different_value_last_bound: bool = False,
+        value_last_bound_kwargs: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> matplotlib.axes.Axes:
+        if ax is None:
+            _, ax = plt.subplots()
 
-        Used by IPython notebooks and other tools
-        """
-        to_pretty(
-            self,
-            tuple(a.name for a in self.__attrs_attrs__),
-            p=p,
-            cycle=cycle,
-        )
+        if value_last_bound_kwargs is None:
+            value_last_bound_kwargs = {}
 
-    def _repr_html_(self) -> str:
-        """
-        Get html representation of self
-
-        Used by IPython notebooks and other tools
-        """
-        return to_html(
-            self,
-            tuple(a.name for a in self.__attrs_attrs__),
-        )
-
-    @property
-    def values_at_bounds(self) -> pint.UnitRegistry.Quantity:  # array
-        """
-        Get the values at the bounds defined by `self.time`
-
-        Returns
-        -------
-        :
-            Values at the bounds defined by `self.time`
-        """
-        return self.interpolate(self.time).values.all_values
-
-    @classmethod
-    def from_integration_result(cls, integration_result, name: str):
-        # def from_integration_result(cls, integration_result: IntegrationResult, name: str) -> Timeseries:
-        time = TimeAxis(
-            values=integration_result.time_bounds[:-1],
-            value_last_bound=integration_result.time_bounds[-1],
-        )
-        values = ValuesBounded(
-            values=integration_result.integral_at_bounds[:-1],
-            value_last_bound=integration_result.integral_at_bounds[-1],
-        )
-
-        return cls(
-            name=name,
-            time=time,
-            values=values,
-            interpolation=integration_result.interpolation,
-            piecewise_polynomial=integration_result.piecewise_polynomial,
-        )
-
-    # def interpolate(self, time_axis_new: TimeAxis, allow_extrapolation: bool = False) -> Timeseries:
-    def interpolate(self, time_axis_new: TimeAxis, allow_extrapolation: bool = False):
-        if self.piecewise_polynomial is not None:
-            values_interp = (
-                self.piecewise_polynomial(time_axis_new.values.m)
-                * time_axis_new.values.u
+        if different_value_last_bound:
+            ax.scatter(
+                self.time.values.m,
+                self.values.values.m,
+                **kwargs,
             )
-            value_last_bound_interp = (
-                self.piecewise_polynomial(time_axis_new.value_last_bound.m)
-                * time_axis_new.value_last_bound.u
+
+            ax.scatter(
+                self.time.value_last_bound.m,
+                self.values.value_last_bound.m,
+                **value_last_bound_kwargs,
             )
 
         else:
-            interpolator = self.get_interpolator(
-                allow_extrapolation=allow_extrapolation
+            ax.scatter(
+                self.time.bounds.m,
+                self.values.all_values.m,
+                **kwargs,
             )
 
-            values_interp = interpolator.interpolate(time_axis_new.values)
-            value_last_bound_interp = interpolator.interpolate(
-                time_axis_new.value_last_bound
-            )
+        return ax
 
-        res = Timeseries(
-            name=self.name,
-            time=time_axis_new,
-            values=ValuesBounded(
-                values=values_interp,
-                value_last_bound=value_last_bound_interp,
-            ),
-            interpolation=self.interpolation,
-            piecewise_polynomial=self.piecewise_polynomial,
-        )
+
+# %%
+@define
+class TimeseriesContinuous:
+    """
+    Representation of a continous timeseries
+
+    At the moment, this only supports one-dimensional timeseries.
+    """
+
+    name: str
+    """Name of the timeseries"""
+
+    time_units: pint.UnitRegistry.Unit
+    """The units of the time axis"""
+
+    values_units: pint.UnitRegistry.Unit
+    """The units of the values"""
+
+    piecewise_polynomial: scipy.interpolate.PPoly
+    """
+    The piecewise polynomial that represents this timeseries.
+    """
+
+    # def __str__(self) -> str:
+    #     """
+    #     Get string representation of self
+    #     """
+    #     return to_str(
+    #         self,
+    #         tuple(a.name for a in self.__attrs_attrs__),
+    #     )
+
+    # def _repr_pretty_(self, p: Any, cycle: bool) -> None:
+    #     """
+    #     Get pretty representation of self
+
+    #     Used by IPython notebooks and other tools
+    #     """
+    #     to_pretty(
+    #         self,
+    #         tuple(a.name for a in self.__attrs_attrs__),
+    #         p=p,
+    #         cycle=cycle,
+    #     )
+
+    # def _repr_html_(self) -> str:
+    #     """
+    #     Get html representation of self
+
+    #     Used by IPython notebooks and other tools
+    #     """
+    #     return to_html(
+    #         self,
+    #         tuple(a.name for a in self.__attrs_attrs__),
+    #     )
+
+    def to_discrete_timeseries(
+        self,
+        time_axis: TimeAxis,
+    ):
+        # ) -> TimeseriesDiscrete:
+        ...
+
+    def interpolate(
+        self,
+        times: TimeAxis,
+        allow_extrapolation: bool = False,
+    ):
+        if isinstance(times, TimeAxis):
+            times = times.bounds
+
+        times_m = times.to(self.time_units).m
+        values_m = self.piecewise_polynomial(times_m)
+        res = values_m * self.values_units
 
         return res
 
-    # def interpolate(self, time_axis_new: TimeAxis, allow_extrapolation: bool = False) -> Timeseries:
     def integrate(
         self,
         integration_constant: pint.UnitRegistry.Quantity,  # scalar
         name_res: str | None = None,
     ):
-        # ) -> Timeseries:
         if name_res is None:
             name_res = f"{self.name}_integral"
 
-        integrate_res = integrate(
-            time_bounds=self.time.bounds,
-            y_at_bounds=self.values_at_bounds,
-            interpolation=self.interpolation,
-            integration_constant=integration_constant,
+        values_units_integral = self.values_units * self.time_units
+
+        indefinite_integral = self.piecewise_polynomial.antiderivative()
+
+        c_new = indefinite_integral.c
+        c_new[-1, :] += integration_constant.to(values_units_integral).m
+
+        piecewise_polynomial_integral = scipy.interpolate.PPoly(
+            c=c_new,
+            x=indefinite_integral.x,
+            extrapolate=False,
         )
 
-        return type(self).from_integration_result(integrate_res, name=name_res)
-
-    def get_interpolator(self, allow_extrapolation: bool = False) -> InterpolatorLike:
-        time_interp = self.time.bounds
-        y_interp = self.values.all_values
-
-        interpolator = create_interpolator(
-            time=time_interp,
-            y_values=y_interp,
-            kind=self.interpolation,
-            allow_extrapolation=allow_extrapolation,
+        return TimeseriesContinuous(
+            name=name_res,
+            time_units=self.time_units,
+            values_units=values_units_integral,
+            piecewise_polynomial=piecewise_polynomial_integral,
         )
 
-        return interpolator
+    def differentiate(
+        self,
+        name_res: str | None = None,
+    ):
+        if name_res is None:
+            name_res = f"{self.name}_derivative"
+
+        piecewise_polynomial_derivative = self.piecewise_polynomial.derivative()
+
+        values_units_derivative = self.values_units / self.time_units
+
+        return TimeseriesContinuous(
+            name=name_res,
+            time_units=self.time_units,
+            values_units=values_units_derivative,
+            piecewise_polynomial=piecewise_polynomial_derivative,
+        )
 
     def plot(
         self,
+        times: TimeAxis | pint.UnitRegistry.Quantity,  # array
         ax: matplotlib.axes.Axes | None = None,
-        show_discrete: bool = False,
-        res_increase: int = 1000,
-        plot_kwargs: dict[str, Any] | None = None,
-        discrete_kwargs: dict[str, Any] | None = None,
+        res_increase: int = 100,
+        **kwargs: Any,
     ) -> matplotlib.axes.Axes:
         if ax is None:
             _, ax = plt.subplots()
 
-        if plot_kwargs is None:
-            plot_kwargs = {}
-
-        if discrete_kwargs is None:
-            discrete_kwargs = {}
+        if isinstance(times, TimeAxis):
+            times = times.bounds
 
         # Interpolate.
         # Then plot interpolated using linear joins
         # (as far as I can tell, this is the only general way to do this,
         # although it is slower than using e.g. step for piecewise constant stuff).)
         show_time_points = (
-            np.unique(
-                np.concatenate(
-                    [
-                        np.linspace(
-                            self.time.values[0].m,
-                            self.time.value_last_bound.m,
-                            res_increase,
-                        ),
-                        self.time.bounds.m,
-                    ]
+            np.sort(
+                np.unique(
+                    np.concatenate(
+                        [
+                            np.linspace(
+                                times[0].m,
+                                times[-1].m,
+                                res_increase,
+                            ),
+                            times.m,
+                        ]
+                    )
                 )
             )
-            * self.time.values.u
+            * times.u
         )
+        interpolated_values = self.interpolate(show_time_points)
 
-        show_time_points = np.sort(show_time_points)
-        interpolated_times = TimeAxis(
-            values=show_time_points[:-1],
-            value_last_bound=self.time.value_last_bound,
-        )
-
-        interpolated = self.interpolate(interpolated_times)
         ax.plot(
-            interpolated.time.bounds.m,
-            interpolated.values_at_bounds.m,
-            **plot_kwargs,
+            show_time_points.m,
+            interpolated_values.m,
+            **kwargs,
         )
-
-        if show_discrete:
-            ax.scatter(
-                self.time.bounds.m,
-                self.values_at_bounds.m,
-                **discrete_kwargs,
-            )
-            # add difference between values and value_last_bound?
 
         return ax
 
 
 # %%
 TimeAxis(Q([1, 2, 3], "yr"), Q(4, "yr"))
+# Test cases for failing validation
 # TimeAxis(Q([1, 2, 3], "yr"), Q(2, "yr"))
 # TimeAxis(Q([1, 2, 3], "yr"), Q(3, "yr"))
 # TimeAxis(Q([1, 2, 1], "yr"), Q(4, "yr"))
 # TimeAxis(Q([1, 2, 2], "yr"), Q(4, "yr"))
 
-# %%
-print(Timeseries.__doc__)
-
 # %% [markdown]
-# The API provided by `Timeseries` offers a solution to the problems above.
+# The API provided by `TimeseriesDiscrete`, `TimeseriesContinous` and `Timeseries` offers a solution to the problems above.
 # The tradeoff is that you have to think about things which you wouldn't normally consider.
 
 # %% [markdown]
 # In the case of our COVID emissions example, we would capture the timeseries we want as shown below.
 
 # %%
-covid_emissions = Timeseries(
+covid_emissions = TimeseriesDiscrete(
     name="co2_emissions",
     time=TimeAxis(
         values=Q(np.array([2018, 2019, 2020, 2021, 2022, 2023]), "yr"),
@@ -1095,9 +669,9 @@ covid_emissions = Timeseries(
         values=Q(np.array([10.2, 10.3, 9.5, 10.1, 10.3, 10.5]), "GtC / yr"),
         value_last_bound=Q(10.6, "GtC / yr"),
     ),
-    interpolation=InterpolationOption.PiecewiseConstantPreviousLeftInclusive,
 )
 covid_emissions
+
 
 # %%
 # # Use something like this for testing interpolation in various forms
@@ -1110,24 +684,358 @@ covid_emissions
 # %% [markdown]
 # We can visualise the implications of different interpolation options like the below.
 
+
 # %%
-covid_emissions
+class PPolyPiecewiseConstantPreviousLeftClosed(scipy.interpolate.PPoly):
+    """
+    Previous piecewise constant class, where the interval is closed on the left
+
+    In other words, the value at the left of each bound is taken from the window it belongs to.
+
+    Provided to allow easy integration with the rest of the [`scipy.interpolate.PPoly`][] universe.
+    """
+
+    def __init__(self, c, x, value_last_bound, extrapolate=None, axis=0):
+        if c.shape[0] != 1:
+            msg = "Should only be used for piecewise constant polynomials"
+            raise AssertionError(msg)
+
+        super().__init__(c, x, extrapolate, axis)
+        self._value_last_bound = value_last_bound
+
+    @classmethod
+    def construct_fast(cls, c, x, extrapolate=None, axis=0):
+        return scipy.interpolate.PPoly.construct_fast(c, x, extrapolate=None, axis=0)
+
+    def _evaluate(self, x, nu, extrapolate, out):
+        from scipy.interpolate import _ppoly
+
+        _ppoly.evaluate(
+            self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+            self.x,
+            x,
+            nu,
+            bool(extrapolate),
+            out,
+        )
+
+        # Should test this carefully, not sure if we will hit the issue described here or not
+        # https://stackoverflow.com/a/32191125
+        x_on_border = np.isin(x, self.x)
+        if x_on_border.any():
+            idxs_self_x = np.searchsorted(a=self.x, v=x[x_on_border])
+
+            n_window_values = self.c[0].size
+            on_last_bound = idxs_self_x == n_window_values
+
+            # Avoid indexing errors
+            idxs_self_x_safe = np.copy(idxs_self_x)
+            idxs_self_x_safe[on_last_bound] = n_window_values - 1
+
+            overwrite_values = self.c[0][idxs_self_x_safe]
+            overwrite_values[on_last_bound] = self._value_last_bound
+
+            out[x_on_border] = overwrite_values[:, np.newaxis]
+
+
+def discrete_to_continuous_piecewise_constant_previous_left_closed(
+    discrete: TimeseriesDiscrete,
+) -> TimeseriesContinuous:
+    x = discrete.time.bounds.m
+    coeffs = np.atleast_2d(discrete.values.all_values[:-1].m)
+    value_last_bound = discrete.values.all_values[-1].m
+
+    piecewise_polynomial = PPolyPiecewiseConstantPreviousLeftClosed(
+        x=x,
+        c=coeffs,
+        value_last_bound=value_last_bound,
+        extrapolate=False,  # Avoid extrapolation by default
+    )
+
+    res = TimeseriesContinuous(
+        name=discrete.name,
+        time_units=discrete.time.bounds.u,
+        values_units=discrete.values.all_values.u,
+        piecewise_polynomial=piecewise_polynomial,
+    )
+
+    return res
+
+
+# %%
+class PPolyPiecewiseConstantPreviousLeftOpen(scipy.interpolate.PPoly):
+    """
+    Previous piecewise constant class, where the interval is open on the left
+
+    In other words, the value at the left of each bound is taken from the previous window.
+
+    Provided to allow easy integration with the rest of the [`scipy.interpolate.PPoly`][] universe.
+    """
+
+    def __init__(self, c, x, extrapolate=None, axis=0):
+        if c.shape[0] != 1:
+            msg = "Should only be used for piecewise constant polynomials"
+            raise AssertionError(msg)
+
+        super().__init__(c, x, extrapolate, axis)
+
+    @classmethod
+    def construct_fast(cls, c, x, extrapolate=None, axis=0):
+        return scipy.interpolate.PPoly.construct_fast(c, x, extrapolate=None, axis=0)
+
+    def _evaluate(self, x, nu, extrapolate, out):
+        from scipy.interpolate import _ppoly
+
+        _ppoly.evaluate(
+            self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+            self.x,
+            x,
+            nu,
+            bool(extrapolate),
+            out,
+        )
+
+        # Should test this carefully, not sure if we will hit the issue described here or not
+        # https://stackoverflow.com/a/32191125
+        x_on_border = np.isin(x, self.x)
+        if x_on_border.any():
+            idxs_self_x = np.searchsorted(a=self.x, v=x[x_on_border]) - 1
+            # Avoid wrapping
+            idxs_self_x[idxs_self_x == -1] = 0
+
+            overwrite_values = self.c[0][idxs_self_x]
+
+            out[x_on_border] = overwrite_values[:, np.newaxis]
+
+
+def discrete_to_continuous_piecewise_constant_previous_left_open(
+    discrete: TimeseriesDiscrete,
+) -> TimeseriesContinuous:
+    x = discrete.time.bounds.m
+    coeffs = np.atleast_2d(discrete.values.all_values[:-1].m)
+
+    piecewise_polynomial = PPolyPiecewiseConstantPreviousLeftOpen(
+        x=x,
+        c=coeffs,
+        extrapolate=False,  # Avoid extrapolation by default
+    )
+
+    res = TimeseriesContinuous(
+        name=discrete.name,
+        time_units=discrete.time.bounds.u,
+        values_units=discrete.values.all_values.u,
+        piecewise_polynomial=piecewise_polynomial,
+    )
+
+    return res
+
+
+# %%
+def discrete_to_continuous_piecewise_constant_next_left_closed(
+    discrete: TimeseriesDiscrete,
+) -> TimeseriesContinuous:
+    x = discrete.time.bounds.m
+    # Next left closed, so we can ignore the first value
+    coeffs = np.atleast_2d(discrete.values.all_values[1:].m)
+
+    # Can use the standard scipy API,
+    # hence this is what everything will collapse back to
+    # (e.g. if you differentiate a linear spline).
+    piecewise_polynomial = scipy.interpolate.PPoly(
+        x=x,
+        c=coeffs,
+        extrapolate=False,  # Avoid extrapolation by default
+    )
+
+    res = TimeseriesContinuous(
+        name=discrete.name,
+        time_units=discrete.time.bounds.u,
+        values_units=discrete.values.all_values.u,
+        piecewise_polynomial=piecewise_polynomial,
+    )
+
+    return res
+
+
+# %%
+class PPolyPiecewiseConstantNextLeftOpen(scipy.interpolate.PPoly):
+    """
+    Next piecewise constant class, where the interval is open on the left
+
+    In other words, the value at the left of each bound is taken from the previous window.
+
+    Provided to allow easy integration with the rest of the [`scipy.interpolate.PPoly`][] universe.
+    """
+
+    def __init__(self, c, x, value_first_bound, extrapolate=None, axis=0):
+        if c.shape[0] != 1:
+            msg = "Should only be used for piecewise constant polynomials"
+            raise AssertionError(msg)
+
+        super().__init__(c, x, extrapolate, axis)
+        self._value_first_bound = value_first_bound
+
+    @classmethod
+    def construct_fast(cls, c, x, extrapolate=None, axis=0):
+        return scipy.interpolate.PPoly.construct_fast(c, x, extrapolate=None, axis=0)
+
+    def _evaluate(self, x, nu, extrapolate, out):
+        from scipy.interpolate import _ppoly
+
+        _ppoly.evaluate(
+            self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+            self.x,
+            x,
+            nu,
+            bool(extrapolate),
+            out,
+        )
+
+        # Should test this carefully, not sure if we will hit the issue described here or not
+        # https://stackoverflow.com/a/32191125
+        x_on_border = np.isin(x, self.x)
+        if x_on_border.any():
+            idxs_self_x = np.searchsorted(a=self.x, v=x[x_on_border])
+            # "Next" interpolation
+            idxs_self_x_use = idxs_self_x - 1
+            overwrite_values = self.c[0][idxs_self_x_use]
+
+            # Ensure correct value is used for first bound
+            on_first_bound = idxs_self_x == 0
+            overwrite_values[on_first_bound] = self._value_first_bound
+
+            out[x_on_border] = overwrite_values[:, np.newaxis]
+
+
+def discrete_to_continuous_piecewise_constant_next_left_open(
+    discrete: TimeseriesDiscrete,
+) -> TimeseriesContinuous:
+    x = discrete.time.bounds.m
+    all_values_m = discrete.values.all_values.m
+    coeffs = np.atleast_2d(all_values_m[1:])
+    # Next left exclusive so need the first value too
+    value_first_bound = all_values_m[0]
+
+    piecewise_polynomial = PPolyPiecewiseConstantNextLeftOpen(
+        x=x,
+        c=coeffs,
+        value_first_bound=value_first_bound,
+        extrapolate=False,  # Avoid extrapolation by default
+    )
+
+    res = TimeseriesContinuous(
+        name=discrete.name,
+        time_units=discrete.time.bounds.u,
+        values_units=discrete.values.all_values.u,
+        piecewise_polynomial=piecewise_polynomial,
+    )
+
+    return res
+
+
+# %%
+# No closed vs. open differentiation available here yet i.e. assume contiguous
+def discrete_to_continuous_linear(
+    discrete: TimeseriesDiscrete,
+) -> TimeseriesContinuous:
+    x = discrete.time.bounds.m
+
+    coeffs = np.zeros((2, discrete.values.all_values.size - 1))
+
+    all_vals = discrete.values.all_values
+    rises = all_vals[1:] - all_vals[:-1]
+    time_bounds = discrete.time.bounds
+    time_steps = time_bounds[1:] - time_bounds[:-1]
+    coeffs[0, :] = (rises / time_steps).m
+
+    coeffs[1, :] = discrete.values.values.m
+
+    piecewise_polynomial = scipy.interpolate.PPoly(
+        x=x,
+        c=coeffs,
+        extrapolate=False,  # Avoid extrapolation by default
+    )
+
+    res = TimeseriesContinuous(
+        name=discrete.name,
+        time_units=discrete.time.bounds.u,
+        values_units=discrete.values.all_values.u,
+        piecewise_polynomial=piecewise_polynomial,
+    )
+
+    return res
+
+
+# %%
+def discrete_to_continuous(
+    discrete: TimeseriesDiscrete,
+    interpolation: InterpolationOption,
+) -> TimeseriesContinuous:
+    if interpolation == InterpolationOption.PiecewiseConstantPreviousLeftClosed:
+        return discrete_to_continuous_piecewise_constant_previous_left_closed(
+            discrete=discrete,
+        )
+
+    if interpolation == InterpolationOption.PiecewiseConstantPreviousLeftOpen:
+        return discrete_to_continuous_piecewise_constant_previous_left_open(
+            discrete=discrete,
+        )
+
+    if interpolation == InterpolationOption.PiecewiseConstantNextLeftClosed:
+        return discrete_to_continuous_piecewise_constant_next_left_closed(
+            discrete=discrete,
+        )
+
+    if interpolation == InterpolationOption.PiecewiseConstantNextLeftOpen:
+        return discrete_to_continuous_piecewise_constant_next_left_open(
+            discrete=discrete,
+        )
+
+    if interpolation == InterpolationOption.Linear:
+        return discrete_to_continuous_linear(
+            discrete=discrete,
+        )
+
+    raise NotImplementedError(interpolation)
+
+
+# %%
+# # Helps catch unit stripped warnings
+# import warnings
+# warnings.filterwarnings("error")
 
 # %%
 fig, ax = plt.subplots(figsize=(12, 8))
 
+covid_emissions.plot(
+    ax=ax,
+    label="Discrete points",
+    different_value_last_bound=True,
+    value_last_bound_kwargs=dict(label="Discrete point last bound"),
+)
 for interp_option, marker in (
-    (InterpolationOption.PiecewiseConstantPreviousLeftInclusive, "o"),
-    (InterpolationOption.PiecewiseConstantPreviousLeftExclusive, "o"),
-    (InterpolationOption.PiecewiseConstantNextLeftInclusive, "x"),
-    (InterpolationOption.PiecewiseConstantNextLeftExclusive, "x"),
+    (InterpolationOption.PiecewiseConstantPreviousLeftClosed, "o"),
+    (InterpolationOption.PiecewiseConstantPreviousLeftOpen, "o"),
+    (InterpolationOption.PiecewiseConstantNextLeftClosed, "x"),
+    (InterpolationOption.PiecewiseConstantNextLeftOpen, "x"),
     (InterpolationOption.Linear, "v"),
 ):
-    evolve(covid_emissions, interpolation=interp_option).plot(
+    continuous = covid_emissions.to_continuous_timeseries(interpolation=interp_option)
+    continuous.plot(
+        times=covid_emissions.time,
         ax=ax,
-        show_discrete=True,
-        plot_kwargs=dict(alpha=0.4, label=interp_option),
-        discrete_kwargs=dict(alpha=0.4, label=interp_option, marker=marker, s=130),
+        alpha=0.4,
+        label=interp_option,
+        # res_increase=3000,
+    )
+    ax.scatter(
+        covid_emissions.time.bounds.m,
+        continuous.interpolate(covid_emissions.time).m,
+        marker=marker,
+        s=150,
+        alpha=0.4,
+        label=f"{interp_option} interpolated points",
+        # continuous.interpolate(continuous.time),
     )
 
 ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
@@ -1139,7 +1047,7 @@ ax.grid()
 # For this, we also pick slightly different emissions.
 
 # %%
-integration_demo_emissions = Timeseries(
+integration_demo_emissions = TimeseriesDiscrete(
     name="co2_emissions",
     time=TimeAxis(
         values=Q(np.array([1850, 1900, 2000]), "yr"), value_last_bound=Q(2100, "yr")
@@ -1148,228 +1056,135 @@ integration_demo_emissions = Timeseries(
         values=Q(np.array([0, 10.0, 0.0]), "GtC / yr"),
         value_last_bound=Q(2.5, "GtC / yr"),
     ),
-    interpolation=InterpolationOption.PiecewiseConstantPreviousLeftInclusive,
 )
 
 # %%
-from attrs import define
+fig, axes = plt.subplots(figsize=(12, 12), nrows=3)
 
-
-@define
-class IntegrationResult:
-    """Result of performing an integration"""
-
-    time_bounds: pint.UnitRegistry.Quantity  # array
-    """Time bounds on which the integration was performed"""
-
-    integral_at_bounds: pint.UnitRegistry.Quantity  # array
-    """Integral value at the boudns defined by time_bounds"""
-
-    interpolation: InterpolationOption
-    """Interpolation that applies to the integration result"""
-
-    piecewise_polynomial: scipy.interpolate.PPoly | None = None
-    """
-    The piecewise polynomial that represents the integration result
-    """
-
-
-def integrate_piecewise_constant_previous_left_inclusive(
-    time_bounds: pint.UnitRegistry.Quantity,  # array
-    y_at_bounds: pint.UnitRegistry.Quantity,  # array
-    integration_constant: pint.UnitRegistry.Quantity,  # scalar
-) -> IntegrationResult:
-    time_step = time_bounds[1:] - time_bounds[:-1]
-    # Previous left-inclusive interpolation so can ignore y_at_bounds[-1]
-    window_integrals = y_at_bounds[:-1] * time_step
-
-    integral_at_bounds = np.hstack(
-        [integration_constant, np.cumsum(window_integrals) + integration_constant]
-    )
-
-    res = IntegrationResult(
-        time_bounds=time_bounds,
-        integral_at_bounds=integral_at_bounds,
-        interpolation=InterpolationOption.Linear,
-    )
-
-    return res
-
-
-def integrate_piecewise_constant_previous_left_exclusive(
-    time_bounds: pint.UnitRegistry.Quantity,  # array
-    y_at_bounds: pint.UnitRegistry.Quantity,  # array
-    integration_constant: pint.UnitRegistry.Quantity,  # scalar
-) -> IntegrationResult:
-    time_step = time_bounds[1:] - time_bounds[:-1]
-    # Previous left-exclusive interpolation so can ignore y_at_bounds[0]
-    window_integrals = y_at_bounds[1:] * time_step
-
-    integral_at_bounds = np.hstack(
-        [integration_constant, np.cumsum(window_integrals) + integration_constant]
-    )
-
-    res = IntegrationResult(
-        time_bounds=time_bounds,
-        integral_at_bounds=integral_at_bounds,
-        interpolation=InterpolationOption.Linear,
-    )
-
-    return res
-
-
-def integrate_piecewise_constant_next_left_inclusive(
-    time_bounds: pint.UnitRegistry.Quantity,  # array
-    y_at_bounds: pint.UnitRegistry.Quantity,  # array
-    integration_constant: pint.UnitRegistry.Quantity,  # scalar
-) -> IntegrationResult:
-    time_step = time_bounds[1:] - time_bounds[:-1]
-    # Next left-inclusive interpolation so can ignore y_at_bounds[-1]
-    window_integrals = y_at_bounds[:-1] * time_step
-
-    integral_at_bounds = np.hstack(
-        [integration_constant, np.cumsum(window_integrals) + integration_constant]
-    )
-
-    res = IntegrationResult(
-        time_bounds=time_bounds,
-        integral_at_bounds=integral_at_bounds,
-        interpolation=InterpolationOption.Linear,
-    )
-
-    return res
-
-
-def integrate_piecewise_constant_next_left_exclusive(
-    time_bounds: pint.UnitRegistry.Quantity,  # array
-    y_at_bounds: pint.UnitRegistry.Quantity,  # array
-    integration_constant: pint.UnitRegistry.Quantity,  # scalar
-) -> IntegrationResult:
-    time_step = time_bounds[1:] - time_bounds[:-1]
-    # Next left-exclusive interpolation so can ignore y_at_bounds[0]
-    window_integrals = y_at_bounds[1:] * time_step
-
-    integral_at_bounds = np.hstack(
-        [integration_constant, np.cumsum(window_integrals) + integration_constant]
-    )
-
-    res = IntegrationResult(
-        time_bounds=time_bounds,
-        integral_at_bounds=integral_at_bounds,
-        interpolation=InterpolationOption.Linear,
-    )
-
-    return res
-
-
-def integrate_linear(
-    time_bounds: pint.UnitRegistry.Quantity,  # array
-    y_at_bounds: pint.UnitRegistry.Quantity,  # array
-    integration_constant: pint.UnitRegistry.Quantity,  # scalar
-) -> IntegrationResult:
-    # TODO: split out `create_linear` or something somewhere
-    coeffs = np.zeros((2, y_at_bounds.size - 1))
-    coeffs[0, :] = (
-        (y_at_bounds[1:] - y_at_bounds[:-1]) / (time_bounds[1:] - time_bounds[:-1])
-    ).m
-    coeffs[1, :] = y_at_bounds[:-1].m
-    x = time_bounds.m
-
-    ppoly = scipy.interpolate.PPoly(c=coeffs, x=x, extrapolate=False)
-    tmp = ppoly.antiderivative()
-    c_new = tmp.c
-    c_new[2, :] += integration_constant.m
-    indefinite_integral = scipy.interpolate.PPoly(
-        c=c_new, x=tmp.x, extrapolate=tmp.extrapolate
-    )
-
-    integral_at_bounds = (
-        indefinite_integral(time_bounds.m) * y_at_bounds.u * time_bounds.u
-    )
-
-    res = IntegrationResult(
-        time_bounds=time_bounds,
-        integral_at_bounds=integral_at_bounds,
-        interpolation=InterpolationOption.Quadratic,
-        piecewise_polynomial=indefinite_integral,
-    )
-
-    return res
-
-
-def integrate(
-    time_bounds: pint.UnitRegistry.Quantity,  # array
-    y_at_bounds: pint.UnitRegistry.Quantity,  # array
-    interpolation: InterpolationOption,
-    integration_constant: pint.UnitRegistry.Quantity,  # scalar
-) -> IntegrationResult:
-    if interpolation == InterpolationOption.PiecewiseConstantPreviousLeftInclusive:
-        return integrate_piecewise_constant_previous_left_inclusive(
-            time_bounds=time_bounds,
-            y_at_bounds=y_at_bounds,
-            integration_constant=integration_constant,
-        )
-
-    if interpolation == InterpolationOption.PiecewiseConstantPreviousLeftExclusive:
-        return integrate_piecewise_constant_previous_left_exclusive(
-            time_bounds=time_bounds,
-            y_at_bounds=y_at_bounds,
-            integration_constant=integration_constant,
-        )
-
-    if interpolation == InterpolationOption.PiecewiseConstantNextLeftInclusive:
-        return integrate_piecewise_constant_next_left_inclusive(
-            time_bounds=time_bounds,
-            y_at_bounds=y_at_bounds,
-            integration_constant=integration_constant,
-        )
-
-    if interpolation == InterpolationOption.PiecewiseConstantNextLeftExclusive:
-        return integrate_piecewise_constant_next_left_exclusive(
-            time_bounds=time_bounds,
-            y_at_bounds=y_at_bounds,
-            integration_constant=integration_constant,
-        )
-
-    if interpolation == InterpolationOption.Linear:
-        return integrate_linear(
-            time_bounds=time_bounds,
-            y_at_bounds=y_at_bounds,
-            integration_constant=integration_constant,
-        )
-
-    raise NotImplementedError(interpolation)
-
-
-# %%
-fig, axes = plt.subplots(figsize=(12, 8), nrows=2)
-
-for interp_option, marker in (
-    (InterpolationOption.PiecewiseConstantPreviousLeftInclusive, "o"),
-    (InterpolationOption.PiecewiseConstantPreviousLeftExclusive, "o"),
-    (InterpolationOption.PiecewiseConstantNextLeftInclusive, "x"),
-    (InterpolationOption.PiecewiseConstantNextLeftExclusive, "x"),
-    (InterpolationOption.Linear, "v"),
+integration_demo_emissions.plot(
+    ax=axes[0],
+    label="Discrete points",
+    different_value_last_bound=True,
+    value_last_bound_kwargs=dict(label="Discrete point last bound"),
+)
+for interp_option in (
+    InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+    InterpolationOption.PiecewiseConstantPreviousLeftOpen,
+    InterpolationOption.PiecewiseConstantNextLeftClosed,
+    InterpolationOption.PiecewiseConstantNextLeftOpen,
+    InterpolationOption.Linear,
 ):
-    evolve(integration_demo_emissions, interpolation=interp_option).plot(
-        ax=axes[0],
-        show_discrete=True,
-        plot_kwargs=dict(alpha=0.4, label=interp_option),
-        discrete_kwargs=dict(alpha=0.4, label=interp_option, marker=marker, s=130),
+    continuous_rep = integration_demo_emissions.to_continuous_timeseries(
+        interpolation=interp_option
     )
 
-    evolve(integration_demo_emissions, interpolation=interp_option).integrate(
-        integration_constant=Q(500, "GtC")
-        # integration_constant=Q(0, "GtC")
-    ).plot(
+    continuous_rep.plot(
+        times=integration_demo_emissions.time,
+        ax=axes[0],
+        alpha=0.4,
+        label=f"{continuous_rep.name}__{interp_option}",
+        res_increase=100,
+    )
+
+    integral = continuous_rep.integrate(integration_constant=Q(150, "GtC"))
+    integral.plot(
+        times=integration_demo_emissions.time,
         ax=axes[1],
-        show_discrete=True,
-        plot_kwargs=dict(alpha=0.4, label=interp_option),
-        discrete_kwargs=dict(alpha=0.4, label=interp_option, marker=marker, s=130),
+        alpha=0.4,
+        label=f"{integral.name}__{interp_option}",
+        res_increase=100,
+    )
+
+    final_view = continuous_rep.differentiate()
+    final_view.plot(
+        times=integration_demo_emissions.time,
+        ax=axes[2],
+        alpha=0.4,
+        label=f"{final_view.name}__{interp_option}",
+        res_increase=100,
     )
 
 for ax in axes:
     ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
     ax.grid()
 
+# %% [markdown]
+# This is how you create a nice, sharp, stepwise forcing function.
+
 # %%
+stepwise_forcing = TimeseriesDiscrete(
+    name="abrupt_forcing",
+    time=TimeAxis(
+        values=Q(np.array([1700, 1850, 2000]), "yr"), value_last_bound=Q(2100, "yr")
+    ),
+    values=ValuesBounded(
+        values=Q(np.array([0.0, 4.0, 4.0]), "W / m^2"),
+        value_last_bound=Q(4.0, "W / m^2"),
+    ),
+)
+stepwise_forcing_continuous = stepwise_forcing.to_continuous_timeseries(
+    interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed
+)
+
+fig, axes = plt.subplots(ncols=2)
+stepwise_forcing_continuous.plot(stepwise_forcing.time, ax=axes[0])
+stepwise_forcing_continuous.plot(Q(np.arange(1849, 1851, 0.01), "yr"), ax=axes[1])
+
+for ax in axes:
+    ax.grid()
+
+stepwise_forcing_continuous.interpolate(
+    Q([1849.5, 1849.9999, 1850.0, 1850.00001], "yr")
+)
+
+# %% [markdown]
+# This is obviously quite different to interpolating this linearly.
+
+# %%
+oops_stepwise_forcing_continuous = stepwise_forcing.to_continuous_timeseries(
+    interpolation=InterpolationOption.Linear
+)
+
+fig, axes = plt.subplots(ncols=2)
+oops_stepwise_forcing_continuous.plot(stepwise_forcing.time, ax=axes[0])
+oops_stepwise_forcing_continuous.plot(Q(np.arange(1849, 1851, 0.01), "yr"), ax=axes[1])
+
+for ax in axes:
+    ax.grid()
+
+fig.tight_layout()
+
+oops_stepwise_forcing_continuous.interpolate(
+    Q([1849.5, 1849.9999, 1850.0, 1850.00001], "yr")
+)
+
+# %% [markdown]
+# It's not solved properly with an initially smaller timestep either
+# (you still get a leading or trailing edge that isn't sharp).
+
+# %%
+stepwise_forcing_annual_start = TimeseriesDiscrete(
+    name="abrupt_forcing",
+    time=TimeAxis(
+        values=Q(np.array([1848, 1849, 1850, 1851]), "yr"),
+        value_last_bound=Q(1852, "yr"),
+    ),
+    values=ValuesBounded(
+        values=Q(np.array([0.0, 0.0, 4.0, 4.0]), "W / m^2"),
+        value_last_bound=Q(4.0, "W / m^2"),
+    ),
+)
+stepwise_forcing_annual_start_continuous = (
+    stepwise_forcing_annual_start.to_continuous_timeseries(
+        interpolation=InterpolationOption.Linear
+    )
+)
+
+fig, ax = plt.subplots()
+stepwise_forcing_annual_start_continuous.plot(stepwise_forcing_annual_start.time, ax=ax)
+
+ax.grid()
+
+stepwise_forcing_annual_start_continuous.interpolate(
+    Q([1849.5, 1850.0, 1850.00001], "yr")
+)
