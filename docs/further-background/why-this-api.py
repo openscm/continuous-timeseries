@@ -1269,8 +1269,10 @@ stepwise_forcing_annual_start_continuous.interpolate(
     Q([1849.5, 1850.0, 1850.00001], "yr")
 )
 
-
 # %%
+import copy
+
+
 @define
 class Timeseries:
     """Timeseries representation"""
@@ -1396,6 +1398,8 @@ class Timeseries:
 
         if show_continuous:
             if "label" not in continuous_kwargs:
+                # Avoid mangling the input
+                continuous_kwargs = copy.deepcopy(continuous_kwargs)
                 continuous_kwargs["label"] = self.name
 
             self.continuous.plot(
@@ -1496,71 +1500,50 @@ fig.tight_layout()
 # %%
 current_time = Q(2025.0, "yr")
 current_emms = Q(10.0, "GtC / yr")
-budget = Q(23.2, "GtC")
+budget = Q(13.2, "GtC")
 
 # %%
-# We're solving for cumulative emissions, y
+# We're solving for emissions, y
 # as a function of time, x.
-# Quadratic cumulative emissions means linear
-# emissions.
-#     y = -alpha * (x - x_nz)**2 + h
+# Assume linear emissions
+#     y(x) = e_0 * (1 - (x - x_0) / (x_nz - x_0))
 #
-# where x_nz is the net-zero time
-# and alpha is a constant
-# (units [cumulative emissions] / [time] ** 2).
+# Simplifying slightly
+#     y(x) = e_0 * (x_nz - x) / (x_nz - x_0)
 #
-# At net-zero, emissions should be zero
-# i.e. the gradient of cumulative emissions should be zero.
-# This is satisfied by construction:
-#     dy/dx(x_nz) = -2 * alpha * (x_nz - x_nz) = 0
+# where e_0 is emissions at the known time (normally today), x_0,
+# and x_nz is the net-zero time.
 #
-# At net-zero, cumulative emissions should be equal to the budget:
-#     y(x_nz) = -alpha * (x_nz - x_nz)**2 + h = budget
-#     therefore h = budget    (1)
+# By geometry, the integral of this curve between x_0 and x_nz is:
 #
-# At the starting point (normally today), x_0,
-# cumulative emissions are zero:
-#     y(x_0) = -alpha * (x_0 - x_nz)**2 + h = 0
-#     therefore alpha * (x_0 - x_nz)**2 = h    (2)
+#     (x_0 - x_nz) * e_0 / 2
 #
-# At the starting point,
-# the gradient of cumulative emissions is also known:
-#     dy/dx(x_0) = -2 * alpha * (x_0 - x_nz) = e_0
-#     therefore (x_0 - x_nz) = -e_0 / (2 * alpha)    (3)
+# You can also do this with calculus:
 #
-# Substituting (3) into (2):
-#     alpha * (-e_0 / (2 * alpha))**2 = h
+#     int_{x_0}^{x_nz} y(x) dx = int_{x_0}^{x_nz} e_0 * (x_nz - x) / (x_nz - x_0) x
+#                              = [-e_0 (x_nz - x)**2 / (2 * (x_nz - x_0))]_{x_0}^{x_nz}
+#                              = -e_0 (x_nz - x_0)**2 / (2 * (x_nz - x_0))) - e_0 (x_nz - x_nz)**2 / (2 * (x_nz - x_0)))
+#                              = e_0 (x_0 - x_nz) / 2
+#
+# This integral should be equal to the allowed buget:
+#
+#     (x_0 - x_nz) * e_0 / 2 = budget
+#
 #     therefore
-#     e_0**2 / (4 * alpha) = h
-#     alpha = e_0**2 / (4 * h)
-#
-# which can then be used, in combination with (3), to solve for x_nz
-#     x_nz = x_0 + e_0 / (2 * alpha)    (3)
-
-h = budget
-alpha = current_emms**2 / (4 * budget)
-x_nz = current_time + current_emms / (2 * alpha)
+#     x_nz = x_0 + 2 * budget / e_0
+x_nz = current_time + 2 * budget / current_emms
 x_nz
 
 # %%
-x = current_time
--alpha * (current_time - x_nz) ** 2 + h
--alpha * (x_nz - x_nz) ** 2 + h
--alpha * (Q(2050, "yr") - x_nz) ** 2 + h
-
-# %%
 # Convert into coefficients for our polynomial
-#    y = -alpha * (x - x_nz)**2 + h
-#    y = -alpha * x**2 + 2 * alpha * x_nz * x - alpha * x_nz ** 2 + h
-#    y = -alpha * (x - x_0 + x_0)**2 + 2 * alpha * x_nz * (x - x_0 + x_0) - alpha * x_nz ** 2 + h
-#    y = -alpha * (x - x_0) ** 2 - 2 * alpha * (x - x_0) * x_0 - alpha * x_0**2 + 2 * alpha * x_nz * (x - x_0) + 2 * alpha * x_nz * x_0 - alpha * x_nz ** 2 + h
-#    y = -alpha * (x - x_0) ** 2 - 2 * alpha * x_0 * (x - x_0) + 2 * alpha * x_nz * (x - x_0) - alpha * x_0**2 + 2 * alpha * x_nz * x_0 - alpha * x_nz ** 2 + h
-#    y = -alpha * (x - x_0) ** 2 + 2 * alpha * (x_nz - x_0) * (x - x_0) + h - alpha * x_0**2 + 2 * alpha * x_nz * x_0 - alpha * x_nz ** 2
+#    y(x) = e_0 * (x_nz - x) / (x_nz - x_0)
+#    y(x) = e_0 * (x_nz - x + x_0 - x_0) / (x_nz - x_0)
+#    y(x) = e_0 * (x_nz - x_0) / (x_nz - x_0) - e_0 * (x - x_0) / (x_nz - x_0)
+#    y(x) = - e_0 / (x_nz - x_0) * (x - x_0) + e_0
 #
-# Therefore, coefficients in y = a * (x - x_0)**2 + b * (x - x_0) + c are:
-#    a = -alpha
-#    b = 2 * alpha * (x_nz - x_0)
-#    c = h - alpha * x_0**2 + 2 * alpha * x_nz * x_0 - alpha * x_nz ** 2
+# Therefore, coefficients in y = m * (x - x_0) + c are:
+#    m = - e_0 / (x_nz - x_0)
+#    c = e_0
 window_bounds = np.array(
     [
         current_time.to(current_time.u).m,
@@ -1571,19 +1554,13 @@ window_bounds = np.array(
 
 coeffs = np.array(
     [
-        [-alpha.to(budget.u / current_time.u**2).m, 0.0],
-        [(2 * alpha * (x_nz - current_time)).to(budget.u / current_time.u).m, 0.0],
         [
-            (
-                h
-                - alpha * current_time**2
-                + 2 * alpha * x_nz * current_time
-                - alpha * x_nz**2
-            )
-            .to(budget.u)
+            (-current_emms / (x_nz - current_time))
+            .to(current_emms.u / current_time.u)
             .m,
-            h.to(budget.u).m,
+            0.0,
         ],
+        [current_emms.m, 0.0],
     ]
 )
 
@@ -1595,70 +1572,73 @@ piecewise_polynomial = scipy.interpolate.PPoly(
 )
 
 # %%
-cumulative_emms_quadratic_pathway = Timeseries(
+emms_linear_pathway = Timeseries(
     time=TimeAxis(
         values=np.hstack([current_time, x_nz]),
-        value_last_bound=x_nz + Q(10, "yr"),
+        value_last_bound=x_nz + Q(2, "yr"),
     ),
     continuous=TimeseriesContinuous(
-        name="demo_quadratic_cumulative_emms",
+        name="linear_emissions",
         time_units=current_time.u,
-        values_units=budget.u,
+        values_units=current_emms.u,
         piecewise_polynomial=piecewise_polynomial,
     ),
 )
-cumulative_emms_quadratic_pathway.plot(set_ylabel=True)
+emms_linear_pathway.plot(set_ylabel=True)
 
 # %%
-cumulative_emms_quadratic_pathway.differentiate().plot(set_ylabel=True)
-
-# %%
-cumulative_emms_quadratic_pathway.discrete
-
-# %%
-cumulative_emms_quadratic_pathway.time.bounds
-
-# %%
-yearly_steps = Q(
-    np.arange(
-        cumulative_emms_quadratic_pathway.time.bounds[0].to("yr").m,
-        cumulative_emms_quadratic_pathway.time.bounds[-1].to("yr").m,
-        Q(1, "yr").to("yr").m,
+yearly_steps = TimeAxis(
+    values=Q(
+        np.arange(
+            emms_linear_pathway.time.bounds[0].to("yr").m,
+            emms_linear_pathway.time.bounds[-1].to("yr").m,
+            Q(1, "yr").to("yr").m,
+        ),
+        "yr",
     ),
-    "yr",
+    value_last_bound=emms_linear_pathway.time.bounds[-1],
 )
 
-cumulative_emms_annual_step_pathway = Timeseries.from_arrays(
-    all_values=cumulative_emms_quadratic_pathway.continuous.interpolate(yearly_steps),
-    time_bounds=yearly_steps,
-    interpolation=InterpolationOption.Linear,
-    name="annual_steps",
+# %%
+cumulative_emms_linear_pathway = (
+    emms_linear_pathway.integrate(Q(0, "GtC"))
+    .update_time(yearly_steps)
+    .update_interpolation(InterpolationOption.Linear)
 )
-cumulative_emms_annual_step_pathway.plot(set_ylabel=True)
+cumulative_emms_linear_pathway.continuous.name = (
+    "linear_cumulative_emissions_annual_time_step"
+)
 
 # %%
-cumulative_emms_annual_step_pathway.discrete
-
-# %%
-cumulative_emms_annual_step_pathway.differentiate().plot(set_ylabel=True)
+cumulative_emms_cubic_pathway = (
+    emms_linear_pathway.integrate(Q(0, "GtC"))
+    .update_time(yearly_steps)
+    .update_interpolation(InterpolationOption.Cubic)
+)
+cumulative_emms_cubic_pathway.continuous.name = (
+    "cubic_cumulative_emissions_annual_time_step"
+)
 
 # %%
 fig, axes = plt.subplots(nrows=2, figsize=(12, 6))
 
 continuous_kwargs = dict(alpha=0.7, linewidth=2)
 
-cumulative_emms_quadratic_pathway.plot(
+emms_linear_pathway.plot(
     ax=axes[0], continuous_kwargs=continuous_kwargs, set_ylabel=True
 )
-cumulative_emms_annual_step_pathway.plot(
+emms_linear_pathway.integrate(Q(0, "GtC")).plot(
+    ax=axes[1], continuous_kwargs=continuous_kwargs, set_ylabel=True
+)
+
+cumulative_emms_linear_pathway.plot(ax=axes[1], continuous_kwargs=continuous_kwargs)
+cumulative_emms_linear_pathway.differentiate().plot(
     ax=axes[0], continuous_kwargs=continuous_kwargs
 )
 
-cumulative_emms_quadratic_pathway.differentiate().plot(
-    ax=axes[1], continuous_kwargs=continuous_kwargs, set_ylabel=True
-)
-cumulative_emms_annual_step_pathway.differentiate().plot(
-    ax=axes[1], continuous_kwargs=continuous_kwargs
+cumulative_emms_cubic_pathway.plot(ax=axes[1], continuous_kwargs=continuous_kwargs)
+cumulative_emms_cubic_pathway.differentiate().plot(
+    ax=axes[0], continuous_kwargs=continuous_kwargs
 )
 
 for ax in axes:
