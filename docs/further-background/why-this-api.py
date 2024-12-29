@@ -987,6 +987,52 @@ def discrete_to_continuous_linear(
 
 
 # %%
+# No closed vs. open differentiation available here yet i.e. assume contiguous
+def discrete_to_continuous_quadratic(
+    discrete: TimeseriesDiscrete,
+) -> TimeseriesContinuous:
+    x = discrete.time.bounds.m
+    y = discrete.values.all_values.m
+
+    # Generally not a great idea to do this so blindly.
+    # User can/should inject their own piecewise polynomial
+    # if they want a more specific interpolation.
+    tck = scipy.interpolate.splrep(x=x, y=y, k=2)
+    piecewise_polynomial = scipy.interpolate.PPoly.from_spline(tck)
+
+    res = TimeseriesContinuous(
+        name=discrete.name,
+        time_units=discrete.time.bounds.u,
+        values_units=discrete.values.all_values.u,
+        piecewise_polynomial=piecewise_polynomial,
+    )
+
+    return res
+
+
+def discrete_to_continuous_cubic(
+    discrete: TimeseriesDiscrete,
+) -> TimeseriesContinuous:
+    x = discrete.time.bounds.m
+    y = discrete.values.all_values.m
+
+    # Generally not a great idea to do this so blindly.
+    # User can/should inject their own piecewise polynomial
+    # if they want a more specific interpolation.
+    tck = scipy.interpolate.splrep(x=x, y=y, k=3)
+    piecewise_polynomial = scipy.interpolate.PPoly.from_spline(tck)
+
+    res = TimeseriesContinuous(
+        name=discrete.name,
+        time_units=discrete.time.bounds.u,
+        values_units=discrete.values.all_values.u,
+        piecewise_polynomial=piecewise_polynomial,
+    )
+
+    return res
+
+
+# %%
 def discrete_to_continuous(
     discrete: TimeseriesDiscrete,
     interpolation: InterpolationOption,
@@ -1013,6 +1059,16 @@ def discrete_to_continuous(
 
     if interpolation == InterpolationOption.Linear:
         return discrete_to_continuous_linear(
+            discrete=discrete,
+        )
+
+    if interpolation == InterpolationOption.Quadratic:
+        return discrete_to_continuous_quadratic(
+            discrete=discrete,
+        )
+
+    if interpolation == InterpolationOption.Cubic:
+        return discrete_to_continuous_cubic(
             discrete=discrete,
         )
 
@@ -1269,6 +1325,19 @@ class Timeseries:
             continuous=continuous,
         )
 
+    def differentiate(
+        self,
+        name_res: str | None = None,
+    ):
+        derivative = self.continuous.differentiate(
+            name_res=name_res,
+        )
+
+        return type(self)(
+            time=self.time,
+            continuous=derivative,
+        )
+
     def integrate(
         self,
         integration_constant: pint.UnitRegistry.Quantity,  # scalar
@@ -1282,6 +1351,17 @@ class Timeseries:
         return type(self)(
             time=self.time,
             continuous=integral,
+        )
+
+    def update_interpolation(self, interpolation: InterpolationOption):
+        continuous = discrete_to_continuous(
+            discrete=self.discrete,
+            interpolation=interpolation,
+        )
+
+        return type(self)(
+            time=self.time,
+            continuous=continuous,
         )
 
     def plot(
@@ -1330,17 +1410,6 @@ class Timeseries:
 
         return ax
 
-    def update_interpolation(self, interpolation: InterpolationOption):
-        continuous = discrete_to_continuous(
-            discrete=self.discrete,
-            interpolation=interpolation,
-        )
-
-        return type(self)(
-            time=self.time,
-            continuous=continuous,
-        )
-
 
 # %%
 base = Timeseries.from_arrays(
@@ -1351,7 +1420,7 @@ base = Timeseries.from_arrays(
 )
 
 # %%
-fig, axes = plt.subplots(nrows=2, figsize=(12, 8))
+fig, axes = plt.subplots(nrows=3, figsize=(12, 8))
 
 
 base = Timeseries.from_arrays(
@@ -1369,7 +1438,8 @@ base.plot(
 )
 for interp_option in (
     InterpolationOption.Linear,
-    # InterpolationOption.Quadratic,
+    InterpolationOption.Quadratic,
+    InterpolationOption.Cubic,
     InterpolationOption.PiecewiseConstantPreviousLeftClosed,
     InterpolationOption.PiecewiseConstantNextLeftClosed,
     InterpolationOption.PiecewiseConstantPreviousLeftOpen,
@@ -1392,6 +1462,18 @@ for interp_option in (
             res_increase=1000,
             alpha=0.4,
         ),
+        set_xlabel=True,
+        set_ylabel=True,
+    )
+    ts.differentiate().plot(
+        ax=axes[2],
+        continuous_kwargs=dict(
+            label=f"differentiated {interp_option}",
+            res_increase=1000,
+            alpha=0.4,
+        ),
+        set_xlabel=True,
+        set_ylabel=True,
     )
 
 for ax in axes:
@@ -1399,5 +1481,3 @@ for ax in axes:
     ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
 
 fig.tight_layout()
-
-# %%
