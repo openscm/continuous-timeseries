@@ -158,7 +158,7 @@ class ValuesBounded:
     see [`InterpolationOption`][] and related functionality).
 
     The design means that the bounds are tightly coupled to the values.
-    This is deliberate, as it significantly simplifes our life.
+    This is deliberate, as it significantly simplifes handling.
     For example, one result of this construction is
     that the bounds are always contiguous.
     In other words, we can have a bounds concept and API
@@ -168,7 +168,7 @@ class ValuesBounded:
     although one we think could be undone later if needed.
 
     One other consequence of this container's structure is
-    that we can’t have bounds which start before the first value
+    that we can't have bounds which start before the first value
     (in the case of time, this means the start of the first timestep
     is always equal to the first value).
     However, we can't think of a situation in which that is needed
@@ -187,38 +187,7 @@ class ValuesBounded:
     Required to avoid ambiguity in this value
     """
 
-    # def __str__(self) -> str:
-    #     """
-    #     Get string representation of self
-    #     """
-    #     return to_str(
-    #         self,
-    #         tuple(a.name for a in self.__attrs_attrs__),
-    #     )
-
-    # def _repr_pretty_(self, p: Any, cycle: bool) -> None:
-    #     """
-    #     Get pretty representation of self
-
-    #     Used by IPython notebooks and other tools
-    #     """
-    #     to_pretty(
-    #         self,
-    #         tuple(a.name for a in self.__attrs_attrs__),
-    #         p=p,
-    #         cycle=cycle,
-    #     )
-
-    # def _repr_html_(self) -> str:
-    #     """
-    #     Get html representation of self
-
-    #     Used by IPython notebooks and other tools
-    #     """
-    #     return to_html(
-    #         self,
-    #         tuple(a.name for a in self.__attrs_attrs__),
-    #     )
+    # TODO: __str__, __repr__ and _repr_html_
 
     @property
     def all_values(self) -> pint.UnitRegistry.Quantity:  # array

@@ -1,5 +1,15 @@
 """
 Definition of the interpolation options we support
+
+At the moment,
+only the piecewise constant options support the left-open/left-closed concept.
+In theory, this could also apply to the other interpolation options.
+However, this only matters if we want to support discontinuous values
+at the boundaries for these interpolation choices.
+So, while we could support this, we currently don't
+because the use case for discontinuous values
+in combination with linear or higher order interpolation
+isn't clear.
 """
 
 from __future__ import annotations
@@ -13,17 +23,14 @@ class InterpolationOption(IntEnum):
     Interpolation options
     """
 
-    NotSpecified = 0
-    """No handling has been specified"""
-
     Linear = 1
-    """Linear interpolation is assumed between points"""
+    """Linear interpolation"""
 
     Quadratic = 2
-    """Quadratic interpolation is assumed between points"""
+    """Quadratic interpolation"""
 
     Cubic = 3
-    """Cubic interpolation is assumed between points"""
+    """Cubic interpolation"""
 
     PiecewiseConstantNextLeftClosed = 10
     """
@@ -40,12 +47,14 @@ class InterpolationOption(IntEnum):
     - i: closed (i.e. inclusive) boundary
     - o: open (i.e. exclusive) boundary
 
+    ```
     y(4):                                    ixxxxxxxxxxxxxxxxxxxxxxxxxx
     y(3):                        ixxxxxxxxxxxo
     y(2):            ixxxxxxxxxxxo
     y(1): xxxxxxxxxxxo
           -----------|-----------|-----------|-----------|--------------
                   time(1)     time(2)     time(3)     time(4)
+    ```
     """
 
     PiecewiseConstantNextLeftOpen = 11
@@ -63,12 +72,14 @@ class InterpolationOption(IntEnum):
     - i: closed (i.e. inclusive) boundary
     - o: open (i.e. exclusive) boundary
 
+    ```
     y(4):                                    oxxxxxxxxxxxxxxxxxxxxxxxxxx
     y(3):                        oxxxxxxxxxxxi
     y(2):            oxxxxxxxxxxxi
     y(1): xxxxxxxxxxxi
           -----------|-----------|-----------|-----------|--------------
                   time(1)     time(2)     time(3)     time(4)
+    ```
     """
 
     PiecewiseConstantPreviousLeftClosed = 12
@@ -86,12 +97,14 @@ class InterpolationOption(IntEnum):
     - i: closed (i.e. inclusive) boundary
     - o: open (i.e. exclusive) boundary
 
+    ```
     y(4):                                                ixxxxxxxxxxxxxx
     y(3):                                    ixxxxxxxxxxxo
     y(2):                        ixxxxxxxxxxxo
     y(1): xxxxxxxxxxxxxxxxxxxxxxxo
           -----------|-----------|-----------|-----------|--------------
                   time(1)     time(2)     time(3)     time(4)
+    ```
     """
 
     PiecewiseConstantPreviousLeftOpen = 13
@@ -109,10 +122,12 @@ class InterpolationOption(IntEnum):
     - i: closed (i.e. inclusive) boundary
     - o: open (i.e. exclusive) boundary
 
+    ```
     y(4):                                                oxxxxxxxxxxxxxx
     y(3):                                    oxxxxxxxxxxxi
     y(2):                        oxxxxxxxxxxxi
     y(1): xxxxxxxxxxxxxxxxxxxxxxxi
           -----------|-----------|-----------|-----------|--------------
                   time(1)     time(2)     time(3)     time(4)
+    ```
     """
