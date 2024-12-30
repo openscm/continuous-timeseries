@@ -87,3 +87,5 @@ pdm.lock: pyproject.toml
 virtual-environment:  ## update virtual environment, create a new one if it doesn't already exist
 	uv sync --all-extras --group all-dev
 	uv run pre-commit install
+	# Lock with pdm too as we need this for releasing etc.
+	pdm lock --group :all --strategy inherit_metadata

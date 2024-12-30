@@ -24,10 +24,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import openscm_units
+import pint
 import scipy.interpolate
 
 # %%
 UR = openscm_units.unit_registry
+# As an aside, this is a handy trick
+# to get pint to use a specific registry by default.
+pint.set_application_registry(UR)
 Q = UR.Quantity
 
 # %% [markdown]
@@ -75,7 +79,7 @@ ax.grid()
 #
 # Given we know that emissions data is generally the average of the emissions
 # over the year, we can make this clearer with our plot.
-# For example, the plotting below.
+# For example, plotting the data as shown below.
 
 # %%
 fig, ax = plt.subplots()
@@ -85,8 +89,8 @@ ax.step(x_vals, y_vals, where="post")
 ax.grid()
 
 # %% [markdown]
-# As you can see, this is a bit of mucking around and we are currently just assuming
-# that having a constant value over the year is the right choice,
+# As you can see, this is a bit of mucking around and we are currently assuming,
+# rather than knowing, that having a constant value over the year is the right choice,
 # rather than actually knowing that to be the case.
 
 # %% [markdown]
@@ -100,12 +104,16 @@ years
 emissions
 
 # %% [markdown]
-# It is clear that we have to consider the size of the timesteps in order to integrate the emissions.
+# It is clear that we have to consider the size of the timesteps
+# in order to integrate the emissions.
 # So, we want an API that makes that easy.
 #
-# On top of this, the decision about whether to linearly interpolate between the emissions values
-# or treat them as stepwise constant (i.e. assume that emissions are constant between the defining points)
-# will have a big difference on the result, yet we do not have any information about what choice was intended based on the data.
+# On top of this, the decision about
+# whether to linearly interpolate between the emissions values
+# or treat them as stepwise constant
+# (i.e. assume that emissions are constant between the defining points)
+# will have a big difference on the result,
+# yet we do not have any information about what choice was intended based on the data.
 # So, we want an API that solves this too.
 
 # %% [markdown]
@@ -115,53 +123,6 @@ emissions
 # Our proposed API to solve this is the below
 
 # %%
-from enum import StrEnum
-
-
-class InterpolationOption(StrEnum):
-    """
-    Interpolation options
-    """
-
-    NotSpecified = "not_specified"
-    """No handling has been specified"""
-
-    Linear = "linear"
-    """Linear interpolation is assumed between points"""
-
-    Quadratic = "quadratic"
-    """Quadratic interpolation is assumed between points"""
-
-    Cubic = "cubic"
-    """Cubic interpolation is assumed between points"""
-
-    PiecewiseConstantPreviousLeftClosed = "piecewise_constant_previous_left_closed"
-    """
-    Between t(i) and t(i + 1), the value is equal to y(i)
-
-    At t(i), the value is equal to y(i).
-    """
-
-    PiecewiseConstantPreviousLeftOpen = "piecewise_constant_previous_left_open"
-    """
-    Between t(i) and t(i + 1), the value is equal to y(i)
-
-    At t(i), the value is equal to y(i - 1).
-    """
-
-    PiecewiseConstantNextLeftClosed = "piecewise_constant_next_left_closed"
-    """
-    Between t(i) and t(i + 1), the value is equal to y(i + 1)
-
-    At t(i), the value is equal to y(i + 1).
-    """
-
-    PiecewiseConstantNextLeftOpen = "piecewise_constant_next_left_open"
-    """
-    Between t(i) and t(i + 1), the value is equal to y(i + 1)
-
-    At t(i), the value is equal to y(i).
-    """
 
 
 # %%
