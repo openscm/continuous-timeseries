@@ -1331,6 +1331,19 @@ class Timeseries:
             continuous=continuous,
         )
 
+    def to_annual_piecewise_constant_integral_preserving(
+        self,
+        name_res: str | None = None,
+    ):
+        res = (
+            self.update_time_to_annual_steps().update_interpolation_integral_preserving(
+                interpolation=InterpolationOption.PiecewiseConstantNextLeftClosed,
+                name_res=name_res,
+            )
+        )
+
+        return res
+
     def differentiate(
         self,
         name_res: str | None = None,
@@ -1359,13 +1372,6 @@ class Timeseries:
             continuous=integral,
         )
 
-    def update_time(self, time: TimeAxis):
-        # Should check here that times are compatible with extrapolation choices
-        return type(self)(
-            time=time,
-            continuous=self.continuous,
-        )
-
     def update_interpolation(self, interpolation: InterpolationOption):
         continuous = discrete_to_continuous(
             discrete=self.discrete,
@@ -1376,6 +1382,79 @@ class Timeseries:
             time=self.time,
             continuous=continuous,
         )
+
+    def update_interpolation_integral_preserving(
+        self,
+        interpolation: InterpolationOption,
+        name_res: str | None = None,
+    ):
+        # Doesn't matter as will be lost when we differentiate
+        integration_constant = Q(
+            0.0, self.continuous.values_units * self.continuous.time_units
+        )
+
+        if interpolation in (
+            InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+            InterpolationOption.PiecewiseConstantPreviousLeftOpen,
+            InterpolationOption.PiecewiseConstantNextLeftClosed,
+            InterpolationOption.PiecewiseConstantNextLeftOpen,
+        ):
+            interpolation_cumulative = InterpolationOption.Linear
+
+        elif interpolation in (InterpolationOption.Linear):
+            interpolation_cumulative = InterpolationOption.Quadratic
+
+        elif interpolation in (InterpolationOption.Quadratic):
+            interpolation_cumulative = InterpolationOption.Cubic
+
+        else:
+            raise NotImplementedError(interpolation)
+
+        res = (
+            self.integrate(integration_constant)
+            .update_interpolation(interpolation_cumulative)
+            .differentiate(name_res=name_res)
+        )
+
+        return res
+
+    def update_time(self, time: TimeAxis):
+        # Should check here that times are compatible with extrapolation choices
+        return type(self)(
+            time=time,
+            continuous=self.continuous,
+        )
+
+    def update_time_to_annual_steps(self):
+        # TODO (?): allow extrapolation choices here too
+        #           to allow people to go forward/backward one step
+
+        if self.time.bounds[0].to("yr").m % 1.0 == 0.0:
+            # If the first value is a year value, we can simply use it
+            arange_first_val = self.time.bounds[0].to("yr").m
+        else:
+            # Round up
+            arange_first_val = np.ceil(self.time.bounds[0].to("yr").m)
+
+        if self.time.bounds[-1].to("yr").m % 1.0 == 0.0:
+            # If the last value is a year value, we can include it in the output
+            arange_last_val = self.time.bounds[-1].to("yr").m + 0.1
+        else:
+            arange_last_val = self.time.bounds[-1].to("yr").m
+
+        yearly_steps = (
+            np.arange(
+                arange_first_val,
+                arange_last_val,
+                1.0,
+            )
+            * self.time.values.to("yr").u
+        )
+        annual_time_axis = TimeAxis.from_bounds(yearly_steps)
+
+        res = self.update_time(annual_time_axis)
+
+        return res
 
     def plot(
         self,
@@ -1536,21 +1615,26 @@ x_nz
 
 # %%
 # Convert into coefficients for our polynomial
-#    y(x) = e_0 * (x_nz - x) / (x_nz - x_0)
-#    y(x) = e_0 * (x_nz - x + x_0 - x_0) / (x_nz - x_0)
-#    y(x) = e_0 * (x_nz - x_0) / (x_nz - x_0) - e_0 * (x - x_0) / (x_nz - x_0)
-#    y(x) = - e_0 / (x_nz - x_0) * (x - x_0) + e_0
+# by simply recalling the definition we started with
+#    y(x) = e_0 * (1 - (x - x_0) / (x_nz - x_0))
+#    y(x) = e_0 - e_0 * (x - x_0) / (x_nz - x_0)
 #
 # Therefore, coefficients in y = m * (x - x_0) + c are:
-#    m = - e_0 / (x_nz - x_0)
 #    c = e_0
-window_bounds = np.array(
+#    m = - e_0 / (x_nz - x_0)
+
+extend_post_nz = Q(
+    3.0, current_time.to("yr").u
+)  # good default as it makes most splines behave
+
+time_bounds = np.hstack(
     [
-        current_time.to(current_time.u).m,
-        x_nz.to(current_time.u).m,
-        x_nz.to(current_time.u).m + 10,  # ensure flat after net zero
+        current_time,
+        x_nz,
+        x_nz + extend_post_nz,  # ensure flat after net zero
     ]
 )
+window_bounds = time_bounds.to(current_time.u).m
 
 coeffs = np.array(
     [
@@ -1573,10 +1657,7 @@ piecewise_polynomial = scipy.interpolate.PPoly(
 
 # %%
 emms_linear_pathway = Timeseries(
-    time=TimeAxis(
-        values=np.hstack([current_time, x_nz]),
-        value_last_bound=x_nz + Q(2, "yr"),
-    ),
+    time=TimeAxis.from_bounds(time_bounds),
     continuous=TimeseriesContinuous(
         name="linear_emissions",
         time_units=current_time.u,
@@ -1584,25 +1665,31 @@ emms_linear_pathway = Timeseries(
         piecewise_polynomial=piecewise_polynomial,
     ),
 )
-emms_linear_pathway.plot(set_ylabel=True)
 
 # %%
-yearly_steps = TimeAxis(
-    values=Q(
-        np.arange(
-            emms_linear_pathway.time.bounds[0].to("yr").m,
-            emms_linear_pathway.time.bounds[-1].to("yr").m,
-            Q(1, "yr").to("yr").m,
-        ),
-        "yr",
-    ),
-    value_last_bound=emms_linear_pathway.time.bounds[-1],
-)
+fig, ax = plt.subplots()
+
+emms_linear_pathway.plot(set_ylabel=True, ax=ax)
+emms_linear_pathway.to_annual_piecewise_constant_integral_preserving(
+    name_res="annual_average_equivalent"
+).plot(ax=ax)
+emms_linear_pathway.update_interpolation_integral_preserving(
+    InterpolationOption.PiecewiseConstantNextLeftClosed,
+    name_res="forgot_to_convert_to_annual",
+).plot(ax=ax)
+emms_linear_pathway.update_time_to_annual_steps().update_interpolation_integral_preserving(
+    InterpolationOption.Linear, name_res="annual_then_linear"
+).plot(ax=ax)
+
+ax.legend()
+ax.grid()
+
+fig.tight_layout()
 
 # %%
 cumulative_emms_linear_pathway = (
     emms_linear_pathway.integrate(Q(0, "GtC"))
-    .update_time(yearly_steps)
+    .update_time_to_annual_steps()
     .update_interpolation(InterpolationOption.Linear)
 )
 cumulative_emms_linear_pathway.continuous.name = (
@@ -1612,7 +1699,7 @@ cumulative_emms_linear_pathway.continuous.name = (
 # %%
 cumulative_emms_cubic_pathway = (
     emms_linear_pathway.integrate(Q(0, "GtC"))
-    .update_time(yearly_steps)
+    .update_time_to_annual_steps()
     .update_interpolation(InterpolationOption.Cubic)
 )
 cumulative_emms_cubic_pathway.continuous.name = (
