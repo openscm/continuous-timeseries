@@ -27,6 +27,7 @@ from continuous_timeseries.values_at_bounds import ValuesAtBounds
 if TYPE_CHECKING:
     import IPython.lib.pretty
     import matplotlib.axes
+    import pint.facets.plain.unit
 
 
 @define
@@ -129,8 +130,8 @@ class TimeseriesDiscrete:
     def plot(  # noqa: PLR0913
         self,
         label: str | None = None,
-        x_units: str | None = None,
-        y_units: str | None = None,
+        x_units: str | pint.facets.plain.unit.PlainUnit | None = None,
+        y_units: str | pint.facets.plain.unit.PlainUnit | None = None,
         ax: matplotlib.axes.Axes | None = None,
         set_xlabel: bool = False,
         set_ylabel: bool = False,
