@@ -62,9 +62,10 @@ plugins:
           - remove_input
   # Docstring generation
   - mkdocstrings:
+      default_handler: python_xref
       enable_inventory: true
       handlers:
-        python:
+        python_xref:
           paths: [src]
           import:
             # Cross-ref helpers (lots included here, remove what you don't want)
@@ -87,11 +88,12 @@ plugins:
             - http://xarray.pydata.org/en/stable/objects.inv
           options:
             docstring_style: numpy
-            show_root_heading: false
+            relative_crossrefs: yes
             separate_signature: true
+            show_root_heading: false
             show_signature_annotations: true
-            signature_crossrefs: true
             show_source: true
+            signature_crossrefs: true
             summary:
               attributes: true
               classes: true
