@@ -27,7 +27,6 @@ from continuous_timeseries.values_at_bounds import ValuesAtBounds
 if TYPE_CHECKING:
     import IPython.lib.pretty
     import matplotlib.axes
-    import pint.facets.plain.unit
 
 
 @define
@@ -127,14 +126,10 @@ class TimeseriesDiscrete:
     #         interpolation=interpolation,
     #     )
 
-    def plot(  # noqa: PLR0913
+    def plot(
         self,
         label: str | None = None,
-        x_units: str | pint.facets.plain.unit.PlainUnit | None = None,
-        y_units: str | pint.facets.plain.unit.PlainUnit | None = None,
         ax: matplotlib.axes.Axes | None = None,
-        set_xlabel: bool = False,
-        set_ylabel: bool = False,
         **kwargs: Any,
     ) -> matplotlib.axes.Axes:
         """
@@ -147,26 +142,10 @@ class TimeseriesDiscrete:
 
             If not supplied, we use the `self.name`.
 
-        x_units
-            Units to use for the x-axis when plotting.
-
-            If not supplied, we use `self.time_axis.bounds.units`.
-
-        y_units
-            Units to use for the y-axis when plotting.
-
-            If not supplied, we use `self.values_at_bounds.values.units`.
-
         ax
             Axes on which to plot.
 
             If not supplied, a set of axes will be created.
-
-        set_xlabel
-            Should the x-label be set to the units of the x-values?
-
-        set_ylabel
-            Should the y-label be set to the units of the y-values?
 
         **kwargs
             Keyword arguments to pass to `ax.scatter`.
@@ -179,12 +158,6 @@ class TimeseriesDiscrete:
         if label is None:
             label = self.name
 
-        if x_units is None:
-            x_units = self.time_axis.bounds.u
-
-        if y_units is None:
-            y_units = self.values_at_bounds.values.u
-
         if ax is None:
             try:
                 import matplotlib.pyplot as plt
@@ -195,17 +168,30 @@ class TimeseriesDiscrete:
 
             _, ax = plt.subplots()
 
-        ax.scatter(
-            self.time_axis.bounds.to(x_units).m,
-            self.values_at_bounds.values.to(y_units).m,
-            label=label,
-            **kwargs,
-        )
+        try:
+            import matplotlib.units
 
-        if set_xlabel:
-            ax.set_xlabel(str(x_units))
+            time_units_registered_with_matplotlib = (
+                type(self.time_axis.bounds) in matplotlib.units.registry
+            )
+            value_units_registered_with_matplotlib = (
+                type(self.values_at_bounds.values) in matplotlib.units.registry
+            )
 
-        if set_ylabel:
-            ax.set_ylabel(str(y_units))
+        except ImportError:
+            time_units_registered_with_matplotlib = False
+            value_units_registered_with_matplotlib = False
+
+        if time_units_registered_with_matplotlib:
+            x_vals = self.time_axis.bounds
+        else:
+            x_vals = self.time_axis.bounds.m
+
+        if value_units_registered_with_matplotlib:
+            y_vals = self.values_at_bounds.values
+        else:
+            y_vals = self.values_at_bounds.values.m
+
+        ax.scatter(x_vals, y_vals, label=label, **kwargs)
 
         return ax

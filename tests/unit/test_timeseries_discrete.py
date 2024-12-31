@@ -165,13 +165,6 @@ def test_html(ts, file_regression):
             True,
             id="label-overwriting",
         ),
-        pytest.param(dict(set_xlabel=True), False, id="xlabel"),
-        pytest.param(dict(set_ylabel=True), False, id="ylabel"),
-        pytest.param(
-            dict(x_units="months", y_units="Mt / yr", set_xlabel=True, set_ylabel=True),
-            False,
-            id="label-user-units",
-        ),
         pytest.param(
             dict(marker="x", color="tab:green", label="demo"),
             True,
@@ -224,7 +217,68 @@ def test_plot(plot_kwargs, legend, image_regression, tmp_path):
     out_file = tmp_path / "fig.png"
     fig.savefig(out_file)
 
-    image_regression.check(out_file.read_bytes())
+    image_regression.check(out_file.read_bytes(), diff_threshold=0.01)
+
+
+@pytest.mark.parametrize(
+    "x_units, y_units",
+    (
+        pytest.param(None, None, id="no-units-set"),
+        pytest.param("month", None, id="x-units-set"),
+        pytest.param(None, "t / yr", id="y-units-set"),
+        pytest.param("s", "Gt / yr", id="x-and-y-units-set"),
+    ),
+)
+def test_plot_matplotlib_units(x_units, y_units, image_regression, tmp_path):
+    import matplotlib
+
+    # ensure matplotlib does not use a GUI backend (such as Tk)
+    matplotlib.use("Agg")
+
+    import matplotlib.pyplot as plt
+    import matplotlib.units
+
+    UR.setup_matplotlib(enable=True)
+
+    fig, ax = plt.subplots()
+
+    mt_month = TimeseriesDiscrete(
+        name="Mt per month",
+        time_axis=TimeAxis(Q([2020.0, 2021.0, 2022.0], "yr")),
+        values_at_bounds=ValuesAtBounds(Q([10.0, 10.5, 11.0], "Mt / month") * 100.0),
+    )
+
+    gt_yr = TimeseriesDiscrete(
+        name="Gt per year",
+        time_axis=TimeAxis(Q([2020.0, 2021.0, 2022.0], "yr")),
+        values_at_bounds=ValuesAtBounds(Q([10.0, 10.5, 11.0], "Gt / yr")),
+    )
+
+    mt = TimeseriesDiscrete(
+        name="Mt",
+        time_axis=TimeAxis(Q([2020.0, 2021.0, 2022.0], "yr")),
+        values_at_bounds=ValuesAtBounds(Q([10.0, 10.5, 11.0], "Mt")),
+    )
+
+    # Even though timeseries are in different units,
+    # use of pint with matplotib will ensure sensible units on plot.
+    mt_month.plot(ax=ax)
+    gt_yr.plot(ax=ax)
+    with pytest.raises(matplotlib.units.ConversionError):
+        mt.plot(ax=ax)
+
+    if x_units is not None:
+        ax.xaxis.set_units(UR.Unit(x_units))
+
+    if y_units is not None:
+        ax.yaxis.set_units(UR.Unit(y_units))
+
+    ax.legend()
+
+    out_file = tmp_path / "fig.png"
+    fig.savefig(out_file)
+
+    image_regression.check(out_file.read_bytes(), diff_threshold=0.01)
 
 
 @pytest.mark.parametrize(
