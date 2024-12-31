@@ -87,6 +87,8 @@ class ValuesAtBounds:
             )
             raise AssertionError(msg)
 
+    # Let attrs take care of __repr__
+
     def __str__(self) -> str:
         """
         Get string representation of self

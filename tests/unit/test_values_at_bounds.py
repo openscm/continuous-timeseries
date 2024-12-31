@@ -77,6 +77,35 @@ def test_validation(values, expectation):
 
 
 @pytest.mark.parametrize(
+    "values, exp_repr",
+    (
+        pytest.param(
+            Q([1.0, 2.0, 3.0], "kg"),
+            "ValuesAtBounds(values=<Quantity([1. 2. 3.], 'kilogram')>)",
+            id="basic",
+        ),
+        pytest.param(
+            Q(np.linspace(1750, 2000 + 1, 1000), "yr"),
+            # There must be some internal limit in numpy.
+            # This still just prints out all values,
+            # but the really big array doesn't.
+            f"ValuesAtBounds(values={Q(np.linspace(1750, 2000 + 1, 1000), 'yr')!r})",
+            id="big_array",
+        ),
+        pytest.param(
+            Q(np.linspace(1750, 2000 + 1, int(1e5)), "yr"),
+            "ValuesAtBounds(values=<Quantity([1750.         1750.00251003 1750.00502005 ... 2000.99497995 2000.99748997\n 2001.        ], 'year')>)",  # noqa: E501
+            id="really_big_array",
+        ),
+    ),
+)
+def test_repr(values, exp_repr):
+    instance = ValuesAtBounds(values)
+
+    assert repr(instance) == exp_repr
+
+
+@pytest.mark.parametrize(
     "values, exp_str",
     (
         pytest.param(
