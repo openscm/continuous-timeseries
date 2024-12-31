@@ -14,14 +14,18 @@ for converting to continuous views i.e. [`TimeseriesContinuous`][(p)].
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any
 
 import attr
+import numpy as np
+import numpy.typing as npt
 from attrs import define, field
 
 import continuous_timeseries.formatting
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
 from continuous_timeseries.time_axis import TimeAxis
+from continuous_timeseries.typing import PINT_NUMPY_ARRAY
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
 
 if TYPE_CHECKING:
@@ -130,6 +134,7 @@ class TimeseriesDiscrete:
         self,
         label: str | None = None,
         ax: matplotlib.axes.Axes | None = None,
+        warn_if_plotting_magnitudes: bool = True,
         **kwargs: Any,
     ) -> matplotlib.axes.Axes:
         """
@@ -146,6 +151,10 @@ class TimeseriesDiscrete:
             Axes on which to plot.
 
             If not supplied, a set of axes will be created.
+
+        warn_if_plotting_magnitudes
+            Should a warning be raised if the units of the values
+            are not considered while plotting?
 
         **kwargs
             Keyword arguments to pass to `ax.scatter`.
@@ -168,29 +177,42 @@ class TimeseriesDiscrete:
 
             _, ax = plt.subplots()
 
-        try:
-            import matplotlib.units
+        def get_plot_vals(
+            pint_q: PINT_NUMPY_ARRAY, desc: str
+        ) -> PINT_NUMPY_ARRAY | npt.NDArray[np.number[Any]]:
+            try:
+                import matplotlib.units
 
-            time_units_registered_with_matplotlib = (
-                type(self.time_axis.bounds) in matplotlib.units.registry
-            )
-            value_units_registered_with_matplotlib = (
-                type(self.values_at_bounds.values) in matplotlib.units.registry
-            )
+                units_registered_with_matplotlib = (
+                    type(pint_q) in matplotlib.units.registry
+                )
 
-        except ImportError:
-            time_units_registered_with_matplotlib = False
-            value_units_registered_with_matplotlib = False
+            except ImportError:
+                units_registered_with_matplotlib = False
 
-        if time_units_registered_with_matplotlib:
-            x_vals = self.time_axis.bounds
-        else:
-            x_vals = self.time_axis.bounds.m
+            if units_registered_with_matplotlib:
+                plot_vals = pint_q
+            else:
+                if warn_if_plotting_magnitudes:
+                    msg = (
+                        f"The units of {desc} are not registered with matplotlib. "
+                        "The magnitude will be plotted "
+                        "without any consideration of units. "
+                        "For docs on how to set up unit-aware plotting, see: "
+                        "https://pint.readthedocs.io/en/stable/user/plotting.html"
+                        "(at the time of writing, the latest version's docs were "
+                        "https://pint.readthedocs.io/en/0.24.4/user/plotting.html)"
+                    )
+                    warnings.warn(msg, stacklevel=3)
 
-        if value_units_registered_with_matplotlib:
-            y_vals = self.values_at_bounds.values
-        else:
-            y_vals = self.values_at_bounds.values.m
+                plot_vals = pint_q.m
+
+            return plot_vals
+
+        x_vals = get_plot_vals(self.time_axis.bounds, "self.time_axis.bounds")
+        y_vals = get_plot_vals(
+            self.values_at_bounds.values, "self.values_at_bounds.values"
+        )
 
         ax.scatter(x_vals, y_vals, label=label, **kwargs)
 
