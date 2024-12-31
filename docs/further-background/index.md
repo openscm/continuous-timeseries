@@ -1,9 +1,12 @@
 # Further background
 
 This part of the project documentation
-will focus on an **understanding-oriented** approach.
-Here, we will describe the background of the project,
-as well as reasoning about how it was implemented.
+focuses on an **understanding-oriented** approach.
+In particular, the background of the project
+and explanations about its implementation.
+
+We will aim to avoid writing instructions or technical descriptions here,
+they belong elsewhere.
 
 Points we will aim to cover:
 
@@ -11,5 +14,8 @@ Points we will aim to cover:
 - Why it was created
 - Help the reader make connections
 
-We will aim to avoid writing instructions or technical descriptions here,
-they belong elsewhere.
+## Representations of objects
+
+See [Representations][representations]
+for a discussion of the different ways we represent our objects.
+This is particularly useful if you work in IPython/Jupyter notebooks often.
