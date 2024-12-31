@@ -198,23 +198,21 @@ class TimeseriesDiscrete:
                 return pint_q.m
 
             if units_registered_with_matplotlib:
-                plot_vals = pint_q
-            else:
-                if warn_if_plotting_magnitudes:
-                    msg = (
-                        f"The units of `{desc}` are not registered with matplotlib. "
-                        "The magnitude will be plotted "
-                        "without any consideration of units. "
-                        "For docs on how to set up unit-aware plotting, see "
-                        "[the stable docs](https://pint.readthedocs.io/en/stable/user/plotting.html) "  # noqa: E501
-                        "(at the time of writing, the latest version's docs were "
-                        "[v0.24.4](https://pint.readthedocs.io/en/0.24.4/user/plotting.html))."
-                    )
-                    warnings.warn(msg, stacklevel=3)
+                return pint_q
 
-                plot_vals = pint_q.m
+            if warn_if_plotting_magnitudes:
+                msg = (
+                    f"The units of `{desc}` are not registered with matplotlib. "
+                    "The magnitude will be plotted "
+                    "without any consideration of units. "
+                    "For docs on how to set up unit-aware plotting, see "
+                    "[the stable docs](https://pint.readthedocs.io/en/stable/user/plotting.html) "  # noqa: E501
+                    "(at the time of writing, the latest version's docs were "
+                    "[v0.24.4](https://pint.readthedocs.io/en/0.24.4/user/plotting.html))."
+                )
+                warnings.warn(msg, stacklevel=3)
 
-            return plot_vals
+            return pint_q.m
 
         x_vals = get_plot_vals(self.time_axis.bounds, "self.time_axis.bounds")
         y_vals = get_plot_vals(
