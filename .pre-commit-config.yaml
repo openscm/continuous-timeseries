@@ -69,3 +69,7 @@ repos:
         name: pdm-lock
         entry: pdm lock
         args: ["--group", ":all", "--strategy", "inherit_metadata"]
+        language: python
+        language_version: python3
+        pass_filenames: false
+        files: ^pyproject.toml$
