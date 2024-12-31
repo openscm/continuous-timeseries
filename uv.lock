@@ -334,7 +334,7 @@ wheels = [
 
 [[package]]
 name = "continuous-timeseries"
-version = "0.1.7"
+version = "0.1.8a1"
 source = { editable = "." }
 dependencies = [
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
@@ -354,6 +354,7 @@ all-dev = [
     { name = "jupyterlab" },
     { name = "jupytext" },
     { name = "liccheck" },
+    { name = "mistune" },
     { name = "mkdocs" },
     { name = "mkdocs-autorefs" },
     { name = "mkdocs-gen-files" },
@@ -363,6 +364,7 @@ all-dev = [
     { name = "mkdocs-section-index" },
     { name = "mkdocstrings", extra = ["python"] },
     { name = "mypy" },
+    { name = "nbconvert" },
     { name = "pip" },
     { name = "pre-commit" },
     { name = "pymdown-extensions" },
@@ -383,6 +385,7 @@ docs = [
     { name = "attrs" },
     { name = "jupyterlab" },
     { name = "jupytext" },
+    { name = "mistune" },
     { name = "mkdocs" },
     { name = "mkdocs-autorefs" },
     { name = "mkdocs-gen-files" },
@@ -391,6 +394,7 @@ docs = [
     { name = "mkdocs-material" },
     { name = "mkdocs-section-index" },
     { name = "mkdocstrings", extra = ["python"] },
+    { name = "nbconvert" },
     { name = "pymdown-extensions" },
 ]
 tests = [
@@ -412,6 +416,7 @@ all-dev = [
     { name = "jupyterlab", specifier = ">=4.2.0" },
     { name = "jupytext", specifier = ">=1.16.3" },
     { name = "liccheck", specifier = ">=0.9.2" },
+    { name = "mistune", specifier = "<3.1.0" },
     { name = "mkdocs", specifier = ">=1.6.0" },
     { name = "mkdocs-autorefs", specifier = ">=1.2.0" },
     { name = "mkdocs-gen-files", specifier = ">=0.5.0" },
@@ -421,6 +426,7 @@ all-dev = [
     { name = "mkdocs-section-index", specifier = ">=0.3.9" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.25.0" },
     { name = "mypy", specifier = ">=1.11" },
+    { name = "nbconvert", specifier = "<=7.16.4" },
     { name = "pip", specifier = ">=24.2" },
     { name = "pre-commit", specifier = ">=3.8.0" },
     { name = "pymdown-extensions", specifier = ">=10.9" },
@@ -441,6 +447,7 @@ docs = [
     { name = "attrs", specifier = ">=24.0.0" },
     { name = "jupyterlab", specifier = ">=4.2.0" },
     { name = "jupytext", specifier = ">=1.16.3" },
+    { name = "mistune", specifier = "<3.1.0" },
     { name = "mkdocs", specifier = ">=1.6.0" },
     { name = "mkdocs-autorefs", specifier = ">=1.2.0" },
     { name = "mkdocs-gen-files", specifier = ">=0.5.0" },
@@ -449,6 +456,7 @@ docs = [
     { name = "mkdocs-material", specifier = ">=9.5.34" },
     { name = "mkdocs-section-index", specifier = ">=0.3.9" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.25.0" },
+    { name = "nbconvert", specifier = "<=7.16.4" },
     { name = "pymdown-extensions", specifier = ">=10.9" },
 ]
 tests = [
