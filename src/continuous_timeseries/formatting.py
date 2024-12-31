@@ -20,7 +20,7 @@ Inspired by:
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -65,7 +65,7 @@ def to_str(instance: Any, attrs_to_show: Iterable[str]) -> str:
 
 def to_pretty(
     instance: Any,
-    attrs_to_show: Iterable[str],
+    attrs_to_show: Collection[str],
     p: IPython.lib.pretty.RepresentationPrinter,
     cycle: bool,
     indent: int = 4,
@@ -94,13 +94,13 @@ def to_pretty(
 
     with p.group(indent, f"{instance_type}(", ")"):
         for i, att in enumerate(attrs_to_show):
-            p.breakable("")
-            p.text(f"{att}=")
-            p.pretty(getattr(instance, att))
+            p.breakable("")  # type: ignore
+            p.text(f"{att}=")  # type: ignore
+            p.pretty(getattr(instance, att))  # type: ignore
 
             if i < len(attrs_to_show) - 1:
-                p.text(",")
-                p.breakable()
+                p.text(",")  # type: ignore
+                p.breakable()  # type: ignore
 
 
 def add_html_attribute_row(
