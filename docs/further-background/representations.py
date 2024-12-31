@@ -15,7 +15,8 @@
 # %% [markdown]
 # # Representations
 #
-# Here we explain our approach to representing our objects.
+# Here we explain our approach to representing our objects,
+# particularly in IPython notebooks.
 #
 # As background, the way we approach this is based on three key sources:
 #
@@ -67,10 +68,9 @@ really_large_array
 #
 # In a notebook environment, the default view is the HTML representation.
 # If you're running this in a notebook, that is what you will have already seen above.
-# We show its raw value below.
 
 # %% [markdown]
-# To make the point clearer, here is the default view.
+# As a reminder, here is the default view.
 
 # %%
 basic_array
@@ -82,7 +82,7 @@ basic_array
 basic_array.values
 
 # %% [markdown]
-# Here is the raw HTML which is generated.
+# Here is the raw HTML which is generated and sits underneath this view.
 
 # %%
 basic_array._repr_html_()

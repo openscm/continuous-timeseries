@@ -13,7 +13,9 @@ Inspired by:
   (see https://github.com/pydata/xarray/blob/main/xarray/core/formatting.py)
 
 - the way that pint handles formatting
-  (see https://github.com/hgrecco/pint/blob/74b708661577623c0c288933d8ed6271f32a4b8b/pint/util.py#L1004)
+  (see
+  [e.g. this line](https://github.com/hgrecco/pint/blob/74b708661577623c0c288933d8ed6271f32a4b8b/pint/util.py#L1004)
+  )
 """
 
 from __future__ import annotations
@@ -105,7 +107,7 @@ def add_html_attribute_row(
     attribute_name: str, attribute_value_html: str, attribute_rows: list[str]
 ) -> list[str]:
     """
-    Add a row for displaying an attribute' HTML value to a list of existing rows
+    Add a row for displaying an attribute's HTML value to a list of existing rows
 
     Parameters
     ----------
@@ -179,7 +181,6 @@ def to_html(
 
 .continuous-timeseries-header {
   padding: 6px 0 6px 3px;
-  color: #555;;
 }
 
 .continuous-timeseries-header > div {
@@ -195,7 +196,6 @@ def to_html(
 
 .continuous-timeseries-cls {
   font-weight: bold;
-  color: #000000;
 }"""
 
     return "\n".join(

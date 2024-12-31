@@ -1,5 +1,7 @@
 """
 Representation of continuous timeseries.
+
+[`Timeseries`][(p).Timeseries]
 """
 
 import importlib.metadata
