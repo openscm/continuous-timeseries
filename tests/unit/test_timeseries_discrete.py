@@ -5,7 +5,9 @@ Test the `timeseries_discrete` module
 from __future__ import annotations
 
 import re
+import sys
 from contextlib import nullcontext as does_not_raise
+from unittest.mock import patch
 
 import numpy as np
 import pint
@@ -13,6 +15,7 @@ import pint.testing
 import pytest
 from IPython.lib.pretty import pretty
 
+from continuous_timeseries.exceptions import MissingOptionalDependencyError
 from continuous_timeseries.time_axis import TimeAxis
 from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
@@ -152,5 +155,98 @@ def test_html(ts, file_regression):
     )
 
 
-def test_plot():
-    raise NotImplementedError()
+@pytest.mark.parametrize(
+    "plot_kwargs, legend",
+    (
+        pytest.param({}, False, id="defaults"),
+        pytest.param({}, True, id="legend"),
+        pytest.param(
+            dict(label="custom"),
+            True,
+            id="label-overwriting",
+        ),
+        pytest.param(dict(set_xlabel=True), False, id="xlabel"),
+        pytest.param(dict(set_ylabel=True), False, id="ylabel"),
+        pytest.param(
+            dict(x_units="months", y_units="Mt / yr", set_xlabel=True, set_ylabel=True),
+            False,
+            id="label-user-units",
+        ),
+        pytest.param(
+            dict(marker="x", color="tab:green", label="demo"),
+            True,
+            id="kwargs-passing",
+        ),
+    ),
+)
+def test_plot(plot_kwargs, legend, image_regression, tmp_path):
+    import matplotlib
+
+    # ensure matplotlib does not use a GUI backend (such as Tk)
+    matplotlib.use("Agg")
+
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+
+    ts = TimeseriesDiscrete(
+        name="test_plot",
+        time_axis=TimeAxis(
+            Q(
+                [
+                    1750.0,
+                    1950.0,
+                    1975.0,
+                    2000.0,
+                    2010.0,
+                    2020.0,
+                    2030.0,
+                    2050.0,
+                    2100.0,
+                    2200.0,
+                    2300.0,
+                ],
+                "yr",
+            )
+        ),
+        values_at_bounds=ValuesAtBounds(
+            Q(
+                [0.0, 2.3, 6.4, 10.0, 11.0, 12.3, 10.2, 0.0, -5.0, -2.0, 0.3],
+                "Gt / yr",
+            )
+        ),
+    )
+
+    ts.plot(ax=ax, **plot_kwargs)
+    if legend:
+        ax.legend()
+
+    out_file = tmp_path / "fig.png"
+    fig.savefig(out_file)
+
+    image_regression.check(out_file.read_bytes())
+
+
+@pytest.mark.parametrize(
+    "sys_modules_patch, expectation",
+    (
+        pytest.param({}, does_not_raise(), id="matplotlib_available"),
+        pytest.param(
+            {"matplotlib": None},
+            pytest.raises(
+                MissingOptionalDependencyError,
+                match="`TimeseriesDiscrete.plot` requires matplotlib to be installed",
+            ),
+            id="matplotlib_not_available",
+        ),
+    ),
+)
+def test_plot_ax_creation(sys_modules_patch, expectation):
+    ts = TimeseriesDiscrete(
+        name="basic",
+        time_axis=TimeAxis(Q([1.0, 2.0, 3.0], "yr")),
+        values_at_bounds=ValuesAtBounds(Q([10.0, 20.0, 5.0], "kg")),
+    )
+    with patch.dict(sys.modules, sys_modules_patch):
+        with expectation:
+            ts.plot()
