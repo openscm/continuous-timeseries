@@ -60,16 +60,15 @@ repos:
   - repo: https://github.com/pdm-project/pdm
     rev: 2.22.1
     hooks:
+      # Update the lock file if needed
+      - name: pdm-lock
+        id: pdm-lock-check
+        entry: pdm lock
+        args: ["--group", ":all", "--strategy", "inherit_metadata"]
+        files: ^pyproject.toml$
+        pass_filenames: false
       # Check that the lock file is up to date.
       # We need the pdm lock file too
       # so that we can build the locked version of the package.
       - id: pdm-lock-check
         args: ["--group", ":all", "--strategy", "inherit_metadata"]
-      - id: pdm-lock-check
-        name: pdm-lock
-        entry: pdm lock
-        args: ["--group", ":all", "--strategy", "inherit_metadata"]
-        language: python
-        language_version: python3
-        pass_filenames: false
-        files: ^(pyproject.toml|pdm.lock)$
