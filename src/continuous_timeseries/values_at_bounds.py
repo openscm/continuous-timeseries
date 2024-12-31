@@ -1,14 +1,14 @@
 """
-Definition of [`ValuesAtBounds`][(m).ValuesAtBounds]
+Definition of [`ValuesAtBounds`][(m)]
 
 This is a container that stores a series of values.
 It is designed to be compatible with the
-[`TimeAxis`][..TimeAxis],
-[`Timeseries`][..Timeseries]
-and [`TimeseriesDiscrete`][..TimeseriesDiscrete]
+[`TimeAxis`][(p)],
+[`Timeseries`][(p)]
+and [`TimeseriesDiscrete`][(p)]
 classes.
 The idea is that, for each time bound defined by a
-[`TimeAxis`][..TimeAxis],
+[`TimeAxis`][(p)],
 it is unambiguous what value to use to use at that point in time.
 
 As background, we considered only defining the values
@@ -49,7 +49,7 @@ class ValuesAtBounds:
     That information has to come from other classes/information.
     For example, the kind of interpolation
     (that instead comes from
-    [`InterpolationOption`][...InterpolationOption]).
+    [`InterpolationOption`][(p)]).
 
     The current implementation does mean that the values at each bound are contiguous,
     i.e. it is impossible to define discontinuous values
