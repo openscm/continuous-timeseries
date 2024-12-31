@@ -65,3 +65,7 @@ repos:
       # so that we can build the locked version of the package.
       - id: pdm-lock-check
         args: ["--group", ":all", "--strategy", "inherit_metadata"]
+      - id: pdm-lock-check
+        name: pdm-lock
+        entry: pdm lock
+        args: ["--group", ":all", "--strategy", "inherit_metadata"]
