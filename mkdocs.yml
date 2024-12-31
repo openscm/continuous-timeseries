@@ -50,9 +50,9 @@ plugins:
       # Use filenames for titles
       ignore_h1_titles: True
       include: ["*.py"]
-      execute: true
+      # execute: true
       # Toggle off for faster builds
-      # execute: false
+      execute: false
       allow_errors: false
       # theme: dark
       include_source: True
@@ -73,6 +73,7 @@ plugins:
             - https://ipython.readthedocs.io/en/stable/objects.inv
             - https://loguru.readthedocs.io/en/latest/objects.inv
             - https://matplotlib.org/stable/objects.inv
+            - https://numpy.org/doc/stable/objects.inv
             - https://ncdata.readthedocs.io/en/stable/objects.inv
             - https://openscm-units.readthedocs.io/en/stable/objects.inv
             - https://pandas.pydata.org/docs/objects.inv
@@ -87,7 +88,15 @@ plugins:
           options:
             docstring_style: numpy
             show_root_heading: true
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
             show_source: true
+            summary:
+              attributes: true
+              classes: true
+              functions: true
+              modules: true
   # https://squidfunk.github.io/mkdocs-material/plugins/search/
   - search
   # Add clickable sections to the sidebar
