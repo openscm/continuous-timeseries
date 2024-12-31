@@ -167,3 +167,28 @@ def test_pretty(values, exp_pretty):
     instance = ValuesAtBounds(values)
 
     assert pretty(instance) == exp_pretty
+
+
+@pytest.mark.parametrize(
+    "values",
+    (
+        pytest.param(
+            Q([1.0, 2.0, 3.0], "kg"),
+            id="basic",
+        ),
+        pytest.param(
+            Q(np.linspace(1750, 2000 + 1, 1000), "yr"),
+            id="big_array",
+        ),
+        pytest.param(
+            Q(np.linspace(1750, 2000 + 1, int(1e5)), "yr"),
+            id="really_big_array",
+        ),
+    ),
+)
+def test_html(values):
+    exp_html = f"ValuesAtBounds(values={values._repr_html_()})"
+
+    instance = ValuesAtBounds(values)
+
+    assert instance._repr_html_() == exp_html
