@@ -100,7 +100,6 @@ def to_pretty(
 
             if i < len(attrs_to_show) - 1:
                 p.text(",")  # type: ignore
-                p.breakable()  # type: ignore
 
 
 def add_html_attribute_row(
@@ -136,7 +135,10 @@ def add_html_attribute_row(
 
 
 def to_html(
-    instance: Any, attrs_to_show: Iterable[str], prefix: str = "continuous_timeseries."
+    instance: Any,
+    attrs_to_show: Iterable[str],
+    prefix: str = "continuous_timeseries.",
+    include_header: bool = True,
 ) -> str:
     """
     Convert an instance to its html representation
@@ -152,6 +154,9 @@ def to_html(
     prefix
         Prefix to include in front of the instance name when displaying.
 
+    include_header
+        Should the header be included when formatting the object?
+
     Returns
     -------
     :
@@ -163,12 +168,17 @@ def to_html(
 
     attribute_rows: list[str] = []
     for att in attrs_to_show:
-        att_val_html = getattr(instance, att)
+        att_val = getattr(instance, att)
 
-        try:
-            att_val_html = att_val_html._repr_html_()
-        except AttributeError:
-            att_val_html = str(att_val_html)
+        if hasattr(att_val, "_repr_html_internal_row_"):
+            # One of our objects
+            att_val_html = att_val._repr_html_internal_row_()
+
+        else:
+            try:
+                att_val_html = att_val._repr_html_()
+            except AttributeError:
+                att_val_html = str(att_val)
 
         attribute_rows = add_html_attribute_row(att, att_val_html, attribute_rows)
 
@@ -198,8 +208,8 @@ def to_html(
   font-weight: bold;
 }"""
 
-    return "\n".join(
-        [
+    if include_header:
+        html_l = [
             "<div>",
             "  <style>",
             f"{css_style}",
@@ -214,4 +224,14 @@ def to_html(
             "  </div>",
             "</div>",
         ]
-    )
+
+    else:
+        html_l = [
+            "<div>",
+            "  <table><tbody>",
+            f"    {attribute_rows_for_table}",
+            "  </tbody></table>",
+            "</div>",
+        ]
+
+    return "\n".join(html_l)

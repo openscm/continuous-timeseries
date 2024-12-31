@@ -121,3 +121,15 @@ class ValuesAtBounds:
         return continuous_timeseries.formatting.to_html(
             self, [a.name for a in self.__attrs_attrs__], prefix=f"{__name__}."
         )
+
+    def _repr_html_internal_row_(self) -> str:
+        """
+        Get html representation of self to use as an internal row of another object
+
+        Used to avoid our representations having more information than we'd like.
+        """
+        return continuous_timeseries.formatting.to_html(
+            self,
+            [a.name for a in self.__attrs_attrs__],
+            include_header=False,
+        )
