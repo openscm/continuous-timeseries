@@ -186,9 +186,10 @@ def test_pretty(values, exp_pretty):
         ),
     ),
 )
-def test_html(values):
-    exp_html = f"ValuesAtBounds(values={values._repr_html_()})"
-
+def test_html(values, file_regression):
     instance = ValuesAtBounds(values)
 
-    assert instance._repr_html_() == exp_html
+    file_regression.check(
+        f"{instance._repr_html_()}\n",
+        extension=".html",
+    )

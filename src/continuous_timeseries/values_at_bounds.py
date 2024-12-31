@@ -115,3 +115,13 @@ class ValuesAtBounds:
             p=p,
             cycle=cycle,
         )
+
+    def _repr_html_(self) -> str:
+        """
+        Get html representation of self
+
+        Used by IPython notebooks and other tools
+        """
+        return continuous_timeseries.formatting.to_html(
+            self, [a.name for a in self.__attrs_attrs__], prefix=f"{__name__}."
+        )

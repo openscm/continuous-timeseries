@@ -50,7 +50,7 @@ def to_str(instance: Any, attrs_to_show: Iterable[str]) -> str:
     Returns
     -------
     :
-        Generated string representation of the instance
+        String representation of the instance
     """
     instance_type = type(instance).__name__
 
@@ -99,3 +99,119 @@ def to_pretty(
             if i < len(attrs_to_show) - 1:
                 p.text(",")
                 p.breakable()
+
+
+def add_html_attribute_row(
+    attribute_name: str, attribute_value_html: str, attribute_rows: list[str]
+) -> list[str]:
+    """
+    Add a row for displaying an attribute' HTML value to a list of existing rows
+
+    Parameters
+    ----------
+    attribute_name
+        Attribute's name
+
+    attribute_value_html
+        Attribute's HTML value to display
+
+    attribute_rows
+        Existing attribute rows
+
+    Returns
+    -------
+    :
+        Attribute rows, with the new row appended
+    """
+    attribute_rows.append(
+        "<tr>"
+        f"<th>{attribute_name}</th>"
+        f"<td style='text-align:left;'>{attribute_value_html}</td>"
+        "</tr>"
+    )
+
+    return attribute_rows
+
+
+def to_html(
+    instance: Any, attrs_to_show: Iterable[str], prefix: str = "continuous_timeseries."
+) -> str:
+    """
+    Convert an instance to its html representation
+
+    Parameters
+    ----------
+    instance
+        Instance to convert
+
+    attrs_to_show
+        Attributes to include in the HTML representation.
+
+    prefix
+        Prefix to include in front of the instance name when displaying.
+
+    Returns
+    -------
+    :
+        HTML representation of the instance
+    """
+    instance_type = type(instance).__name__
+
+    header = f"{prefix}{instance_type}"
+
+    attribute_rows: list[str] = []
+    for att in attrs_to_show:
+        att_val_html = getattr(instance, att)
+
+        try:
+            att_val_html = att_val_html._repr_html_()
+        except AttributeError:
+            att_val_html = str(att_val_html)
+
+        attribute_rows = add_html_attribute_row(att, att_val_html, attribute_rows)
+
+    attribute_rows_for_table = "\n          ".join(attribute_rows)
+
+    css_style = """.continuous-timeseries-wrap {
+  /*font-family: monospace;*/
+  width: 540px;
+}
+
+.continuous-timeseries-header {
+  padding: 6px 0 6px 3px;
+  color: #555;;
+}
+
+.continuous-timeseries-header > div {
+  display: inline;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.continuous-timeseries-cls {
+  margin-left: 2px;
+  margin-right: 10px;
+}
+
+.continuous-timeseries-cls {
+  font-weight: bold;
+  color: #000000;
+}"""
+
+    return "\n".join(
+        [
+            "<div>",
+            "  <style>",
+            f"{css_style}",
+            "  </style>",
+            "  <div class='continuous-timeseries-wrap'>",
+            "    <div class='continuous-timeseries-header'>",
+            f"      <div class='continuous-timeseries-cls'>{header}</div>",
+            "        <table><tbody>",
+            f"          {attribute_rows_for_table}",
+            "        </tbody></table>",
+            "    </div>",
+            "  </div>",
+            "</div>",
+        ]
+    )
