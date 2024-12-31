@@ -27,6 +27,7 @@ from typing import Any
 import attr
 from attrs import define, field
 
+import continuous_timeseries.formatting
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY
 
 
@@ -85,5 +86,14 @@ class ValuesAtBounds:
                 f"Received `values` with shape {shape}"
             )
             raise AssertionError(msg)
+
+    def __str__(self) -> str:
+        """
+        Get string representation of self
+        """
+        return continuous_timeseries.formatting.to_str(
+            self,
+            self.__attrs_attrs__,
+        )
 
     # TODO: __str__, __repr__ and _repr_html_
