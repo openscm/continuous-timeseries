@@ -352,6 +352,7 @@ plots = [
 all-dev = [
     { name = "attrs" },
     { name = "coverage" },
+    { name = "ipython" },
     { name = "jupyterlab" },
     { name = "jupytext" },
     { name = "liccheck" },
@@ -378,6 +379,7 @@ all-dev = [
     { name = "towncrier" },
 ]
 dev = [
+    { name = "ipython" },
     { name = "liccheck" },
     { name = "mypy" },
     { name = "pip" },
@@ -405,6 +407,7 @@ docs = [
 ]
 tests = [
     { name = "coverage" },
+    { name = "ipython" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-regressions" },
@@ -422,6 +425,7 @@ requires-dist = [
 all-dev = [
     { name = "attrs", specifier = ">=24.0.0" },
     { name = "coverage", specifier = ">=7.6.0" },
+    { name = "ipython", specifier = ">=8.18.1" },
     { name = "jupyterlab", specifier = ">=4.2.0" },
     { name = "jupytext", specifier = ">=1.16.3" },
     { name = "liccheck", specifier = ">=0.9.2" },
@@ -448,6 +452,7 @@ all-dev = [
     { name = "towncrier", specifier = ">=24.8.0" },
 ]
 dev = [
+    { name = "ipython", specifier = ">=8.18.1" },
     { name = "liccheck", specifier = ">=0.9.2" },
     { name = "mypy", specifier = ">=1.11" },
     { name = "pip", specifier = ">=24.2" },
@@ -475,6 +480,7 @@ docs = [
 ]
 tests = [
     { name = "coverage", specifier = ">=7.6.0" },
+    { name = "ipython", specifier = ">=8.18.1" },
     { name = "pytest", specifier = ">=8.3.3" },
     { name = "pytest-cov", specifier = ">=5.0.0" },
     { name = "pytest-regressions", specifier = ">=2.6.0" },
