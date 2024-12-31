@@ -1,10 +1,10 @@
 # Tutorials
 
 This part of the project documentation
-will focus on a **learning-oriented** approach.
+focuses on a **learning-oriented** approach.
 You'll learn how to get started with the code in this project.
 
-It is currently empty, but we will aim to:
+We aim to:
 
 - Help newcomers with getting started
 - Teach readers about the library by having them write code
@@ -13,3 +13,9 @@ It is currently empty, but we will aim to:
 - Show concrete examples without abstractions
 - Provide the minimum necessary explanation
 - Avoid any distraction
+
+## Discrete timeseries handling
+
+See [Discrete timeseries][discrete-timeseries]
+for an introduction to our handing of discrete timeseries,
+i.e. timeseries that are represented with discrete data points e.g. arrays.

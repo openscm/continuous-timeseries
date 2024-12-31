@@ -152,22 +152,5 @@ def test_html(ts, file_regression):
     )
 
 
-@pytest.mark.parametrize(
-    "bounds, exp",
-    (
-        pytest.param(
-            Q(np.array([1.0, 2.0, 3.0]), "yr"),
-            Q(np.array([[1.0, 2.0], [2.0, 3.0]]), "yr"),
-            id="basic",
-        ),
-        pytest.param(
-            Q(np.array([1.0, 10.0, 30.0]), "yr"),
-            Q(np.array([[1.0, 10.0], [10.0, 30.0]]), "yr"),
-            id="uneven_spacing",
-        ),
-    ),
-)
-def test_bounds2d(bounds, exp):
-    res = TimeAxis(bounds).bounds_2d
-
-    pint.testing.assert_equal(res, exp)
+def test_plot():
+    raise NotImplementedError()

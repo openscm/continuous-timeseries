@@ -126,8 +126,11 @@ class TimeseriesDiscrete:
     #         interpolation=interpolation,
     #     )
 
-    def plot(
+    def plot(  # noqa: PLR0913
         self,
+        label: str | None = None,
+        x_units: str | None = None,
+        y_units: str | None = None,
         ax: matplotlib.axes.Axes | None = None,
         set_xlabel: bool = False,
         set_ylabel: bool = False,
@@ -138,6 +141,21 @@ class TimeseriesDiscrete:
 
         Parameters
         ----------
+        label
+            Label to use when plotting the data.
+
+            If not supplied, we use the `self.name`.
+
+        x_units
+            Units to use for the x-axis when plotting.
+
+            If not supplied, we use `self.time_axis.bounds.units`.
+
+        y_units
+            Units to use for the y-axis when plotting.
+
+            If not supplied, we use `self.values_at_bounds.values.units`.
+
         ax
             Axes on which to plot.
 
@@ -157,6 +175,15 @@ class TimeseriesDiscrete:
         :
             Axes on which the data was plotted
         """
+        if label is None:
+            label = self.name
+
+        if x_units is None:
+            x_units = self.time_axis.bounds.u
+
+        if y_units is None:
+            y_units = self.values_at_bounds.values.u
+
         if ax is None:
             try:
                 import matplotlib.pyplot as plt
@@ -168,15 +195,16 @@ class TimeseriesDiscrete:
             _, ax = plt.subplots()
 
         ax.scatter(
-            self.time_axis.bounds.m,
-            self.values_at_bounds.values.m,
+            self.time_axis.bounds.to(x_units).m,
+            self.values_at_bounds.values.to(y_units).m,
+            label=label,
             **kwargs,
         )
 
         if set_xlabel:
-            ax.set_xlabel(str(self.time_axis.bounds.u))
+            ax.set_xlabel(str(x_units))
 
         if set_ylabel:
-            ax.set_ylabel(str(self.values_at_bounds.values.u))
+            ax.set_ylabel(str(y_units))
 
         return ax
