@@ -101,6 +101,7 @@ show_error_codes = true
 show_error_context = true
 warn_unreachable = true
 follow_imports = "normal"
+plugins = "numpy.typing.mypy_plugin"
 
 [tool.jupytext]
 formats = "ipynb,py:percent"

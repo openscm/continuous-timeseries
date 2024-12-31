@@ -24,9 +24,10 @@ from __future__ import annotations
 
 from typing import Any
 
-import numpy.typing as npt
-import pint
-from attrs import define
+import attr
+from attrs import define, field
+
+from continuous_timeseries.typing import PINT_NUMPY_ARRAY
 
 
 @define
@@ -52,12 +53,27 @@ class ValuesAtBounds:
     This is deliberate, as it significantly simplifes handling.
     """
 
-    values: pint.facets.numpy.NumpyQuantity[npt.NDArray[Any]]
-    # values: pint.registry.Quantity[npt.NDArray[Any]]
+    values: PINT_NUMPY_ARRAY = field()
     """
     Values
 
     Must be one-dimensional.
     """
+
+    @values.validator
+    def values_validator(
+        self,
+        attribute: attr.Attribute[Any],
+        value: PINT_NUMPY_ARRAY,
+    ) -> None:
+        """
+        Validate the received values
+        """
+        if len(value.shape) != 1:
+            msg = (
+                "`values` must be one-dimensional. "
+                f"Received `values` with shape {value.shape}"
+            )
+            raise AssertionError(msg)
 
     # TODO: __str__, __repr__ and _repr_html_
