@@ -104,7 +104,10 @@ class TimeAxis:
 
         deltas = value[1:] - value[:-1]
         if (deltas <= 0).any():
-            msg = f"values must be strictly monotonic. Received bounds={value}"
+            msg = (
+                "`bounds` must be strictly monotonically increasing. "
+                f"Received bounds={value}"
+            )
             raise ValueError(msg)
 
     # Let attrs take care of __repr__
