@@ -12,12 +12,22 @@ The idea is that, for each time bound defined by a
 it is unambiguous what value to use to use at that point in time.
 
 As background, we considered only defining the values
-that apply within each time window.
+that apply within each time window
+(so you would carry around a values array
+that was one element shorter than your time bounds array).
 This was rejected because it only supports piecewise constant interpolation
 (at least trivially).
 For linear or higher order interpolation, you need to know the value
-at the end of the last bound for the values to be unambiguous
+at the end of the last time window for the values to be unambiguous
 over the entirety of each time window.
+
+It is important to keep in mind that this container is very low-level.
+As a result, it does not provide all the information required to do operations,
+such as interpolation, integration and differentiation, unambiguosly.
+For example, how to interpolate between the values.
+That information has to come from other classes/information.
+To see classes that do support these kind of operations,
+see [`Timeseries`][(p)] and [`TimeseriesContinuous`][(p)].
 """
 
 from __future__ import annotations
@@ -41,20 +51,6 @@ class ValuesAtBounds:
 
     This is a low-level container.
     It generally won't be used directly.
-
-    It is important to keep in mind that this container is quite low-level.
-    As a result, it does not provide all the information required to do operations,
-    such as interpolation, integration and differentiation, unambiguosly.
-    For example, how to interpolate between the values.
-    That information has to come from other classes/information.
-    For example, the kind of interpolation
-    (that instead comes from
-    [`InterpolationOption`][(p)]).
-
-    The current implementation does mean that the values at each bound are contiguous,
-    i.e. it is impossible to define discontinuous values
-    at the bounds of each time window.
-    This is deliberate, as it significantly simplifes handling.
     """
 
     values: PINT_NUMPY_ARRAY = field()
