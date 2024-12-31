@@ -22,12 +22,8 @@ over the entirety of each time window.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
+import pint
 from attrs import define
-
-if TYPE_CHECKING:
-    import pint
 
 
 @define
@@ -57,5 +53,8 @@ class ValuesAtBounds:
     """
     Values
     """
+
+    other_attr: int
+    """DS"""
 
     # TODO: __str__, __repr__ and _repr_html_

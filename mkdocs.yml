@@ -87,7 +87,9 @@ plugins:
           options:
             docstring_style: numpy
             show_root_heading: true
+            show_signature_annotations: true
             show_source: true
+            summary: true
   # https://squidfunk.github.io/mkdocs-material/plugins/search/
   - search
   # Add clickable sections to the sidebar
