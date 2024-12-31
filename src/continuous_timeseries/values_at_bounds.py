@@ -69,10 +69,20 @@ class ValuesAtBounds:
         """
         Validate the received values
         """
-        if len(value.shape) != 1:
+        try:
+            shape = value.shape
+        except AttributeError as exc:
+            msg = (
+                "`values` must be one-dimensional but "
+                "an error was raised while trying to check its shape. "
+                f"Received values={value}."
+            )
+            raise AssertionError(msg) from exc
+
+        if len(shape) != 1:
             msg = (
                 "`values` must be one-dimensional. "
-                f"Received `values` with shape {value.shape}"
+                f"Received `values` with shape {shape}"
             )
             raise AssertionError(msg)
 
