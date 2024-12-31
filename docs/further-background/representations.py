@@ -39,6 +39,8 @@ import numpy as np
 import pint
 from IPython.lib.pretty import pretty
 
+from continuous_timeseries.time_axis import TimeAxis
+from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
 
 # %% [markdown]
@@ -52,16 +54,28 @@ Q = UR.Quantity
 # ## Set up some example objects
 
 # %%
-basic_array = ValuesAtBounds(Q([1, 2, 3], "m"))
-basic_array
+basic_ts = TimeseriesDiscrete(
+    name="basic",
+    time_axis=TimeAxis(Q([1750.0, 1850.0, 1950.0], "yr")),
+    values_at_bounds=ValuesAtBounds(Q([1.0, 2.0, 3.0], "m")),
+)
+basic_ts
 
 # %%
-large_array = ValuesAtBounds(Q(np.arange(1850, 2300, 1), "m"))
-large_array
+long_ts = TimeseriesDiscrete(
+    name="basic",
+    time_axis=TimeAxis(Q(np.arange(1850.0, 2300.0, 1), "yr")),
+    values_at_bounds=ValuesAtBounds(Q(np.arange(450.0), "m")),
+)
+long_ts
 
 # %%
-really_large_array = ValuesAtBounds(Q(np.arange(1850, 2300, 1 / 12), "m"))
-really_large_array
+really_long_ts = TimeseriesDiscrete(
+    name="basic",
+    time_axis=TimeAxis(Q(np.arange(1850.0, 2300.0, 1 / 12), "yr")),
+    values_at_bounds=ValuesAtBounds(Q(np.arange(450.0 * 12), "m")),
+)
+really_long_ts
 
 # %% [markdown]
 # ## HTML representation
@@ -73,25 +87,28 @@ really_large_array
 # As a reminder, here is the default view.
 
 # %%
-basic_array
+basic_ts
 
 # %% [markdown]
 # Here is the HTML representation of the wrapped values.
 
 # %%
-basic_array.values
+basic_ts.values_at_bounds
+
+# %%
+basic_ts.values_at_bounds.values
 
 # %% [markdown]
 # Here is the raw HTML which is generated and sits underneath this view.
 
 # %%
-basic_array._repr_html_()
+print(basic_ts._repr_html_())
 
 # %%
-large_array._repr_html_()
+long_ts._repr_html_()
 
 # %%
-really_large_array._repr_html_()
+really_long_ts._repr_html_()
 
 # %% [markdown]
 # ## Pretty representation
@@ -102,16 +119,19 @@ really_large_array._repr_html_()
 # not to be confused with the `pprint` module).
 
 # %%
-pretty(basic_array)
+print(pretty(basic_ts))
 
 # %%
-pretty(basic_array.values)
+print(pretty(basic_ts.values_at_bounds))
 
 # %%
-pretty(large_array)
+print(pretty(basic_ts.values_at_bounds.values))
 
 # %%
-pretty(really_large_array)
+print(pretty(long_ts))
+
+# %%
+print(pretty(really_long_ts))
 
 # %% [markdown]
 # ## String representation
@@ -121,14 +141,17 @@ pretty(really_large_array)
 # We let the underlying libraries handle most of the formatting decisions.
 
 # %%
-str(basic_array)
+str(basic_ts)
 
 # %% [markdown]
 # The value displayed for the attributes of the object
 # are simply the string representations of themselves.
 
 # %%
-str(basic_array.values)
+str(basic_ts.values_at_bounds)
+
+# %%
+str(basic_ts.values_at_bounds.values)
 
 # %% [markdown]
 # With a large array,
@@ -136,23 +159,23 @@ str(basic_array.values)
 # as shown below.
 
 # %%
-str(large_array)
+str(long_ts)
 
 # %% [markdown]
 # For whatever reason, this is the behaviour of the underlying packages.
 
 # %%
-str(large_array.values)
+str(long_ts.values_at_bounds.values)
 
 # %% [markdown]
 # If we go to an even larger array, not all values are shown
 # (which seems a more sensible choice to us).
 
 # %%
-str(really_large_array)
+str(really_long_ts)
 
 # %%
-str(really_large_array.values)
+str(really_long_ts.values_at_bounds.values)
 
 # %% [markdown]
 # ## `repr` representation
@@ -165,23 +188,26 @@ str(really_large_array.values)
 # As a result, it can be quite unwieldy.
 
 # %%
-repr(basic_array)
+repr(basic_ts)
+
+# %%
+repr(basic_ts.values_at_bounds)
 
 # %%
 # pint's output is not copy-pasteable because of the surrounding "<>"
 # and lack of commas between numerical values.
-repr(basic_array.values)
+repr(basic_ts.values_at_bounds.values)
 
 # %%
 # numpy does give copy-pasteable output for basic arrays
-repr(basic_array.values.m)
+repr(basic_ts.values_at_bounds.values.m)
 
 # %%
-repr(large_array)
+repr(long_ts)
 
 # %%
-repr(really_large_array)
+repr(really_long_ts)
 
 # %%
 # numpy doesn't give copy-pasteable output for really large arrays
-repr(really_large_array.values.m)
+repr(really_long_ts.values_at_bounds.values.m)

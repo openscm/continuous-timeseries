@@ -5,7 +5,7 @@ focuses on an **understanding-oriented** approach.
 In particular, the background of the project
 and explanations about its implementation.
 
-We will aim to avoid writing instructions or technical descriptions here,
+We aim to avoid writing instructions or technical descriptions here,
 they belong elsewhere.
 
 Points we will aim to cover:

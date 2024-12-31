@@ -1,0 +1,1 @@
+TimeseriesDiscrete(name='basic', time_axis=TimeAxis(bounds=<Quantity([1. 2. 3.], 'year')>), values_at_bounds=ValuesAtBounds(values=<Quantity([10. 20.  5.], 'kilogram')>))

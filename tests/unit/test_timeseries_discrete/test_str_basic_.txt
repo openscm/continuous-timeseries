@@ -1,0 +1,1 @@
+TimeseriesDiscrete(name=basic, time_axis=TimeAxis(bounds=[1.0 2.0 3.0] year), values_at_bounds=ValuesAtBounds(values=[10.0 20.0 5.0] kilogram))

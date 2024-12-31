@@ -7,6 +7,7 @@ See https://oprypin.github.io/mkdocs-literate-nav/
 - [Installation](installation.md)
 - [How-to guides](how-to-guides/index.md)
 - [Tutorials](tutorials/index.md)
+    - [Discrete timeseries](tutorials/discrete_timeseries.py)
 - [Further background](further-background/index.md)
     - [Representations](further-background/representations.py)
 - [Development](development.md)
