@@ -10,6 +10,7 @@ from contextlib import nullcontext as does_not_raise
 import numpy as np
 import pint
 import pytest
+from IPython.lib.pretty import pretty
 
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
 
@@ -132,3 +133,37 @@ def test_str(values, exp_str):
     instance = ValuesAtBounds(values)
 
     assert str(instance) == exp_str
+
+
+@pytest.mark.parametrize(
+    "values, exp_pretty",
+    (
+        pytest.param(
+            Q([1.0, 2.0, 3.0], "kg"),
+            "ValuesAtBounds(values=<Quantity([1. 2. 3.], 'kilogram')>)",
+            id="basic",
+        ),
+        pytest.param(
+            Q(np.linspace(1750, 2000 + 1, 1000), "yr"),
+            (
+                "ValuesAtBounds(\n"
+                f"values={pretty(Q(np.linspace(1750, 2000 + 1, 1000), 'yr'))})"
+            ),
+            marks=pytest.mark.skip(reason="Too hard to predict indenting and slow"),
+            id="big_array",
+        ),
+        pytest.param(
+            Q(np.linspace(1750, 2000 + 1, int(1e5)), "yr"),
+            (
+                "ValuesAtBounds(\n"
+                "    values=<Quantity([1750.         1750.00251003 1750.00502005 ... 2000.99497995 2000.99748997\n"  # noqa: E501
+                "     2001.        ], 'year')>)"
+            ),
+            id="really_big_array",
+        ),
+    ),
+)
+def test_pretty(values, exp_pretty):
+    instance = ValuesAtBounds(values)
+
+    assert pretty(instance) == exp_pretty

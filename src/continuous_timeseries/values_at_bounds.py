@@ -22,13 +22,16 @@ over the entirety of each time window.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import attr
 from attrs import define, field
 
 import continuous_timeseries.formatting
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY
+
+if TYPE_CHECKING:
+    import IPython.lib.pretty
 
 
 @define
@@ -95,7 +98,20 @@ class ValuesAtBounds:
         """
         return continuous_timeseries.formatting.to_str(
             self,
-            self.__attrs_attrs__,
+            [a.name for a in self.__attrs_attrs__],
         )
 
-    # TODO: __str__, __repr__ and _repr_html_
+    def _repr_pretty_(
+        self, p: IPython.lib.pretty.RepresentationPrinter, cycle: bool
+    ) -> None:
+        """
+        Get IPython pretty representation of self
+
+        Used by IPython notebooks and other tools
+        """
+        continuous_timeseries.formatting.to_pretty(
+            self,
+            [a.name for a in self.__attrs_attrs__],
+            p=p,
+            cycle=cycle,
+        )

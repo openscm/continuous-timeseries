@@ -1,13 +1,28 @@
 """
 Support for pretty formatting of our classes
 
-Inspired by [xarray](https://github.com/pydata/xarray/blob/main/xarray/core/formatting.py)
+Inspired by:
+
+- the difference between `__repr__` and `__str__` in Python
+  (see e.g. https://realpython.com/python-repr-vs-str/)
+
+- the advice from the IPython docs about prettifying output
+  (https://ipython.readthedocs.io/en/8.26.0/config/integrating.html#rich-display)
+
+- the way that xarray handles formatting
+  (see https://github.com/pydata/xarray/blob/main/xarray/core/formatting.py)
+
+- the way that pint handles formatting
+  (see https://github.com/hgrecco/pint/blob/74b708661577623c0c288933d8ed6271f32a4b8b/pint/util.py#L1004)
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import IPython.lib.pretty
 
 # Let attrs take care of __repr__
 
@@ -29,7 +44,7 @@ def to_str(instance: Any, attrs_to_show: Iterable[str]) -> str:
     instance
         Instance to convert to str
 
-    exposed_attributes
+    attrs_to_show
         Attributes to include in the string representation.
 
     Returns
@@ -39,8 +54,48 @@ def to_str(instance: Any, attrs_to_show: Iterable[str]) -> str:
     """
     instance_type = type(instance).__name__
 
-    attribute_str = [f"{v.name}={getattr(instance, v.name)}" for v in attrs_to_show]
+    attribute_str = [f"{v}={getattr(instance, v)}" for v in attrs_to_show]
 
     res = f"{instance_type}({', '.join(attribute_str)})"
 
     return res
+
+
+def to_pretty(
+    instance: Any,
+    attrs_to_show: Iterable[str],
+    p: IPython.lib.pretty.RepresentationPrinter,
+    cycle: bool,
+    indent: int = 4,
+) -> None:
+    """
+    Pretty-print an instance using IPython's pretty printer
+
+    Parameters
+    ----------
+    instance
+        Instance to convert
+
+    attrs_to_show
+        Attributes to include in the pretty representation.
+
+    p
+        Pretty printer
+
+    cycle
+        Whether the pretty printer has detected a cycle or not.
+
+    indent
+        Indent to apply to the pretty printing group
+    """
+    instance_type = type(instance).__name__
+
+    with p.group(indent, f"{instance_type}(", ")"):
+        for i, att in enumerate(attrs_to_show):
+            p.breakable("")
+            p.text(f"{att}=")
+            p.pretty(getattr(instance, att))
+
+            if i < len(attrs_to_show) - 1:
+                p.text(",")
+                p.breakable()

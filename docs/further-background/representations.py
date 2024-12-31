@@ -21,6 +21,8 @@
 #
 # - the difference between `__repr__` and `__str__` in Python
 #   (see e.g. https://realpython.com/python-repr-vs-str/)
+# - the advice from the IPython docs about prettifying output
+#   (https://ipython.readthedocs.io/en/8.26.0/config/integrating.html#rich-display)
 # - the way that xarray handles formatting
 #   (see https://github.com/pydata/xarray/blob/main/xarray/core/formatting.py)
 # - the way that pint handles formatting
@@ -32,10 +34,10 @@
 # ## Imports
 
 # %%
-from pprint import pprint
 
 import numpy as np
 import pint
+from IPython.lib.pretty import pretty
 
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
 
@@ -95,18 +97,22 @@ really_large_array._repr_html_()
 # %% [markdown]
 # ## Pretty representation
 #
-# There is also the pretty representation, which is used by the `pprint` module
-# and can be useful in other cases
-# (and is, we think, a fallback for objects that don't implement `_repr_html_`).
+# There is also the pretty representation,
+# which is used by the IPython `pretty` module
+# (https://ipython.readthedocs.io/en/8.26.0/api/generated/IPython.lib.pretty.html#module-IPython.lib.pretty,
+# not to be confused with the `pprint` module).
 
 # %%
-pprint(basic_array)
+pretty(basic_array)
 
 # %%
-pprint(basic_array.values)
+pretty(basic_array.values)
 
 # %%
-pprint(basic_array.values)
+pretty(large_array)
+
+# %%
+pretty(really_large_array)
 
 # %% [markdown]
 # ## String representation
