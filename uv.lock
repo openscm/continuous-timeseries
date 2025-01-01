@@ -426,6 +426,8 @@ tests = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-regressions" },
+    { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "scipy", version = "1.14.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
 ]
 
 [package.metadata]
@@ -506,6 +508,7 @@ tests = [
     { name = "pytest", specifier = ">=8.3.3" },
     { name = "pytest-cov", specifier = ">=5.0.0" },
     { name = "pytest-regressions", specifier = ">=2.6.0" },
+    { name = "scipy", specifier = ">=1.13.1" },
 ]
 
 [[package]]

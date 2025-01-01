@@ -103,7 +103,34 @@ class ContinuousFunctionScipyPPoly:
     Wrapped [`scipy.interpolate.PPoly`][scipy.interpolate.PPoly] instance
     """
 
-    # TODO __str__ method
+    # Let attrs take care of __repr__
+
+    def __str__(self) -> str:
+        """
+        Get string representation of self
+        """
+        type_self = type(self).__name__
+
+        type_ppoly = type(self.ppoly).__name__
+        ppoly_x = self.ppoly.x
+        ppoly_c = self.ppoly.c
+
+        order = self.ppoly.c.shape[0] - 1
+
+        if order == 1:
+            order_s = "1st"
+        elif order == 2:  # noqa: PLR2004
+            order_s = "2nd"
+        elif order == 3:  # noqa: PLR2004
+            order_s = "3rd"
+        else:
+            order_s = f"{order}th"
+
+        res = (
+            f"{order_s} order {type_self}(ppoly={type_ppoly}(c={ppoly_c}, x={ppoly_x}))"
+        )
+
+        return res
 
     def __call__(
         self, x: npt.NDArray[np.number[Any]], allow_extrapolation: bool = False

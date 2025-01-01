@@ -5,7 +5,7 @@
 groups = ["default", "all-dev", "dev", "docs", "full", "plots", "scipy", "tests"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:3a71db274416870cd50e746e16856d6959fe5e570bf536e31ea344d1f03c3046"
+content_hash = "sha256:c6c7537af593cd4065ec11684ee459ca4669dc5ffc01eeb71aa7cd266649432c"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -2044,7 +2044,7 @@ name = "numpy"
 version = "2.0.2"
 requires_python = ">=3.9"
 summary = "Fundamental package for array computing in Python"
-groups = ["default", "all-dev", "docs", "full", "plots", "scipy"]
+groups = ["default", "all-dev", "docs", "full", "plots", "scipy", "tests"]
 files = [
     {file = "numpy-2.0.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:51129a29dbe56f9ca83438b706e2e69a39892b5eda6cedcb6b0c9fdc9b0d3ece"},
     {file = "numpy-2.0.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:f15975dfec0cf2239224d80e32c3170b1d168335eaedee69da84fbe9f1f9cd04"},
@@ -3033,7 +3033,7 @@ name = "scipy"
 version = "1.13.1"
 requires_python = ">=3.9"
 summary = "Fundamental algorithms for scientific computing in Python"
-groups = ["all-dev", "docs", "full", "scipy"]
+groups = ["all-dev", "docs", "full", "scipy", "tests"]
 dependencies = [
     "numpy<2.3,>=1.22.4",
 ]
