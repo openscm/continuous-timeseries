@@ -32,12 +32,150 @@ if TYPE_CHECKING:
     import IPython.lib.pretty
     import matplotlib.axes
     import pint.registry
+    import scipy.interpolate
 
 
 class ContinuousFunctionLike(Protocol):
     """
     Protocol for classes that can be used as continuous functions
     """
+
+    def __call__(
+        self, x: npt.NDArray[np.number[Any]], allow_extrapolation: bool = False
+    ) -> npt.NDArray[np.number[Any]]:
+        """
+        Evaluate the function at specific points
+
+        Parameters
+        ----------
+        x
+            Points at which to evaluate the function
+
+        allow_extrapolation
+            Should extrapolatino be allowed?
+
+        Returns
+        -------
+        :
+            The function, evaluated at `x`
+        """
+
+    def integrate(self, integration_constant: np.number[Any]) -> ContinuousFunctionLike:
+        """
+        Integrate
+
+        Parameters
+        ----------
+        integration_constant
+            Integration constant
+
+            This is required for the integral to be a definite integral.
+
+        Returns
+        -------
+        :
+            Integral of the function
+        """
+
+    def differentiate(self) -> ContinuousFunctionLike:
+        """
+        Differentiate
+
+        Returns
+        -------
+        :
+            Derivative of the function
+        """
+
+
+@define
+class ContinuousFunctionScipyPPoly:
+    """
+    Wrapper around scipy's piecewise polynomial
+
+    The wrapper makes [`scipy.interpolate.PPoly`][]
+    compatible with the interface expected by
+    [`ContinuousFunctionLike`][(m)].
+    """
+
+    ppoly: scipy.interpolate.PPoly
+    """
+    Wrapped [`scipy.interpolate.PPoly`][] instance
+    """
+
+    # TODO __str__ method
+
+    def __call__(
+        self, x: npt.NDArray[np.number[Any]], allow_extrapolation: bool = False
+    ) -> npt.NDArray[np.number[Any]]:
+        """
+        Evaluate the function at specific points
+
+        Parameters
+        ----------
+        x
+            Points at which to evaluate the function
+
+        allow_extrapolation
+            Should extrapolatino be allowed?
+
+        Returns
+        -------
+        :
+            The function, evaluated at `x`
+        """
+        res = self.ppoly(x=x, extrapolate=allow_extrapolation)
+
+        if np.isnan(res).any():
+            msg = (
+                f"The result contains NaNs. "
+                "Was this because you tried to extrapolate "
+                f"when it is not allowed ({allow_extrapolation=})?. "
+                f"Result of calling `self.ppoly` was {res!r}."
+            )
+            raise ValueError(msg)
+
+        return res
+
+    def integrate(self, integration_constant: np.number[Any]) -> ContinuousFunctionLike:
+        """
+        Integrate
+
+        Parameters
+        ----------
+        integration_constant
+            Integration constant
+
+            This is required for the integral to be a definite integral.
+
+        Returns
+        -------
+        :
+            Integral of the function
+        """
+        indefinite_integral = self.ppoly.antiderivative()
+
+        c_new = indefinite_integral.c
+        c_new[-1, :] += integration_constant
+
+        ppoly_integral = scipy.interpolate.PPoly(
+            c=c_new,
+            x=indefinite_integral.x,
+            extrapolate=False,
+        )
+
+        return type(self)(ppoly_integral)
+
+    def differentiate(self) -> ContinuousFunctionLike:
+        """
+        Differentiate
+
+        Returns
+        -------
+        :
+            Derivative of the function
+        """
+        return type(self)(self.ppoly.derivative())
 
 
 @define
@@ -141,7 +279,8 @@ class TimeseriesContinuous:
             time_axis = time_axis.bounds
 
         times_m = time_axis.to(self.time_units).m
-        values_m = self.function(times_m, extrapolate=allow_extrapolation)
+        values_m = self.function(times_m, allow_extrapolation=allow_extrapolation)
+
         if np.isnan(values_m).any():
             msg = (
                 f"The result of calling `self.function` contains NaNs. "
@@ -150,11 +289,13 @@ class TimeseriesContinuous:
             )
             raise ValueError(msg)
 
-        res = values_m * self.values_units
+        res: PINT_NUMPY_ARRAY = values_m * self.values_units
 
         return res
 
-    def integrate(self, integration_constant: PINT_SCALAR, name_res: str | None = None):
+    def integrate(
+        self, integration_constant: PINT_SCALAR, name_res: str | None = None
+    ) -> TimeseriesContinuous:
         """
         Integrate
 
@@ -178,7 +319,9 @@ class TimeseriesContinuous:
 
         integral_values_units = self.values_units * self.time_units
 
-        integral = self.function.integrate()
+        integral = self.function.integrate(
+            integration_constant=integration_constant.to(integral_values_units).m
+        )
         # indefinite_integral = self.piecewise_polynomial.antiderivative()
         #
         # c_new = indefinite_integral.c
@@ -199,7 +342,7 @@ class TimeseriesContinuous:
             function=integral,
         )
 
-    def differentiate(self, name_res: str | None = None):
+    def differentiate(self, name_res: str | None = None) -> TimeseriesContinuous:
         """
         Differentiate
 
@@ -220,7 +363,7 @@ class TimeseriesContinuous:
 
         derivative_values_units = self.values_units / self.time_units
 
-        derivative = self.function.derivative()
+        derivative = self.function.differentiate()
 
         return type(self)(
             name=name_res,
@@ -229,7 +372,7 @@ class TimeseriesContinuous:
             function=derivative,
         )
 
-    def plot(
+    def plot(  # noqa: PLR0913
         self,
         time_axis: TimeAxis | PINT_NUMPY_ARRAY,
         res_increase: int = 500,

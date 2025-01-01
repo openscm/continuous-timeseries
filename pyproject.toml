@@ -21,6 +21,13 @@ classifiers = [
 plots = [
     "matplotlib>=3.7.1",
 ]
+scipy = [
+    "scipy>=1.13.1",
+]
+full = [
+    "continuous-timeseries[plots]",
+    "continuous-timeseries[scipy]",
+]
 
 [dependency-groups]
 dev = [
