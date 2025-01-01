@@ -28,146 +28,141 @@
 import traceback
 
 import matplotlib.pyplot as plt
-import matplotlib.units
 import numpy as np
 import pint
 import scipy.interpolate
 
-from continuous_timeseries.time_axis import TimeAxis
 from continuous_timeseries.timeseries_continuous import (
     ContinuousFunctionScipyPPoly,
     TimeseriesContinuous,
 )
-from continuous_timeseries.values_at_bounds import ValuesAtBounds
 
 # %% [markdown]
 # ## Set up pint
+#
+# For details, see the pint docs
+# ([stable docs](https://pint.readthedocs.io/en/stable/user/plotting.html),
+# [last version that we checked at the time of writing](https://pint.readthedocs.io/en/0.24.4/user/plotting.html))
+# [or our docs on unit-aware plotting](../discrete_timeseries_tutorial#unit-aware-plotting).  # noqa: E501
 
 # %%
 UR = pint.get_application_registry()
 Q = UR.Quantity
 
 # %% [markdown]
+# ## Set up matplotlib to work with pint
+
+# %%
+UR.setup_matplotlib(enable=True)
+
+# %% [markdown]
 # ## The `TimeseriesContinuous` class
+#
+# The `TimeseriesContinuous` is our representation of continuous timeseries.
+# It needs a few pieces.
+# The first is a name, this is straight-forward.
+# The next pieces are the units of time (`time_units`),
+# the units for the values in the timeseries (`values_units`)
+# and a class which holds
+# the continuous representation of the timeseries.
+# This class must match the interface defined by
+# `continuous_timeseries.timeseries_continuous.ContinuousFunctionLike`,
+# i.e. it should support evaluating the function,
+# integration and differentiation.
+#
+# We also provide a concrete implementation of a class that satisfies the
+# `continuous_timeseries.timeseries_continuous.ContinuousFunctionLike`
+# interface. It is `ContinuousFunctionScipyPPoly`.
+# This is a thin wrapper around scipy's
+# `scipy.interpolate.PPoly` class.
+# We use the `ContinuousFunctionScipyPPoly` class throughout these docs,
+# but things are written such that other representations of continuous timeseries
+# could be used if desired
+# (for example, many of
+# [scipy's other polynomial representations](https://docs.scipy.org/doc/scipy/reference/interpolate.html)
+# ).
+
+# %% [markdown]
+# ### Setting up our continuous representation
+
+# %% [markdown]
+# #### Piecewise constant
+#
+# Here we create an instance of `ContinuousFunctionScipyPPoly`
+# that represents data that is stepwise constant i.e. its value
+# is constant over each timestep.
 
 # %%
 time_axis = Q([2020, 2030, 2050], "yr")
-ms = Q([1.0, 2.0], "Gt / yr / yr")
-cs = Q([10.0, 20.0], "Gt / yr")
 
-# %%
+values = Q([10.0, 20.0], "Gt / yr")
+
 piecewise_polynomial_constant = scipy.interpolate.PPoly(
     x=time_axis.m,
-    c=np.atleast_2d(cs.m),
+    c=np.atleast_2d(values.m),
 )
 continuous_constant = ContinuousFunctionScipyPPoly(piecewise_polynomial_constant)
 # TODO: update str for ContinuousFunctionScipyPPoly to be nicer
 continuous_constant
 
+# %% [markdown]
+# We then create our `TimeseriesContinuous` instance.
+
 # %%
-# notes for docs
-# - never initialise like this, almost always have your own thing or use `from_discrete` or similar
-#   (add examples below)
-# - interface for function is defined in ...
-# - under the hood, this just uses interpolate, which is a trivial operation on a continuous function
-# - add extrapolation examples
 ts = TimeseriesContinuous(
     name="piecewise_constant",
     time_units=time_axis.u,
-    values_units=cs.u,
+    values_units=values.u,
     function=continuous_constant,
 )
 ts
 
-# %%
-time_axis_plot = TimeAxis(time_axis)
+# %% [markdown]
+# If we plot this data, it is much clearer what is going on.
+# (As a note, when plotting,
+# we need to specify the time axis we want to use for plotting
+# (continuous representations don't carry this information around with them)).
 
 # %%
-UR.setup_matplotlib(enable=True)
+ts.plot(time_axis=time_axis)
+
+# %% [markdown]
+# #### Linear
+#
+# Here we create an instance of `ContinuousFunctionScipyPPoly`
+# that represents data that is linear between the defined discrete values.
 
 # %%
-ts.plot(time_axis_plot)
+gradients = Q([1.0, 2.0], values.units / time_axis.units)
 
-# %%
-fig, ax = plt.subplots()
-
-for res_increase in (1, 5, 10, 100, 300):
-    ts.plot(
-        time_axis_plot,
-        ax=ax,
-        res_increase=res_increase,
-        label=f"{res_increase=}",
-        alpha=0.7,
-        linestyle="--",
-    )
-
-ax.legend()
-
-# %%
 piecewise_polynomial_linear = scipy.interpolate.PPoly(
     x=time_axis.m,
-    c=np.vstack(
-        [
-            ms.m,
-            cs.m,
-        ]
-    ),
+    c=np.vstack([gradients.m, values.m]),
 )
+continuous_linear = ContinuousFunctionScipyPPoly(piecewise_polynomial_linear)
 
 ts_linear = TimeseriesContinuous(
     name="piecewise_linear",
     time_units=time_axis.u,
-    values_units=cs.u,
-    function=ContinuousFunctionScipyPPoly(piecewise_polynomial_linear),
+    values_units=values.u,
+    function=continuous_linear,
 )
+ts_linear
 
 # %%
-fig, ax = plt.subplots()
-
-for res_increase in (1, 5, 10, 100, 300):
-    ts_linear.plot(
-        time_axis_plot,
-        ax=ax,
-        res_increase=res_increase,
-        label=f"{res_increase=}",
-        alpha=0.7,
-        linestyle="--",
-    )
-
-ax.legend()
+ts_linear.plot(time_axis=time_axis)
 
 # %% [markdown]
-# y = a * x**2 + b * x + c
-# dy / dx = 2 * a * x + b
-# c = 10
+# #### Quadratic
 #
-# y(10) = 20
-# dy/dx(10) = 4.0
-#
-# y(10) = 20 ==> 20 = 100 * a + 10 * b + 10
-# dy/dx(10) = 4.0 ==> 4 = 20 * a + b ==> b = 4 - 20a
-#
-# 10 = 100a + 10 * (4 - 20a)
-# 10 = 100a + 40 - 200a
-# 30 = 100a
-# a = 0.3
-# b = 4 - 20 * 0.3
-# b = -2.0
-
-# %% [markdown]
-# y = a * x**2 + b * x + c
-# dy / dx = 2 * a * x + b
-# c = 20
-# b = 4.0
-# y(20) = 60 ==> 60 = 400 * a + 80 + 20
-# a = -0.1
+# We also create an instance of `ContinuousFunctionScipyPPoly`
+# that represents data that is quadratic between the defined discrete values.
 
 # %%
-a_values = Q([0.3, -0.1], "Gt / yr / yr / yr")
-b_values = Q([-2.0, 4.0], "Gt / yr / yr")
-c_values = cs
+a_values = Q([0.3, -0.1], values.u / time_axis.u / time_axis.u)
+b_values = Q([-2.0, 4.0], values.u / time_axis.u)
+c_values = values
 
-# %%
 piecewise_polynomial_quadratic = scipy.interpolate.PPoly(
     x=time_axis.m,
     c=np.vstack(
@@ -178,39 +173,87 @@ piecewise_polynomial_quadratic = scipy.interpolate.PPoly(
         ]
     ),
 )
+continuous_quadratic = ContinuousFunctionScipyPPoly(piecewise_polynomial_quadratic)
 
 ts_quadratic = TimeseriesContinuous(
     name="piecewise_quadratic",
     time_units=time_axis.u,
-    values_units=cs.u,
-    function=ContinuousFunctionScipyPPoly(piecewise_polynomial_quadratic),
+    values_units=values.u,
+    function=continuous_quadratic,
 )
+ts_quadratic
+
+# %%
+ts_quadratic.plot(time_axis=time_axis)
+
+# %% [markdown]
+# ### Comparing the interpolation choices
+#
+# If we plot the different interpolation choices on the same axes,
+# the difference between them is clear.
+# This also makes clear why having continuous representations is helpful:
+# they add information that cannot be captured by discrete representations alone
+# (all the timeseries go through the same discrete points,
+# but are completely different in between).
 
 # %%
 fig, ax = plt.subplots()
 
-for res_increase in (1, 2, 5, 100):
-    ts_quadratic.plot(
-        time_axis_plot,
-        ax=ax,
-        res_increase=res_increase,
-        label=f"{res_increase=}",
-        alpha=0.7,
-        linestyle="--",
-    )
+for ts_plot in (ts, ts_linear, ts_quadratic):
+    ts_plot.plot(time_axis, ax=ax, alpha=0.7, linestyle="--")
 
-ax.legend()
+ax.set_ylim(ymin=0)
+ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
+
+fig.tight_layout()
+
+# %% [markdown]
+# ### Intepolation
+#
+# With our continuous representations,
+# interpolation is trivial.
 
 # %%
-fig, axes = plt.subplots(nrows=3, figsize=(12, 8))
+ts_quadratic.interpolate(Q([2023, 2025, 2030, 2035], "yr"))
+
+# %%
+ts_quadratic.interpolate(Q([2020, 2025, 2045], "yr"))
+
+# %% [markdown]
+# Extrapolation is also possible.
+
+# %%
+ts_quadratic.interpolate(Q([2000, 2025, 2055], "yr"), allow_extrapolation=True)
+
+# %% [markdown]
+# However, if you don't explicitly allow it,
+# you will get an error if you try and extrapolate.
+
+# %%
+try:
+    ts_quadratic.interpolate(Q([2000, 2025, 2055], "yr"))
+except ValueError:
+    traceback.print_exc(limit=0)
+
+# %% [markdown]
+# ### Integration and differentiation
+#
+# With our continuous representations,
+# integration and differentiation are also trivial.
+
+# %%
+fig, axes = plt.subplots(nrows=4, figsize=(12, 8))
 
 for ts_plot in (ts, ts_linear, ts_quadratic):
-    ts_plot.plot(time_axis_plot, ax=axes[0], alpha=0.7, linestyle="--")
-    ts_plot.differentiate().plot(time_axis_plot, ax=axes[1], alpha=0.7, linestyle="--")
+    ts_plot.plot(time_axis, ax=axes[0], alpha=0.7, linestyle="--")
+    ts_plot.differentiate().plot(time_axis, ax=axes[1], alpha=0.7, linestyle="--")
 
     integration_constant = Q(0, "Gt")
-    ts_plot.integrate(integration_constant=integration_constant).plot(
-        time_axis_plot, ax=axes[2], alpha=0.7, linestyle="--"
+    integral = ts_plot.integrate(integration_constant=integration_constant)
+    integral.plot(time_axis, ax=axes[2], alpha=0.7, linestyle="--")
+
+    integral.integrate(integration_constant=Q(0.0, "Gt yr")).plot(
+        time_axis, ax=axes[3], alpha=0.7, linestyle="--"
     )
 
 axes[0].set_ylim(ymin=0)
@@ -219,229 +262,86 @@ for ax in axes:
 
 fig.tight_layout()
 
-# %%
-ts_quadratic.interpolate(time_axis_plot)
+# %% [markdown]
+# ### Plotting
+#
+# This class makes plotting simple, as seen above.
+
+# %% [markdown]
+# #### Resolution of the plot
+#
+# As far as we can tell, plotting continuous functions isn't trivial.
+# So, we instead simply sample the function at many points,
+# then plot using a straight line between points.
+# In most cases, our eye can't tell the difference
+# (and for linear interpolation, the choice of resolution makes no difference at all).
+# However, in some cases it is useful to be able to control this resolution.
+# We demonstrate how to do this below.
 
 # %%
-ts_quadratic.interpolate(Q([2010, 2020, 2030, 2050, 2060], "yr"))
+fig, axes = plt.subplots(nrows=3, figsize=(12, 8))
 
-# %%
-# TODO: consider whether this should return TimeseriesContinuous too.
-# Could be helpful when extrapolating.
-# Maybe just add an extrapolate method that is simpler to reason about.
-ts_quadratic.interpolate(
-    Q([2010, 2020, 2030, 2050, 2060], "yr"), allow_extrapolation=True
-)
+for i, ts_plot in enumerate((ts, ts_linear, ts_quadratic)):
+    for res_increase in (1, 5, 100, 300):
+        ts_plot.plot(
+            time_axis,
+            ax=axes[i],
+            res_increase=res_increase,
+            label=f"{res_increase=}",
+            alpha=0.7,
+            linestyle="--",
+        )
 
-# %%
-fig, ax = plt.subplots()
-
-for ts_plot in (ts, ts_linear, ts_quadratic):
-    time_axis = Q([2010, 2020, 2030, 2050, 2060], "yr")
-    extrapolated_vals = ts_plot.interpolate(time_axis, allow_extrapolation=True)
-    ax.plot(
-        time_axis,
-        extrapolated_vals,
-        label=f"{ts_plot.name}_extrapolated",
-    )
-
-ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
+    axes[i].set_title(ts_plot.name)
+    axes[i].set_ylim(ymin=0)
+    axes[i].legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
 
 fig.tight_layout()
 
 # %% [markdown]
-# ### Time axis
-#
-# The first thing we need to define our timeseries is a time axis.
-# This is handled by the `TimeAxis` class.
-# This class expects to be passed the bounds of the time steps.
-# In other words, the first time step runs from `bounds[0]`, to `bounds[1]`,
-# the second from `bounds[1]`, to `bounds[2]`,
-# the third from `bounds[2]`, to `bounds[3]` etc.
-
-# %%
-time_axis = TimeAxis(
-    Q([1900.0, 1950.0, 1975.0, 2000.0, 2010.0, 2020.0, 2030.0, 2050.0], "yr")
-)
-time_axis
-
-# %% [markdown]
-# ### Values
-#
-# The second thing we need is the values.
-# These must represent the values at each bound (i.e. value) in `time_axis`.
-
-# %%
-values_at_bounds = ValuesAtBounds(
-    Q([2.3, 4.5, 6.4, 10.0, 11.0, 12.3, 10.2, 3.5], "Gt / yr")
-)
-values_at_bounds
-
-# %% [markdown]
-# ### Initialisation
-#
-# Having created our values and time axis, we can now add a name
-# and initialise our instance.
-
-# %%
-ts = TimeseriesDiscrete(
-    name="example",
-    time_axis=time_axis,
-    values_at_bounds=values_at_bounds,
-)
-ts
-
-# %% [markdown]
-# ### Plotting
-#
-# It is trivial to plot with this class.
-
-# %%
-ts.plot()
-
-# %% [markdown]
-# One thing which you notice straight away is
-# that the data is plotted as a scatter plot.
-# This is deliberate: the data is discrete i.e. we have no information
-# about what happens between the provided data points.
-# This way of plotting makes that as clear and obvious as possible.
-
-# %% [markdown]
-# The other thing that is clear is the warning about the units.
-# If you need a quick plot but don't want this warning,
-# it can be disabled as shown below.
-
-# %%
-ts.plot(warn_if_plotting_magnitudes=False)
-
-# %% [markdown]
-# #### Unit-aware plotting
-#
-# However, better than this is to use unit-aware plotting.
-# This can be done with pint
-# ([stable docs](https://pint.readthedocs.io/en/stable/user/plotting.html),
-# [last version that we checked at the time of writing](https://pint.readthedocs.io/en/0.24.4/user/plotting.html)).
-
-# %% [markdown]
-# Firstly, set-up matplotlib to use the unit registry.
-
-# %%
-UR.setup_matplotlib(enable=True)
-
-# %% [markdown]
-# If you just plot now, the units will appear on the output axis.
-
-# %%
-ts.plot()
-
-# %% [markdown]
-# This has the added benefit that timeseries in different, but compatible units,
-# will automatically be plotted with the same units.
-
-# %%
-ts_compatible_unit = TimeseriesDiscrete(
-    name="example_compatible_unit",
-    time_axis=TimeAxis(
-        Q(
-            [(1932 + 6) * 12.0, 2000 * 12.0, (2010 + 5) * 12.0, (2025 + 3) * 12.0],
-            "month",
-        )
-    ),
-    values_at_bounds=ValuesAtBounds(Q([140.0, 160.0, 120.0, -10.0], "Mt / month")),
-)
-
-ax = ts.plot()
-ts_compatible_unit.plot(ax=ax)
-
-# %% [markdown]
-# You can set the desired units too.
-
-# %%
-fig, ax = plt.subplots()
-
-# Note: the auto-scaling can do some funny things
-# depending on the order of operations.
-# You may need to set the axis limits
-# or labels by hand before/after plotting to make things look sensible.
-x_unit = "month"
-ax.set_xlabel(x_unit)
-ax.xaxis.set_units(x_unit)
-
-y_unit = "Mt / month"
-ax.set_ylabel(y_unit)
-ax.yaxis.set_units(y_unit)
-
-ts.plot(ax=ax)
-ts_compatible_unit.plot(ax=ax)
-
-ax.legend()
-
-# %% [markdown]
-# Another benefit is that you won't be able to inadverantly plot timeseries
-# with incompatible units on the same axes.
-# Instead, you will get an error.
-
-# %%
-ts_incompatible_unit = TimeseriesDiscrete(
-    name="example_incompatible_unit",
-    time_axis=TimeAxis(
-        Q(
-            [(1932 + 6) * 12.0, 2000 * 12.0, (2010 + 5) * 12.0, (2025 + 3) * 12.0],
-            "month",
-        )
-    ),
-    values_at_bounds=ValuesAtBounds(Q([10.0, 20.0, 30.0, 40.0], "Mt")),
-)
-
-ax = ts.plot()
-try:
-    ts_incompatible_unit.plot(ax=ax)
-except matplotlib.units.ConversionError:
-    traceback.print_exc(limit=0)
-
-# %% [markdown]
-# Of course, you can always disable the unit-aware plotting if you really want.
-
-# %%
-UR.setup_matplotlib(enable=False)
-
-fig, ax = plt.subplots()
-
-ts.plot(ax=ax, warn_if_plotting_magnitudes=False)
-ts_compatible_unit.plot(ax=ax, warn_if_plotting_magnitudes=False)
-ts_incompatible_unit.plot(ax=ax, warn_if_plotting_magnitudes=False)
-
-ax.legend()
-
-# %% [markdown]
 # #### Customising plots and other features
-
-# %%
-# Re-enable unit awareness for the rest of the notebook
-UR.setup_matplotlib(enable=True)
 
 # %% [markdown]
 # By default, the plotted points
-# are labelled with the name of the `TimeseriesDiscrete` object.
+# are labelled with the name of the `TimeseriesContinuous` object.
 # This is shown if you add a legend to your plot.
 
 # %%
-ax = ts.plot()
+ax = ts_linear.plot(time_axis=time_axis)
 ax.legend()
 
 # %% [markdown]
 # The `label` argument and any unrecognised arguments
-# are simply passed through to the `scatter` method of the underlying axes.
+# are simply passed through to the `plot` method of the underlying axes.
 # This gives you full control over the plot.
 
 # %%
 fig, ax = plt.subplots()
 
-y_unit = "Gt / year"
+y_unit = "Mt / year"
 ax.set_ylabel(y_unit)
-ax.yaxis.set_units(y_unit)
+ax.yaxis.set_units(UR.Unit(y_unit))
 
-ts.plot(ax=ax, marker="x", color="tab:green", label="demo")
-ts_compatible_unit.plot(ax=ax, marker="o", color="tab:red", label="other timeseries")
+ts_linear.plot(
+    time_axis=time_axis,
+    ax=ax,
+    res_increase=2,
+    marker="x",
+    color="tab:orange",
+    label="demo",
+    linestyle="--",
+    linewidth=2,
+)
+ts_quadratic.plot(
+    time_axis=time_axis,
+    ax=ax,
+    res_increase=2,
+    marker="o",
+    color="tab:cyan",
+    label="second demo",
+    linestyle=":",
+)
+
+ax.set_ylim(0.0)
 ax.grid()
 ax.legend()

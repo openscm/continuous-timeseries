@@ -93,14 +93,14 @@ class ContinuousFunctionScipyPPoly:
     """
     Wrapper around scipy's piecewise polynomial
 
-    The wrapper makes [`scipy.interpolate.PPoly`][]
+    The wrapper makes [`scipy.interpolate.PPoly`][scipy.interpolate.PPoly]
     compatible with the interface expected by
     [`ContinuousFunctionLike`][(m)].
     """
 
     ppoly: scipy.interpolate.PPoly
     """
-    Wrapped [`scipy.interpolate.PPoly`][] instance
+    Wrapped [`scipy.interpolate.PPoly`][scipy.interpolate.PPoly] instance
     """
 
     # TODO __str__ method
