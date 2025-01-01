@@ -40,6 +40,7 @@ dev = [
     # Required for liccheck
     "setuptools>=74.1.2",
     "pip>=24.2",
+    "scipy-stubs>=1.14.1.6 ; python_full_version >= '3.10'",
 ]
 docs = [
     "attrs>=24.0.0",

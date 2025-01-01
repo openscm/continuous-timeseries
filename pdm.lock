@@ -5,7 +5,7 @@
 groups = ["default", "all-dev", "dev", "docs", "full", "plots", "scipy", "tests"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:c6f837fd78c2fc55b60e7e93bd62af95c5a54f4750b159833bfbc290da1ad7f0"
+content_hash = "sha256:3a71db274416870cd50e746e16856d6959fe5e570bf536e31ea344d1f03c3046"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -2094,6 +2094,21 @@ files = [
 ]
 
 [[package]]
+name = "optype"
+version = "0.8.0"
+requires_python = ">=3.10"
+summary = "Building blocks for precise & flexible type hints"
+groups = ["all-dev", "dev"]
+marker = "python_full_version >= \"3.10\""
+dependencies = [
+    "typing-extensions>=4.10; python_version < \"3.13\"",
+]
+files = [
+    {file = "optype-0.8.0-py3-none-any.whl", hash = "sha256:90a7760177f2e7feae379a60445fceec37b932b75a00c3d96067497573c5e84d"},
+    {file = "optype-0.8.0.tar.gz", hash = "sha256:8cbfd452d6f06c7c70502048f38a0d5451bc601054d3a577dd09c7d6363950e1"},
+]
+
+[[package]]
 name = "overrides"
 version = "7.7.0"
 requires_python = ">=3.6"
@@ -3048,6 +3063,21 @@ files = [
     {file = "scipy-1.13.1-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:a014c2b3697bde71724244f63de2476925596c24285c7a637364761f8710891c"},
     {file = "scipy-1.13.1-cp39-cp39-win_amd64.whl", hash = "sha256:392e4ec766654852c25ebad4f64e4e584cf19820b980bc04960bca0b0cd6eaa2"},
     {file = "scipy-1.13.1.tar.gz", hash = "sha256:095a87a0312b08dfd6a6155cbbd310a8c51800fc931b8c0b84003014b874ed3c"},
+]
+
+[[package]]
+name = "scipy-stubs"
+version = "1.14.1.6"
+requires_python = ">=3.10"
+summary = "Precise type-hints for all of SciPy"
+groups = ["all-dev", "dev"]
+marker = "python_full_version >= \"3.10\""
+dependencies = [
+    "optype>=0.7.3",
+]
+files = [
+    {file = "scipy_stubs-1.14.1.6-py3-none-any.whl", hash = "sha256:6f5b96aba27fd20c0bb9abfce5b3ce83fbd2fe13e803bf92796242828755fecc"},
+    {file = "scipy_stubs-1.14.1.6.tar.gz", hash = "sha256:7505ea8a1624ab4c72516a04eb2838f5ae43e33ba100fc2d5c44103003dd414a"},
 ]
 
 [[package]]

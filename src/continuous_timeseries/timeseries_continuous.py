@@ -153,10 +153,17 @@ class ContinuousFunctionScipyPPoly:
         :
             Integral of the function
         """
+        try:
+            import scipy.interpolate
+        except ImportError as exc:
+            raise MissingOptionalDependencyError(
+                "ContinuousFunctionScipyPPoly.integrate", requirement="scipy"
+            ) from exc
+
         indefinite_integral = self.ppoly.antiderivative()
 
         c_new = indefinite_integral.c
-        c_new[-1, :] += integration_constant
+        c_new[-1, :] = c_new[-1, :] + integration_constant
 
         ppoly_integral = scipy.interpolate.PPoly(
             c=c_new,
@@ -372,7 +379,7 @@ class TimeseriesContinuous:
             function=derivative,
         )
 
-    def plot(  # noqa: PLR0913
+    def plot(
         self,
         time_axis: TimeAxis | PINT_NUMPY_ARRAY,
         res_increase: int = 500,

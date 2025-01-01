@@ -34,7 +34,10 @@ import pint
 import scipy.interpolate
 
 from continuous_timeseries.time_axis import TimeAxis
-from continuous_timeseries.timeseries_continuous import TimeseriesContinuous
+from continuous_timeseries.timeseries_continuous import (
+    ContinuousFunctionScipyPPoly,
+    TimeseriesContinuous,
+)
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
 
 # %% [markdown]
@@ -57,6 +60,9 @@ piecewise_polynomial_constant = scipy.interpolate.PPoly(
     x=time_axis.m,
     c=np.atleast_2d(cs.m),
 )
+continuous_constant = ContinuousFunctionScipyPPoly(piecewise_polynomial_constant)
+# TODO: update str for ContinuousFunctionScipyPPoly to be nicer
+continuous_constant
 
 # %%
 # notes for docs
@@ -69,7 +75,7 @@ ts = TimeseriesContinuous(
     name="piecewise_constant",
     time_units=time_axis.u,
     values_units=cs.u,
-    function=piecewise_polynomial_constant,
+    function=continuous_constant,
 )
 ts
 
@@ -112,7 +118,7 @@ ts_linear = TimeseriesContinuous(
     name="piecewise_linear",
     time_units=time_axis.u,
     values_units=cs.u,
-    function=piecewise_polynomial_linear,
+    function=ContinuousFunctionScipyPPoly(piecewise_polynomial_linear),
 )
 
 # %%
@@ -130,9 +136,35 @@ for res_increase in (1, 5, 10, 100, 300):
 
 ax.legend()
 
+# %% [markdown]
+# y = a * x**2 + b * x + c
+# dy / dx = 2 * a * x + b
+# c = 10
+#
+# y(10) = 20
+# dy/dx(10) = 4.0
+#
+# y(10) = 20 ==> 20 = 100 * a + 10 * b + 10
+# dy/dx(10) = 4.0 ==> 4 = 20 * a + b ==> b = 4 - 20a
+#
+# 10 = 100a + 10 * (4 - 20a)
+# 10 = 100a + 40 - 200a
+# 30 = 100a
+# a = 0.3
+# b = 4 - 20 * 0.3
+# b = -2.0
+
+# %% [markdown]
+# y = a * x**2 + b * x + c
+# dy / dx = 2 * a * x + b
+# c = 20
+# b = 4.0
+# y(20) = 60 ==> 60 = 400 * a + 80 + 20
+# a = -0.1
+
 # %%
-a_values = Q([0.1, -0.05], "Gt / yr / yr / yr")
-b_values = Q([0.0, 2.0], "Gt / yr / yr")
+a_values = Q([0.3, -0.1], "Gt / yr / yr / yr")
+b_values = Q([-2.0, 4.0], "Gt / yr / yr")
 c_values = cs
 
 # %%
@@ -151,7 +183,7 @@ ts_quadratic = TimeseriesContinuous(
     name="piecewise_quadratic",
     time_units=time_axis.u,
     values_units=cs.u,
-    function=piecewise_polynomial_quadratic,
+    function=ContinuousFunctionScipyPPoly(piecewise_polynomial_quadratic),
 )
 
 # %%
@@ -177,32 +209,11 @@ for ts_plot in (ts, ts_linear, ts_quadratic):
     ts_plot.differentiate().plot(time_axis_plot, ax=axes[1], alpha=0.7, linestyle="--")
 
     integration_constant = Q(0, "Gt")
-    # Need to fix up interfaces/wrapper class for this
-    # ts_plot.integrate(integration_constant=integration_constant).plot(time_axis_plot, ax=axes[2], alpha=0.7, linestyle="--")
-
-    integral_values_units = ts_plot.values_units * ts_plot.time_units
-
-    tmp = ts_plot.function.antiderivative()
-    c_new = tmp.c
-    c_new[-1, :] += integration_constant.to(integral_values_units).m
-
-    # TODO: introduce wrapper class to help clean this interface up
-    # to make writing the Protocol easier.
-    function_integral = scipy.interpolate.PPoly(
-        c=c_new,
-        x=tmp.x,
-        extrapolate=False,
-    )
-    ts_integral = TimeseriesContinuous(
-        name=f"{ts_plot.name}_integral",
-        time_units=ts_plot.time_units,
-        values_units=ts_plot.values_units,
-        function=function_integral,
+    ts_plot.integrate(integration_constant=integration_constant).plot(
+        time_axis_plot, ax=axes[2], alpha=0.7, linestyle="--"
     )
 
-    ts_integral.plot(time_axis_plot, ax=axes[2], alpha=0.7, linestyle="--")
-
-
+axes[0].set_ylim(ymin=0)
 for ax in axes:
     ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
 
@@ -215,9 +226,28 @@ ts_quadratic.interpolate(time_axis_plot)
 ts_quadratic.interpolate(Q([2010, 2020, 2030, 2050, 2060], "yr"))
 
 # %%
+# TODO: consider whether this should return TimeseriesContinuous too.
+# Could be helpful when extrapolating.
+# Maybe just add an extrapolate method that is simpler to reason about.
 ts_quadratic.interpolate(
     Q([2010, 2020, 2030, 2050, 2060], "yr"), allow_extrapolation=True
 )
+
+# %%
+fig, ax = plt.subplots()
+
+for ts_plot in (ts, ts_linear, ts_quadratic):
+    time_axis = Q([2010, 2020, 2030, 2050, 2060], "yr")
+    extrapolated_vals = ts_plot.interpolate(time_axis, allow_extrapolation=True)
+    ax.plot(
+        time_axis,
+        extrapolated_vals,
+        label=f"{ts_plot.name}_extrapolated",
+    )
+
+ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
+
+fig.tight_layout()
 
 # %% [markdown]
 # ### Time axis
