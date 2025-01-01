@@ -255,6 +255,9 @@ class TimeseriesContinuous:
         res_increase
             The amount by which to increase the resolution of the x-axis when plotting.
 
+            (Note, these docs are actually incorrect.
+            The algorithm needs to be updated
+            to handle uneven spacing in time_axis for it to be true.)
             If equal to 1, then only the points in `time_axis` will be plotted.
             If equal to 100, then there will be roughly 100 times as many points
             plotted as the number of points in `time_axis`
