@@ -1,5 +1,5 @@
 """
-Tests of `continuous_timeseries.exceptions`
+Unit tests of `continuous_timeseries.exceptions`
 """
 
 from __future__ import annotations
