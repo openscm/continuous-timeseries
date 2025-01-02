@@ -82,7 +82,10 @@ class TimeseriesDiscrete:
         )
 
     def _repr_pretty_(
-        self, p: IPython.lib.pretty.RepresentationPrinter, cycle: bool
+        self,
+        p: IPython.lib.pretty.RepresentationPrinter,
+        cycle: bool,
+        indent: int = 4,
     ) -> None:
         """
         Get IPython pretty representation of self

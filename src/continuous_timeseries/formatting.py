@@ -175,14 +175,13 @@ def to_html(
             att_val_html = att_val._repr_html_internal_row_()
 
         else:
+            # Split this out into separate function
             try:
                 att_val_html = att_val._repr_html_()
             except AttributeError:
                 att_val_html = str(att_val)
 
         attribute_rows = add_html_attribute_row(att, att_val_html, attribute_rows)
-
-    attribute_rows_for_table = "\n          ".join(attribute_rows)
 
     css_style = """.continuous-timeseries-wrap {
   /*font-family: monospace;*/
@@ -209,6 +208,7 @@ def to_html(
 }"""
 
     if include_header:
+        attribute_rows_for_table = "\n          ".join(attribute_rows)
         html_l = [
             "<div>",
             "  <style>",
@@ -226,6 +226,7 @@ def to_html(
         ]
 
     else:
+        attribute_rows_for_table = "\n    ".join(attribute_rows)
         html_l = [
             "<div>",
             "  <table><tbody>",

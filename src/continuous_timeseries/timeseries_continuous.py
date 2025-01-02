@@ -16,6 +16,7 @@ We include straight-forward methods to convert to
 
 from __future__ import annotations
 
+import textwrap
 import warnings
 from typing import TYPE_CHECKING, Any, Protocol
 
@@ -111,7 +112,43 @@ class ContinuousFunctionScipyPPoly:
         """
         type_self = type(self).__name__
 
-        type_ppoly = type(self.ppoly).__name__
+        type_ppoly = type(self.ppoly)
+        ppoly_display = f"{type_ppoly.__module__}.{type_ppoly.__name__}"
+
+        ppoly_x = self.ppoly.x
+        ppoly_c = self.ppoly.c
+
+        order = self.order
+
+        if order == 1:
+            order_s = "1st"
+        elif order == 2:  # noqa: PLR2004
+            order_s = "2nd"
+        elif order == 3:  # noqa: PLR2004
+            order_s = "3rd"
+        else:
+            order_s = f"{order}th"
+
+        res = f"{order_s} order {type_self}(ppoly={ppoly_display}(c={ppoly_c}, x={ppoly_x}))"
+
+        return res
+
+    def _repr_pretty_(
+        self,
+        p: IPython.lib.pretty.RepresentationPrinter,
+        cycle: bool,
+        indent: int = 4,
+    ) -> None:
+        """
+        Get IPython pretty representation of self
+
+        Used by IPython notebooks and other tools
+        """
+        type_self = type(self).__name__
+
+        type_ppoly = type(self.ppoly)
+        ppoly_display = f"{type_ppoly.__module__}.{type_ppoly.__name__}"
+
         ppoly_x = self.ppoly.x
         ppoly_c = self.ppoly.c
 
@@ -126,11 +163,84 @@ class ContinuousFunctionScipyPPoly:
         else:
             order_s = f"{order}th"
 
-        res = (
-            f"{order_s} order {type_self}(ppoly={type_ppoly}(c={ppoly_c}, x={ppoly_x}))"
+        with p.group(indent, f"{order_s} order {type_self}(", ")"):
+            p.breakable("")  # type: ignore
+            with p.group(indent, f"ppoly={ppoly_display}(", ")"):
+                p.breakable("")  # type: ignore
+
+                p.text("c=")  # type: ignore
+                p.pretty(ppoly_c)  # type: ignore
+                p.text(",")  # type: ignore
+                p.breakable()  # type: ignore
+
+                p.text("x=")  # type: ignore
+                p.pretty(ppoly_x)  # type: ignore
+                p.text(",")  # type: ignore
+                p.breakable("")  # type: ignore
+
+            p.breakable("")  # type: ignore
+
+    def _repr_html_(self) -> str:
+        """
+        Get html representation of self
+
+        Used by IPython notebooks and other tools
+        """
+        type_self = type(self)
+        header = f"{type_self.__module__}.{type_self.__name__}"
+
+        repr_internal_row = self._repr_html_internal_row_()
+
+        html_l = [
+            "<div>",
+            # "  <style>",
+            # f"{css_style}",
+            # "  </style>",
+            "  <div class='continuous-timeseries-wrap'>",
+            "    <div class='continuous-timeseries-header'>",
+            f"      <div class='continuous-timeseries-cls'>{header}</div>",
+            repr_internal_row,
+            "    </div>",
+            "  </div>",
+            "</div>",
+        ]
+
+        return "\n".join(html_l)
+
+    def _repr_html_internal_row_(self) -> str:
+        """
+        Get html representation of self
+
+        Used by IPython notebooks and other tools
+        """
+        attribute_rows: list[str] = []
+        attribute_rows = continuous_timeseries.formatting.add_html_attribute_row(
+            "order", self.order, attribute_rows
+        )
+        attribute_rows = continuous_timeseries.formatting.add_html_attribute_row(
+            "c", str(self.ppoly.c), attribute_rows
+        )
+        attribute_rows = continuous_timeseries.formatting.add_html_attribute_row(
+            "x", str(self.ppoly.x), attribute_rows
         )
 
-        return res
+        attribute_rows_for_table = "\n    ".join(attribute_rows)
+        html_l = [
+            "<table><tbody>",
+            "  <tr>",
+            "    <th>ppoly</th>",
+            "    <td style='text-align:left;'>",
+            "      <div>",
+            "        <table><tbody>",
+            f"          {attribute_rows_for_table}",
+            "        </tbody></table>",
+            "      </div>",
+            "    </td>",
+            "  </tr>",
+            "</tbody></table>",
+        ]
+
+        return "\n".join(html_l)
 
     def __call__(
         self, x: npt.NDArray[np.number[Any]], allow_extrapolation: bool = False
@@ -163,6 +273,13 @@ class ContinuousFunctionScipyPPoly:
             raise ValueError(msg)
 
         return res
+
+    @property
+    def order(self) -> int:
+        """
+        Order of the polynomial used by this instance
+        """
+        return self.ppoly.c.shape[0] - 1
 
     def integrate(self, integration_constant: np.number[Any]) -> ContinuousFunctionLike:
         """
@@ -244,7 +361,10 @@ class TimeseriesContinuous:
         )
 
     def _repr_pretty_(
-        self, p: IPython.lib.pretty.RepresentationPrinter, cycle: bool
+        self,
+        p: IPython.lib.pretty.RepresentationPrinter,
+        cycle: bool,
+        indent: int = 4,
     ) -> None:
         """
         Get IPython pretty representation of self

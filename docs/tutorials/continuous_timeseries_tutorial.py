@@ -102,7 +102,6 @@ piecewise_polynomial_constant = scipy.interpolate.PPoly(
     c=np.atleast_2d(values.m),
 )
 continuous_constant = ContinuousFunctionScipyPPoly(piecewise_polynomial_constant)
-# TODO: update str for ContinuousFunctionScipyPPoly to be nicer
 continuous_constant
 
 # %% [markdown]
@@ -133,7 +132,7 @@ ts.plot(time_axis=time_axis)
 # that represents data that is linear between the defined discrete values.
 
 # %%
-gradients = Q([1.0, 2.0], values.units / time_axis.units)
+gradients = Q([1.0, 1.5], values.units / time_axis.units)
 
 piecewise_polynomial_linear = scipy.interpolate.PPoly(
     x=time_axis.m,
@@ -159,8 +158,8 @@ ts_linear.plot(time_axis=time_axis)
 # that represents data that is quadratic between the defined discrete values.
 
 # %%
-a_values = Q([0.3, -0.1], values.u / time_axis.u / time_axis.u)
-b_values = Q([-2.0, 4.0], values.u / time_axis.u)
+a_values = Q([0.1, -1 / 40], values.u / time_axis.u / time_axis.u)
+b_values = Q([0.0, 2.0], values.u / time_axis.u)
 c_values = values
 
 piecewise_polynomial_quadratic = scipy.interpolate.PPoly(
@@ -187,6 +186,61 @@ ts_quadratic
 ts_quadratic.plot(time_axis=time_axis)
 
 # %% [markdown]
+# #### Cubic
+#
+# We also create an instance of `ContinuousFunctionScipyPPoly`
+# that represents data that is cubic between the defined discrete values.
+
+# %% [markdown]
+# y = a x**3 + b x**2 + cx + d
+# dy/dx = 3a x**2 + 2b x + c
+# d2y/dx2 = 6a x + 2b
+#
+# y(0) = 10 ==> d = 10
+# dy/dx(0) = 0 ==> c = 0
+# y(10) = 20 ==> 20 = 1000a + 100b + 10 ==> 1 = 100a + 10b
+# dy/dx(10) = 1.0 ==> 1.0 = 3a (100) + 2b (10) ==> 1 = 300a + 20b
+#
+# therefore 2 = 10b ==> b = 0.2
+# a = -1 / 100
+#
+# y(0) = 20 ==> d = 20
+# dy/dx(0) = 1.0 ==> c = 1.0
+# d2y/dx2(0) = 6 (-1 / 100) (10) + 2 (0.2) ==> -0.2 = 2b ==> b = -0.1
+# y(20) = 50 ==> 50 = 8000a + 400(-0.1) + 20 + 20 ==> 10 = 8000a -40 ==> a = 5 / 800
+#
+
+# %%
+a_values = Q([-1 / 100, 5 / 800], values.u / time_axis.u**3)
+b_values = Q([0.2, -0.1], values.u / time_axis.u**2)
+c_values = Q([0.0, 1.0], values.u / time_axis.u)
+d_values = values
+
+piecewise_polynomial_quadratic = scipy.interpolate.PPoly(
+    x=time_axis.m,
+    c=np.vstack(
+        [
+            a_values.m,
+            b_values.m,
+            c_values.m,
+            d_values.m,
+        ]
+    ),
+)
+continuous_quadratic = ContinuousFunctionScipyPPoly(piecewise_polynomial_quadratic)
+
+ts_cubic = TimeseriesContinuous(
+    name="piecewise_cubic",
+    time_units=time_axis.u,
+    values_units=values.u,
+    function=continuous_quadratic,
+)
+ts_cubic
+
+# %%
+ts_cubic.plot(time_axis=time_axis)
+
+# %% [markdown]
 # ### Comparing the interpolation choices
 #
 # If we plot the different interpolation choices on the same axes,
@@ -199,7 +253,7 @@ ts_quadratic.plot(time_axis=time_axis)
 # %%
 fig, ax = plt.subplots()
 
-for ts_plot in (ts, ts_linear, ts_quadratic):
+for ts_plot in (ts, ts_linear, ts_quadratic, ts_cubic):
     ts_plot.plot(time_axis, ax=ax, alpha=0.7, linestyle="--")
 
 ax.set_ylim(ymin=0)
@@ -242,9 +296,10 @@ except ValueError:
 # integration and differentiation are also trivial.
 
 # %%
-fig, axes = plt.subplots(nrows=4, figsize=(12, 8))
+fig, axes_ar = plt.subplots(nrows=2, ncols=2, figsize=(12, 8))
+axes = axes_ar.flatten()
 
-for ts_plot in (ts, ts_linear, ts_quadratic):
+for ts_plot in (ts, ts_linear, ts_quadratic, ts_cubic):
     ts_plot.plot(time_axis, ax=axes[0], alpha=0.7, linestyle="--")
     ts_plot.differentiate().plot(time_axis, ax=axes[1], alpha=0.7, linestyle="--")
 
@@ -258,7 +313,7 @@ for ts_plot in (ts, ts_linear, ts_quadratic):
 
 axes[0].set_ylim(ymin=0)
 for ax in axes:
-    ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
+    ax.legend()
 
 fig.tight_layout()
 
@@ -279,9 +334,9 @@ fig.tight_layout()
 # We demonstrate how to do this below.
 
 # %%
-fig, axes = plt.subplots(nrows=3, figsize=(12, 8))
+fig, axes = plt.subplots(nrows=4, figsize=(12, 12))
 
-for i, ts_plot in enumerate((ts, ts_linear, ts_quadratic)):
+for i, ts_plot in enumerate((ts, ts_linear, ts_quadratic, ts_cubic)):
     for res_increase in (1, 5, 100, 300):
         ts_plot.plot(
             time_axis,

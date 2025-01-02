@@ -10,6 +10,7 @@ import pint
 import pint.testing
 import pytest
 import scipy.interpolate
+from IPython.lib.pretty import pretty
 
 from continuous_timeseries.timeseries_continuous import (
     ContinuousFunctionScipyPPoly,
@@ -53,13 +54,16 @@ def test_repr_continuous_function_scipy_ppoly(ts, exp_re):
             ContinuousFunctionScipyPPoly(
                 scipy.interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
             ),
-            "ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate.PPoly(x=x, c=c)",
+            "0th order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[10. 12.]], x=[ 1. 10. 20.]))",
         ),
         pytest.param(
             ContinuousFunctionScipyPPoly(
                 scipy.interpolate.PPoly(x=[1, 10, 20], c=[[-1.2, 2.3], [10, 12]])
             ),
-            "ContinuousFunctionScipyPPoly(ppoly=<scipy.interpolate._interpolate.PPoly object at .*>)",  # noqa: E501
+            (
+                "1st order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[-1.2  2.3]\n"
+                " [10.  12. ]], x=[ 1. 10. 20.]))"
+            ),
         ),
     ),
 )
@@ -69,20 +73,56 @@ def test_str_continuous_function_scipy_ppoly(ts, exp):
     assert str_value == exp
 
 
-# @formatting_check_cases
-# def test_pretty(ts, file_regression):
-#     file_regression.check(
-#         f"{pretty(ts)}\n",
-#         extension=".txt",
-#     )
-#
-#
-# @formatting_check_cases
-# def test_html(ts, file_regression):
-#     file_regression.check(
-#         f"{ts._repr_html_()}\n",
-#         extension=".html",
-#     )
+@pytest.mark.parametrize(
+    "ts, exp",
+    (
+        pytest.param(
+            ContinuousFunctionScipyPPoly(
+                scipy.interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
+            ),
+            "0th order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[10. 12.]], x=[ 1. 10. 20.]))",
+        ),
+        pytest.param(
+            ContinuousFunctionScipyPPoly(
+                scipy.interpolate.PPoly(x=[1, 10, 20], c=[[-1.2, 2.3], [10, 12]])
+            ),
+            (
+                "1st order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[-1.2  2.3]\n"
+                " [10.  12. ]], x=[ 1. 10. 20.]))"
+            ),
+        ),
+    ),
+)
+def test_pretty_continuous_function_scipy_ppoly(ts, exp):
+    pretty_value = pretty(ts)
+
+    assert pretty_value == exp
+
+
+@pytest.mark.parametrize(
+    "ts, exp",
+    (
+        pytest.param(
+            ContinuousFunctionScipyPPoly(
+                scipy.interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
+            ),
+            "0th order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[10. 12.]], x=[ 1. 10. 20.]))",
+        ),
+        pytest.param(
+            ContinuousFunctionScipyPPoly(
+                scipy.interpolate.PPoly(x=[1, 10, 20], c=[[-1.2, 2.3], [10, 12]])
+            ),
+            (
+                "1st order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[-1.2  2.3]\n"
+                " [10.  12. ]], x=[ 1. 10. 20.]))"
+            ),
+        ),
+    ),
+)
+def test_pretty_continuous_function_scipy_ppoly(ts, exp):
+    html_value = ts._repr_html_()
+
+    assert html_value == exp
 
 
 # @pytest.mark.parametrize(
