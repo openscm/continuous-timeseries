@@ -21,6 +21,13 @@ classifiers = [
 plots = [
     "matplotlib>=3.7.1",
 ]
+scipy = [
+    "scipy>=1.13.1",
+]
+full = [
+    "continuous-timeseries[plots]",
+    "continuous-timeseries[scipy]",
+]
 
 [dependency-groups]
 dev = [
@@ -33,6 +40,7 @@ dev = [
     # Required for liccheck
     "setuptools>=74.1.2",
     "pip>=24.2",
+    "scipy-stubs>=1.14.1.6 ; python_full_version >= '3.10'",
 ]
 docs = [
     "attrs>=24.0.0",
@@ -54,6 +62,7 @@ docs = [
     "jupyterlab>=4.2.0",
     "jupytext>=1.16.3",
     "ruff>=0.8.4",
+    "scipy>=1.13.1",
 ]
 tests = [
     "pytest>=8.3.3",
@@ -61,6 +70,7 @@ tests = [
     "pytest-cov>=5.0.0",
     "pytest-regressions>=2.6.0",
     "ipython>=8.18.1",
+    "scipy>=1.13.1",
 ]
 all-dev = [
     {include-group = "dev"},

@@ -1,0 +1,1 @@
+TimeseriesContinuous(name='piecewise_linear', time_units=<Unit('year')>, values_units=<Unit('gigametric_ton')>, function=ContinuousFunctionScipyPPoly(ppoly=<scipy.interpolate._interpolate.PPoly object at address>))

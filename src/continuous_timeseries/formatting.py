@@ -20,8 +20,9 @@ Inspired by:
 
 from __future__ import annotations
 
+import textwrap
 from collections.abc import Collection, Iterable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     import IPython.lib.pretty
@@ -102,6 +103,31 @@ def to_pretty(
                 p.text(",")  # type: ignore
 
 
+def get_html_repr_safe(instance: Any) -> str:
+    """
+    Get the HTML representation of an instance
+
+    Parameters
+    ----------
+    instance
+        Instance of which to get the HTML representation
+
+    Returns
+    -------
+    :
+        HTML representation.
+
+        If `instance` has a `_repr_html_` method, this is used.
+        Otherwise the string representation of `instance` is returned.
+    """
+    try:
+        repr_html = cast(str, instance._repr_html_())
+    except AttributeError:
+        repr_html = str(instance)
+
+    return repr_html
+
+
 def add_html_attribute_row(
     attribute_name: str, attribute_value_html: str, attribute_rows: list[str]
 ) -> list[str]:
@@ -125,13 +151,100 @@ def add_html_attribute_row(
         Attribute rows, with the new row appended
     """
     attribute_rows.append(
-        "<tr>"
-        f"<th>{attribute_name}</th>"
-        f"<td style='text-align:left;'>{attribute_value_html}</td>"
+        "<tr>\n"
+        f"  <th>{attribute_name}</th>\n"
+        "  <td style='text-align:left;'>\n"
+        f"{textwrap.indent(attribute_value_html, '    ')}\n"
+        "  </td>\n"
         "</tr>"
     )
 
     return attribute_rows
+
+
+def make_html_attribute_table(attribute_rows: Iterable[str]) -> str:
+    """
+    Make an HTML table of attributes
+
+    Parameters
+    ----------
+    attribute_rows
+        Attribute rows to put in the table
+
+    Returns
+    -------
+    :
+        HTML table of attribute rows
+    """
+    attribute_rows_for_table = textwrap.indent("\n".join(attribute_rows), "  ")
+    html_l = [
+        "<table><tbody>",
+        f"{attribute_rows_for_table}",
+        "</tbody></table>",
+    ]
+
+    return "\n".join(html_l)
+
+
+def apply_ct_html_styling(display_name: str, attribute_table: str) -> str:
+    """
+    Apply continuous timeseries' HTML styling for displaying an instance
+
+    Parameters
+    ----------
+    display_name
+        Name to display as the instance's name
+
+        This appears as the title of the output table/div
+
+    attribute_table
+        Table of attributes of the instance.
+
+        Generally created with [`make_html_attribute_table`][(m)].
+
+    Returns
+    -------
+    :
+        Formatted HTML with CSS styling included
+    """
+    css_style = """.continuous-timeseries-wrap {
+  /*font-family: monospace;*/
+  width: 540px;
+}
+
+.continuous-timeseries-header {
+  padding: 6px 0 6px 3px;
+}
+
+.continuous-timeseries-header > div {
+  display: inline;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.continuous-timeseries-cls {
+  margin-left: 2px;
+  margin-right: 10px;
+}
+
+.continuous-timeseries-cls {
+  font-weight: bold;
+}"""
+    html_l = [
+        "<div>",
+        "  <style>",
+        f"{css_style}",
+        "  </style>",
+        "  <div class='continuous-timeseries-wrap'>",
+        "    <div class='continuous-timeseries-header'>",
+        f"      <div class='continuous-timeseries-cls'>{display_name}</div>",
+        textwrap.indent(attribute_table, "      "),
+        "    </div>",
+        "  </div>",
+        "</div>",
+    ]
+
+    return "\n".join(html_l)
 
 
 def to_html(
@@ -175,63 +288,12 @@ def to_html(
             att_val_html = att_val._repr_html_internal_row_()
 
         else:
-            try:
-                att_val_html = att_val._repr_html_()
-            except AttributeError:
-                att_val_html = str(att_val)
+            att_val_html = get_html_repr_safe(att_val)
 
         attribute_rows = add_html_attribute_row(att, att_val_html, attribute_rows)
 
-    attribute_rows_for_table = "\n          ".join(attribute_rows)
+    attribute_table = make_html_attribute_table(attribute_rows)
+    if not include_header:
+        return attribute_table
 
-    css_style = """.continuous-timeseries-wrap {
-  /*font-family: monospace;*/
-  width: 540px;
-}
-
-.continuous-timeseries-header {
-  padding: 6px 0 6px 3px;
-}
-
-.continuous-timeseries-header > div {
-  display: inline;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.continuous-timeseries-cls {
-  margin-left: 2px;
-  margin-right: 10px;
-}
-
-.continuous-timeseries-cls {
-  font-weight: bold;
-}"""
-
-    if include_header:
-        html_l = [
-            "<div>",
-            "  <style>",
-            f"{css_style}",
-            "  </style>",
-            "  <div class='continuous-timeseries-wrap'>",
-            "    <div class='continuous-timeseries-header'>",
-            f"      <div class='continuous-timeseries-cls'>{header}</div>",
-            "        <table><tbody>",
-            f"          {attribute_rows_for_table}",
-            "        </tbody></table>",
-            "    </div>",
-            "  </div>",
-            "</div>",
-        ]
-
-    else:
-        html_l = [
-            "<div>",
-            "  <table><tbody>",
-            f"    {attribute_rows_for_table}",
-            "  </tbody></table>",
-            "</div>",
-        ]
-
-    return "\n".join(html_l)
+    return apply_ct_html_styling(display_name=header, attribute_table=attribute_table)

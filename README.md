@@ -95,6 +95,12 @@ Additional dependencies can be installed using
     ```sh
     # To add plotting dependencies
     pip install continuous-timeseries[plots]
+
+    # To add scipy-related dependencies
+    pip install continuous-timeseries[scipy]
+
+    # To add all optionatl dependencies
+    pip install continuous-timeseries[full]
     ```
 
 ### For developers
