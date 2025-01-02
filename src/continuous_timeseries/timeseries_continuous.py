@@ -17,7 +17,6 @@ We include straight-forward methods to convert to
 from __future__ import annotations
 
 import textwrap
-import warnings
 from typing import TYPE_CHECKING, Any, Protocol
 
 import numpy as np
@@ -29,6 +28,7 @@ from continuous_timeseries.exceptions import (
     ExtrapolationNotAllowedError,
     MissingOptionalDependencyError,
 )
+from continuous_timeseries.plotting_helpers import get_plot_vals
 from continuous_timeseries.time_axis import TimeAxis
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
 
@@ -656,45 +656,16 @@ class TimeseriesContinuous:
         ) * time_axis.u
         show_values = self.interpolate(show_time_points)
 
-        def get_plot_vals(
-            pint_q: PINT_NUMPY_ARRAY, desc: str
-        ) -> PINT_NUMPY_ARRAY | npt.NDArray[np.number[Any]]:
-            try:
-                import matplotlib.units
-
-                units_registered_with_matplotlib = (
-                    type(pint_q) in matplotlib.units.registry
-                )
-
-            except ImportError:
-                msg = (
-                    "Could not import `matplotlib.units` "
-                    "to set up unit-aware plotting. "
-                    "We will simply try plotting magnitudes instead."
-                )
-                warnings.warn(msg, stacklevel=3)
-
-                return pint_q.m
-
-            if units_registered_with_matplotlib:
-                return pint_q
-
-            if warn_if_plotting_magnitudes:
-                msg = (
-                    f"The units of `{desc}` are not registered with matplotlib. "
-                    "The magnitude will be plotted "
-                    "without any consideration of units. "
-                    "For docs on how to set up unit-aware plotting, see "
-                    "[the stable docs](https://pint.readthedocs.io/en/stable/user/plotting.html) "  # noqa: E501
-                    "(at the time of writing, the latest version's docs were "
-                    "[v0.24.4](https://pint.readthedocs.io/en/0.24.4/user/plotting.html))."
-                )
-                warnings.warn(msg, stacklevel=3)
-
-            return pint_q.m
-
-        x_vals = get_plot_vals(show_time_points, "time_axis")
-        y_vals = get_plot_vals(show_values, "show_values")
+        x_vals = get_plot_vals(
+            show_time_points,
+            "time_axis",
+            warn_if_plotting_magnitudes=warn_if_plotting_magnitudes,
+        )
+        y_vals = get_plot_vals(
+            show_values,
+            "show_values",
+            warn_if_plotting_magnitudes=warn_if_plotting_magnitudes,
+        )
 
         ax.plot(x_vals, y_vals, label=label, **kwargs)
 
