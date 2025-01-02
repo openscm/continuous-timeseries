@@ -593,14 +593,11 @@ class TimeseriesContinuous:
         res_increase
             The amount by which to increase the resolution of the x-axis when plotting.
 
-            (Note, these docs are actually incorrect.
-            The algorithm needs to be updated
-            to handle uneven spacing in time_axis for it to be true.)
             If equal to 1, then only the points in `time_axis` will be plotted.
-            If equal to 100, then there will be roughly 100 times as many points
-            plotted as the number of points in `time_axis`
-            (roughly because there can be slightly fewer if there are duplicate points
-            in `time_axis` and the created plotting points).
+            If equal to 100, then there will be 100 times as many points
+            plotted as the number of points in `time_axis`.
+            If equal to n, then there will be n times as many points
+            plotted as the number of points in `time_axis`.
 
         label
             Label to use when plotting the data.
@@ -640,29 +637,20 @@ class TimeseriesContinuous:
 
             _, ax = plt.subplots()
 
-        # Interpolate.
+        # Interpolate based on res_increase.
         # Then plot interpolated using linear joins
         # (as far as I can tell, this is the only general way to do this,
         # although it is slower than using e.g. step for piecewise constant stuff).)
-        show_time_points = (
-            np.union1d(
-                np.linspace(
-                    time_axis[0].m,
-                    time_axis[-1].m,
-                    time_axis.size * res_increase,
-                ),
-                time_axis.m,
-            )
-        ) * time_axis.u
-        show_values = self.interpolate(show_time_points)
+        plot_points = get_plot_points(time_axis, res_increase=res_increase)
+        plot_values = self.interpolate(plot_points)
 
         x_vals = get_plot_vals(
-            show_time_points,
+            plot_points,
             "time_axis",
             warn_if_plotting_magnitudes=warn_if_plotting_magnitudes,
         )
         y_vals = get_plot_vals(
-            show_values,
+            plot_values,
             "show_values",
             warn_if_plotting_magnitudes=warn_if_plotting_magnitudes,
         )
@@ -670,3 +658,68 @@ class TimeseriesContinuous:
         ax.plot(x_vals, y_vals, label=label, **kwargs)
 
         return ax
+
+
+def get_plot_points(time_axis: PINT_NUMPY_ARRAY, res_increase: int) -> PINT_NUMPY_ARRAY:
+    """
+    Get points to plot
+
+    Parameters
+    ----------
+    time_axis
+        Time axis to use for plotting
+
+    res_increase
+        The increase in resolution we want to use when plotting.
+
+        In each window defined by `time_axis[n]` to `time_axis[n + 1]`,
+        `res_increase - 1` evenly spaced points
+        between `time_axis[n]` and `time_axis[n + 1]` will be generated.
+        The points defined by `time_axis` are also included.
+        As a result, the total number of plotted points is equal to
+        `time_axis.size + (res_increase - 1) * (time_axis.size - 1)`.
+
+    Returns
+    -------
+    :
+        Points to plot
+
+    Examples
+    --------
+    >>> import pint
+    >>> UR = pint.get_application_registry()
+    >>> Q = UR.Quantity
+    >>>
+    >>> time_axis = Q([2000, 2010, 2020, 2025], "yr")
+    >>>
+    >>> # Passing in res_increase equal to 1 simply returns the input values
+    >>> get_plot_points(time_axis, res_increase=1)
+    <Quantity([2000. 2010. 2020. 2025.], 'year')>
+    >>>
+    >>> # 'Double' the resolution
+    >>> get_plot_points(time_axis, res_increase=2)
+    <Quantity([2000.  2005.  2010.  2015.  2020.  2022.5 2025. ], 'year')>
+    >>>
+    >>> # 'Triple' the resolution
+    >>> get_plot_points(time_axis, res_increase=3)
+    <Quantity([2000.         2003.33333333 2006.66666667 2010.         2013.33333333
+     2016.66666667 2020.         2021.66666667 2023.33333333 2025.        ], 'year')>
+    """
+    time_axis_internal = time_axis[:-1]
+    step_fractions = np.linspace(0.0, (res_increase - 1) / res_increase, res_increase)
+    time_deltas = time_axis[1:] - time_axis[:-1]
+
+    time_axis_rep = (
+        np.repeat(time_axis_internal.m, step_fractions.size) * time_axis_internal.u
+    )
+    step_fractions_rep = np.tile(step_fractions, time_axis_internal.size)
+    time_axis_deltas_rep = np.repeat(time_deltas.m, step_fractions.size) * time_deltas.u
+
+    res = np.hstack(
+        [
+            time_axis_rep + time_axis_deltas_rep * step_fractions_rep,
+            time_axis[-1],
+        ]
+    )
+
+    return res
