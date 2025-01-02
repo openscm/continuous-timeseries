@@ -234,7 +234,7 @@ class ContinuousFunctionScipyPPoly:
         return self.ppoly.c.shape[0] - 1
 
     @property
-    def order_str(self) -> int:
+    def order_str(self) -> str:
         """
         String name for the order of the polynomial used by this instance
         """
@@ -715,7 +715,7 @@ def get_plot_points(time_axis: PINT_NUMPY_ARRAY, res_increase: int) -> PINT_NUMP
     step_fractions_rep = np.tile(step_fractions, time_axis_internal.size)
     time_axis_deltas_rep = np.repeat(time_deltas.m, step_fractions.size) * time_deltas.u
 
-    res = np.hstack(
+    res: PINT_NUMPY_ARRAY = np.hstack(  # type: ignore # mypy confused by numpy and pint
         [
             time_axis_rep + time_axis_deltas_rep * step_fractions_rep,
             time_axis[-1],

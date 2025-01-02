@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import textwrap
 from collections.abc import Collection, Iterable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     import IPython.lib.pretty
@@ -121,7 +121,7 @@ def get_html_repr_safe(instance: Any) -> str:
         Otherwise the string representation of `instance` is returned.
     """
     try:
-        repr_html = instance._repr_html_()
+        repr_html = cast(str, instance._repr_html_())
     except AttributeError:
         repr_html = str(instance)
 
