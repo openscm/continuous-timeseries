@@ -32,6 +32,7 @@ import numpy as np
 import pint
 import scipy.interpolate
 
+from continuous_timeseries.exceptions import ExtrapolationNotAllowedError
 from continuous_timeseries.timeseries_continuous import (
     ContinuousFunctionScipyPPoly,
     TimeseriesContinuous,
@@ -267,7 +268,7 @@ ts_quadratic.interpolate(Q([2000, 2025, 2055], "yr"), allow_extrapolation=True)
 # %%
 try:
     ts_quadratic.interpolate(Q([2000, 2025, 2055], "yr"))
-except ValueError:
+except ExtrapolationNotAllowedError:
     traceback.print_exc(limit=0)
 
 # %% [markdown]
@@ -318,7 +319,7 @@ fig.tight_layout()
 fig, axes = plt.subplots(nrows=4, figsize=(12, 12))
 
 for i, ts_plot in enumerate((ts, ts_linear, ts_quadratic, ts_cubic)):
-    for res_increase in (1, 5, 100, 300):
+    for res_increase in (1, 2, 5, 100, 300):
         ts_plot.plot(
             time_axis,
             ax=axes[i],
