@@ -25,7 +25,10 @@ import numpy.typing as npt
 from attrs import define
 
 import continuous_timeseries.formatting
-from continuous_timeseries.exceptions import MissingOptionalDependencyError
+from continuous_timeseries.exceptions import (
+    ExtrapolationNotAllowedError,
+    MissingOptionalDependencyError,
+)
 from continuous_timeseries.time_axis import TimeAxis
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
 
@@ -59,6 +62,15 @@ class ContinuousFunctionLike(Protocol):
         -------
         :
             The function, evaluated at `x`
+
+        Raises
+        ------
+        ExtrapolationNotAllowedError
+            The user attempted to extrapolate when it isn't allowed.
+
+            Raising this has to be managed by the classes
+            that implement this interface as only they know
+            the domain over which they are defined.
         """
 
     def integrate(self, integration_constant: np.number[Any]) -> ContinuousFunctionLike:
@@ -257,17 +269,47 @@ class ContinuousFunctionScipyPPoly:
         -------
         :
             The function, evaluated at `x`
+
+        Raises
+        ------
+        ExtrapolationNotAllowedError
+            The user attempted to extrapolate when it isn't allowed.
         """
         res = self.ppoly(x=x, extrapolate=allow_extrapolation)
 
         if np.isnan(res).any():
+            if allow_extrapolation:  # pragma: no cover
+                msg = (
+                    f"The result contains NaNs, even though {allow_extrapolation=}."
+                    f"Result of calling `self.ppoly` was {res!r}."
+                )
+                raise AssertionError(msg)
+
+            outside_x = np.hstack(
+                [
+                    x[np.where(x < self.ppoly.x.min())],
+                    x[np.where(x > self.ppoly.x.max())],
+                ]
+            )
+            if outside_x.size < 1:  # pragma: no cover
+                # Should be impossible, but just in case
+                msg = (
+                    f"The result contains NaNs, "
+                    "even though all the interpolation values "
+                    "are within the piecewise polynomial's domain. "
+                    f"{x=}. {self.ppoly.x=}. "
+                    f"Result of calling `self.ppoly` was {res!r}."
+                )
+                raise AssertionError(msg)
+
             msg = (
                 f"The result contains NaNs. "
-                "Was this because you tried to extrapolate "
-                f"when it is not allowed ({allow_extrapolation=})?. "
-                f"Result of calling `self.ppoly` was {res!r}."
+                "This is because you tried to extrapolate "
+                f"even though {allow_extrapolation=}. "
+                f"The x-values that are outside the known domain are {outside_x}. "
+                f"Result of calling `self.ppoly` was {res!r}. {self.ppoly.x=}."
             )
-            raise ValueError(msg)
+            raise ExtrapolationNotAllowedError(msg)
 
         return res
 
@@ -423,15 +465,34 @@ class TimeseriesContinuous:
             time_axis = time_axis.bounds
 
         times_m = time_axis.to(self.time_units).m
-        values_m = self.function(times_m, allow_extrapolation=allow_extrapolation)
+        try:
+            values_m = self.function(times_m, allow_extrapolation=allow_extrapolation)
+        except ExtrapolationNotAllowedError as exc:  # pragma: no cover
+            if allow_extrapolation:
+                msg = (
+                    "`self.function` raised a `ExtrapolationNotAllowedError`, "
+                    f"even though {allow_extrapolation=}. "
+                    "Please check the implementation of `self.function`. "
+                    f"{self.function=}"
+                )
+                raise AssertionError(msg) from exc
 
-        if np.isnan(values_m).any():
-            msg = (
-                f"The result of calling `self.function` contains NaNs. "
-                f"Extrapolation when not allowed ({allow_extrapolation=})?. "
-                f"Result of calling `self.function` was {values_m!r}."
-            )
-            raise ValueError(msg)
+            raise
+
+        if np.isnan(values_m).any():  # pragma: no cover
+            # This is an escape hatch.
+            # In general, we expect `self.function` to handle NaNs
+            # before we get to this point.
+            msg_l = ["The result of calling `self.function` contains NaNs."]
+            if not allow_extrapolation:
+                msg_l.append(
+                    "This might be the result of extrapolating when it is not allowed "
+                    f"({allow_extrapolation=})."
+                )
+
+            msg_l.append(f"Result of calling `self.function` was {values_m!r}.")
+            msg = " ".join(msg_l)
+            raise AssertionError(msg)
 
         res: PINT_NUMPY_ARRAY = values_m * self.values_units
 
@@ -466,18 +527,6 @@ class TimeseriesContinuous:
         integral = self.function.integrate(
             integration_constant=integration_constant.to(integral_values_units).m
         )
-        # indefinite_integral = self.piecewise_polynomial.antiderivative()
-        #
-        # c_new = indefinite_integral.c
-        # c_new[-1, :] += integration_constant.to(integral_values_units).m
-        #
-        # # TODO: introduce wrapper class to help clean this interface up
-        # # to make writing the Protocol easier.
-        # piecewise_polynomial_integral = scipy.interpolate.PPoly(
-        #     c=c_new,
-        #     x=indefinite_integral.x,
-        #     extrapolate=False,
-        # )
 
         return type(self)(
             name=name_res,

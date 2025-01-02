@@ -26,3 +26,20 @@ class MissingOptionalDependencyError(ImportError):
         """
         error_msg = f"`{callable_name}` requires {requirement} to be installed"
         super().__init__(error_msg)
+
+
+class ExtrapolationNotAllowedError(ValueError):
+    """
+    Raised when extrapolation is attempted, but isn't allowed
+    """
+
+    def __init__(self, msg: str) -> None:
+        """
+        Initialise the error
+
+        Parameters
+        ----------
+        msg
+            The message to display
+        """
+        super().__init__(msg)

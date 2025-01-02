@@ -11,8 +11,11 @@ import pint
 import pint.testing
 import pytest
 import scipy.interpolate
+from attrs import define
 from IPython.lib.pretty import pretty
 
+from continuous_timeseries.exceptions import ExtrapolationNotAllowedError
+from continuous_timeseries.time_axis import TimeAxis
 from continuous_timeseries.timeseries_continuous import (
     ContinuousFunctionScipyPPoly,
     TimeseriesContinuous,
@@ -326,6 +329,136 @@ def test_html(ts, file_regression):
         extension=".html",
     )
 
+
+@define
+class InterpolationCasesTest:
+    ts: TimeseriesContinuous
+    time_interp: UR.Quantity
+    exp_interp: UR.Quantity
+    time_extrap: UR.Quantity
+    exp_extrap: UR.Quantity
+
+
+interpolation_cases = pytest.mark.parametrize(
+    "interpolation_case",
+    (
+        pytest.param(
+            InterpolationCasesTest(
+                ts=TimeseriesContinuous(
+                    name="piecewise_constant",
+                    time_units=UR.Unit("yr"),
+                    values_units=UR.Unit("Gt"),
+                    function=ContinuousFunctionScipyPPoly(
+                        scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[2.5]])
+                    ),
+                ),
+                time_interp=Q([1.25, 1.5, 1.75], "yr"),
+                exp_interp=Q([2.5, 2.5, 2.5], "Gt"),
+                time_extrap=Q([0.0, 1.0, 2.0, 3.0], "yr"),
+                exp_extrap=Q([2.5, 2.5, 2.5, 2.5], "Gt"),
+            ),
+            id="basic_constant",
+        ),
+        pytest.param(
+            InterpolationCasesTest(
+                ts=TimeseriesContinuous(
+                    name="piecewise_linear",
+                    time_units=UR.Unit("yr"),
+                    values_units=UR.Unit("Gt"),
+                    function=ContinuousFunctionScipyPPoly(
+                        scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [2.5]])
+                    ),
+                ),
+                time_interp=Q([1.25, 1.5, 1.75], "yr"),
+                exp_interp=Q([2.75, 3.0, 3.25], "Gt"),
+                time_extrap=Q([0.0, 1.0, 2.0, 3.0], "yr"),
+                exp_extrap=Q([1.5, 2.5, 3.5, 4.5], "Gt"),
+            ),
+            id="basic_linear",
+        ),
+        pytest.param(
+            InterpolationCasesTest(
+                ts=TimeseriesContinuous(
+                    name="piecewise_quadratic",
+                    time_units=UR.Unit("yr"),
+                    values_units=UR.Unit("Gt"),
+                    function=ContinuousFunctionScipyPPoly(
+                        scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [1.0], [0.0]])
+                    ),
+                ),
+                time_interp=Q([1.25, 1.5, 1.75], "yr"),
+                exp_interp=Q([1 / 16 + 1 / 4, 1 / 4 + 1 / 2, 9 / 16 + 3 / 4], "Gt"),
+                time_extrap=Q([0.0, 0.5, 1.0, 2.0, 3.0], "yr"),
+                exp_extrap=Q([0.0, 1 / 4 - 1 / 2, 0.0, 2.0, 6.0], "Gt"),
+            ),
+            id="basic_quadratic",
+        ),
+        pytest.param(
+            InterpolationCasesTest(
+                ts=TimeseriesContinuous(
+                    name="piecewise_linear",
+                    time_units=UR.Unit("yr"),
+                    values_units=UR.Unit("Gt"),
+                    function=ContinuousFunctionScipyPPoly(
+                        scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [2.5]])
+                    ),
+                ),
+                time_interp=TimeAxis(Q([1.25, 1.5, 1.75], "yr")),
+                exp_interp=Q([2.75, 3.0, 3.25], "Gt"),
+                time_extrap=TimeAxis(Q([0.0, 1.0, 2.0, 3.0], "yr")),
+                exp_extrap=Q([1.5, 2.5, 3.5, 4.5], "Gt"),
+            ),
+            id="time_axis_is_time_axis",
+        ),
+        pytest.param(
+            InterpolationCasesTest(
+                ts=TimeseriesContinuous(
+                    name="piecewise_linear",
+                    time_units=UR.Unit("yr"),
+                    values_units=UR.Unit("Gt"),
+                    function=ContinuousFunctionScipyPPoly(
+                        scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [2.5]])
+                    ),
+                ),
+                time_interp=Q([15, 18, 21], "month"),
+                exp_interp=Q([2750, 3000, 3250], "Mt"),
+                time_extrap=Q([0, 12, 24, 36], "month"),
+                exp_extrap=Q([1500, 2500, 3500, 4500], "Mt"),
+            ),
+            id="linear_using_unit_conversion",
+        ),
+    ),
+)
+
+
+@interpolation_cases
+def test_interpolation(interpolation_case):
+    pint.testing.assert_allclose(
+        interpolation_case.ts.interpolate(interpolation_case.time_interp),
+        interpolation_case.exp_interp,
+        rtol=1e-10,
+    )
+
+
+@interpolation_cases
+def test_extrapolation_not_allowed_raises(interpolation_case):
+    with pytest.raises(ExtrapolationNotAllowedError, match="hi"):
+        interpolation_case.ts.interpolate(interpolation_case.time_extrap)
+
+
+@interpolation_cases
+def test_extrapolation(interpolation_case):
+    pint.testing.assert_allclose(
+        interpolation_case.ts.interpolate(
+            interpolation_case.time_extrap, allow_extrapolation=True
+        ),
+        interpolation_case.exp_extrap,
+        rtol=1e-10,
+    )
+
+
+# Test integration
+# Test differentation
 
 # @pytest.mark.parametrize(
 #     "x_units, y_units, plot_kwargs",
