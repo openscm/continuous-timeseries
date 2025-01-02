@@ -136,6 +136,10 @@ def test_str_continuous_function_scipy_ppoly(continuous_function_scipy_ppoly, ex
                 "        x=array([0.000e+00, 1.000e+00, 2.000e+00, ..., 9.998e+03, 9.999e+03,\n"  # noqa: E501
                 "               1.000e+04], shape=(10001,))))"
             ),
+            marks=pytest.mark.xfail(
+                condition=sys.version_info == (3, 9),
+                reason="shape info only in Python>=3.10",
+            ),
             id="heaps_of_windows",
         ),
     ),
