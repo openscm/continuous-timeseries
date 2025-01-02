@@ -16,13 +16,13 @@ We aim to:
 
 ## Continuous timeseries handling
 
-See [Continuous timeseries](tutorials/continuous_timeseries_tutorial)
+See [Continuous timeseries](./continuous_timeseries_tutorial)
 for an introduction to our handing of continuous timeseries,
 i.e. timeseries that are represented by functions
 (as opposed to being represented by discrete data points).
 
 ## Discrete timeseries handling
 
-See [Discrete timeseries](tutorials/discrete_timeseries_tutorial)
+See [Discrete timeseries](./discrete_timeseries_tutorial)
 for an introduction to our handing of discrete timeseries,
 i.e. timeseries that are represented with discrete data points e.g. arrays.
