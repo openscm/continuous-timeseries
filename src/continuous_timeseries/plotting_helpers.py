@@ -14,7 +14,7 @@ from continuous_timeseries.typing import PINT_NUMPY_ARRAY
 
 
 def get_plot_vals(
-    pint_q: PINT_NUMPY_ARRAY, desc: str, warn_if_plotting_magnitudes: bool
+    pint_q: PINT_NUMPY_ARRAY, desc: str, warn_if_magnitudes: bool
 ) -> PINT_NUMPY_ARRAY | npt.NDArray[np.number[Any]]:
     """
     Get values to plot
@@ -30,8 +30,8 @@ def get_plot_vals(
     desc
         Descripion of `pint_q`, used in creating messages.
 
-    warn_if_plotting_magnitudes
-        Should a warning be raised if the magnitudes will be plotted?
+    warn_if_magnitudes
+        Should a warning be raised if magnitudes will be returned?
 
         This helps alert users
         that they haven't set matplotlib up to be unit-aware with pint.
@@ -68,7 +68,7 @@ def get_plot_vals(
     if units_registered_with_matplotlib:
         return pint_q
 
-    if warn_if_plotting_magnitudes:
+    if warn_if_magnitudes:
         msg = (
             f"The units of `{desc}` are not registered with matplotlib. "
             "The magnitude will be plotted "

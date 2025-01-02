@@ -77,7 +77,7 @@ def test_get_plot_vals(
         res = get_plot_vals(
             inv,
             desc="values",
-            warn_if_plotting_magnitudes=warn_if_plotting_magnitudes,
+            warn_if_magnitudes=warn_if_plotting_magnitudes,
         )
 
     if isinstance(exp_res, UR.Quantity):

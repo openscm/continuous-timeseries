@@ -40,6 +40,4 @@ Q = UR.Quantity
 def test_plot_no_matplotlib_units(sys_modules_patch, expectation):
     with patch.dict(sys.modules, sys_modules_patch):
         with expectation:
-            get_plot_vals(
-                Q([1, 2, 3], "yr"), desc="values", warn_if_plotting_magnitudes=False
-            )
+            get_plot_vals(Q([1, 2, 3], "yr"), desc="values", warn_if_magnitudes=False)

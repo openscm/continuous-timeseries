@@ -647,12 +647,12 @@ class TimeseriesContinuous:
         x_vals = get_plot_vals(
             plot_points,
             "time_axis",
-            warn_if_plotting_magnitudes=warn_if_plotting_magnitudes,
+            warn_if_magnitudes=warn_if_plotting_magnitudes,
         )
         y_vals = get_plot_vals(
             plot_values,
             "show_values",
-            warn_if_plotting_magnitudes=warn_if_plotting_magnitudes,
+            warn_if_magnitudes=warn_if_plotting_magnitudes,
         )
 
         ax.plot(x_vals, y_vals, label=label, **kwargs)

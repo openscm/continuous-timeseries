@@ -561,26 +561,52 @@ def test_extrapolate(operations_test_case):
         Q(1.0, "Gt yr"),
     ),
 )
-def test_integration(operations_test_case, integration_constant):
+@pytest.mark.parametrize(
+    "integrate_kwargs", ({}, dict(name_res=None), dict(name_res="name_overwritten"))
+)
+def test_integration(operations_test_case, integration_constant, integrate_kwargs):
+    integral = operations_test_case.ts.integrate(
+        integration_constant=integration_constant, **integrate_kwargs
+    )
+
     pint.testing.assert_allclose(
-        operations_test_case.ts.integrate(
-            integration_constant=integration_constant
-        ).interpolate(operations_test_case.time_integral_check),
+        integral.interpolate(operations_test_case.time_integral_check),
         operations_test_case.exp_integral_values_excl_integration_constant
         + integration_constant,
         rtol=1e-10,
     )
 
+    if (
+        integrate_kwargs
+        and "name_res" in integrate_kwargs
+        and integrate_kwargs["name_res"] is not None
+    ):
+        assert integral.name == integrate_kwargs["name_res"]
+    else:
+        assert integral.name == f"{operations_test_case.ts.name}_integral"
+
 
 @operations_test_cases
-def test_differentiate(operations_test_case):
+@pytest.mark.parametrize(
+    "differentiate_kwargs", ({}, dict(name_res=None), dict(name_res="name_overwritten"))
+)
+def test_differentiate(operations_test_case, differentiate_kwargs):
+    derivative = operations_test_case.ts.differentiate(**differentiate_kwargs)
+
     pint.testing.assert_allclose(
-        operations_test_case.ts.differentiate().interpolate(
-            operations_test_case.time_derivative_check
-        ),
+        derivative.interpolate(operations_test_case.time_derivative_check),
         operations_test_case.exp_derivative_values,
         rtol=1e-10,
     )
+
+    if (
+        differentiate_kwargs
+        and "name_res" in differentiate_kwargs
+        and differentiate_kwargs["name_res"] is not None
+    ):
+        assert derivative.name == differentiate_kwargs["name_res"]
+    else:
+        assert derivative.name == f"{operations_test_case.ts.name}_derivative"
 
 
 @pytest.mark.parametrize(
@@ -610,8 +636,16 @@ def test_differentiate(operations_test_case):
         ),
     ),
 )
+@pytest.mark.parametrize(
+    "time_axis_plot",
+    (
+        pytest.param(Q([1.0, 2.0], "yr"), id="basic"),
+        pytest.param(TimeAxis(Q([1.0, 2.0], "yr")), id="TimeAxis"),
+        pytest.param(Q([1.25, 1.75], "yr"), id="within_domain"),
+    ),
+)
 def test_plot(  # noqa: PLR0913
-    x_units, y_units, plot_kwargs, legend, image_regression, tmp_path
+    x_units, y_units, plot_kwargs, legend, time_axis_plot, image_regression, tmp_path
 ):
     import matplotlib
 
@@ -660,7 +694,6 @@ def test_plot(  # noqa: PLR0913
         ax.set_ylabel(y_units)
         ax.yaxis.set_units(UR.Unit(y_units))
 
-    time_axis_plot = Q([1.0, 2.0], "yr")
     # Even though timeseries are in different units,
     # use of pint with matplotib will ensure sensible units on plot.
     mt.plot(ax=ax, time_axis=time_axis_plot, **plot_kwargs)
