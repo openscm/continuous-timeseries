@@ -15,6 +15,7 @@ from IPython.lib.pretty import pretty
 
 from continuous_timeseries.timeseries_continuous import (
     ContinuousFunctionScipyPPoly,
+    TimeseriesContinuous,
 )
 
 UR = pint.get_application_registry()
@@ -22,7 +23,7 @@ Q = UR.Quantity
 
 
 @pytest.mark.parametrize(
-    "ts, exp_re",
+    "continuous_function_scipy_ppoly, exp_re",
     (
         pytest.param(
             ContinuousFunctionScipyPPoly(
@@ -42,14 +43,14 @@ Q = UR.Quantity
         ),
     ),
 )
-def test_repr_continuous_function_scipy_ppoly(ts, exp_re):
-    repr_value = repr(ts)
+def test_repr_continuous_function_scipy_ppoly(continuous_function_scipy_ppoly, exp_re):
+    repr_value = repr(continuous_function_scipy_ppoly)
 
     assert exp_re.fullmatch(repr_value)
 
 
 @pytest.mark.parametrize(
-    "ts, exp",
+    "continuous_function_scipy_ppoly, exp",
     (
         pytest.param(
             ContinuousFunctionScipyPPoly(
@@ -80,14 +81,14 @@ def test_repr_continuous_function_scipy_ppoly(ts, exp_re):
         ),
     ),
 )
-def test_str_continuous_function_scipy_ppoly(ts, exp):
-    str_value = str(ts)
+def test_str_continuous_function_scipy_ppoly(continuous_function_scipy_ppoly, exp):
+    str_value = str(continuous_function_scipy_ppoly)
 
     assert str_value == exp
 
 
 @pytest.mark.parametrize(
-    "ts, exp",
+    "continuous_function_scipy_ppoly, exp",
     (
         pytest.param(
             ContinuousFunctionScipyPPoly(
@@ -130,14 +131,14 @@ def test_str_continuous_function_scipy_ppoly(ts, exp):
         ),
     ),
 )
-def test_pretty_continuous_function_scipy_ppoly(ts, exp):
-    pretty_value = pretty(ts)
+def test_pretty_continuous_function_scipy_ppoly(continuous_function_scipy_ppoly, exp):
+    pretty_value = pretty(continuous_function_scipy_ppoly)
 
     assert pretty_value == exp
 
 
 @pytest.mark.parametrize(
-    "ts",
+    "continuous_function_scipy_ppoly",
     (
         pytest.param(
             ContinuousFunctionScipyPPoly(
@@ -159,144 +160,173 @@ def test_pretty_continuous_function_scipy_ppoly(ts, exp):
         ),
     ),
 )
-def test_html_continuous_function_scipy_ppoly(ts, file_regression):
+def test_html_continuous_function_scipy_ppoly(
+    continuous_function_scipy_ppoly, file_regression
+):
+    file_regression.check(
+        f"{continuous_function_scipy_ppoly._repr_html_()}\n",
+        extension=".html",
+    )
+
+
+@pytest.mark.parametrize(
+    "continuous_function_scipy_ppoly, order_exp, order_str_exp",
+    (
+        pytest.param(
+            ContinuousFunctionScipyPPoly(
+                scipy.interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
+            ),
+            0,
+            "0th",
+            id="piecewise_constant",
+        ),
+        pytest.param(
+            ContinuousFunctionScipyPPoly(
+                scipy.interpolate.PPoly(x=[1, 10, 20], c=[[1.0, 2.0], [10, 12]])
+            ),
+            1,
+            "1st",
+            id="piecewise_linear",
+        ),
+        pytest.param(
+            ContinuousFunctionScipyPPoly(
+                scipy.interpolate.PPoly(
+                    x=[1, 10, 20], c=[[1.2, -9.5], [1.0, 2.0], [10, 12]]
+                )
+            ),
+            2,
+            "2nd",
+            id="piecewise_quadratic",
+        ),
+        pytest.param(
+            ContinuousFunctionScipyPPoly(
+                scipy.interpolate.PPoly(
+                    x=[1, 10, 20], c=[[0.02, 0.03], [1.2, -9.5], [1.0, 2.0], [10, 12]]
+                )
+            ),
+            3,
+            "3rd",
+            id="piecewise_cubic",
+        ),
+        pytest.param(
+            ContinuousFunctionScipyPPoly(
+                scipy.interpolate.PPoly(
+                    x=[1, 10, 20],
+                    c=[[0.0, 0.001], [0.02, 0.03], [1.2, -9.5], [1.0, 2.0], [10, 12]],
+                )
+            ),
+            4,
+            "4th",
+            id="piecewise_quartic",
+        ),
+    ),
+)
+def test_order_continuous_function_scipy_ppoly(
+    continuous_function_scipy_ppoly, order_exp, order_str_exp
+):
+    assert continuous_function_scipy_ppoly.order == order_exp
+    assert continuous_function_scipy_ppoly.order_str == order_str_exp
+
+
+formatting_check_cases = pytest.mark.parametrize(
+    "ts",
+    (
+        pytest.param(
+            TimeseriesContinuous(
+                name="piecewise_constant",
+                time_units=UR.Unit("yr"),
+                values_units=UR.Unit("Gt"),
+                function=ContinuousFunctionScipyPPoly(
+                    scipy.interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
+                ),
+            ),
+            id="piecewise_constant",
+        ),
+        pytest.param(
+            TimeseriesContinuous(
+                name="piecewise_linear",
+                time_units=UR.Unit("yr"),
+                values_units=UR.Unit("Gt"),
+                function=ContinuousFunctionScipyPPoly(
+                    scipy.interpolate.PPoly(x=[1, 10, 20], c=[[-1.2, 2.3], [10, 12]])
+                ),
+            ),
+            id="piecewise_linear",
+        ),
+        pytest.param(
+            TimeseriesContinuous(
+                name="piecewise_linear_heaps_of_windows",
+                time_units=UR.Unit("yr"),
+                values_units=UR.Unit("Gt"),
+                function=ContinuousFunctionScipyPPoly(
+                    scipy.interpolate.PPoly(
+                        x=np.arange(10001), c=np.arange(20000).reshape(2, 10000)
+                    )
+                ),
+            ),
+            id="piecewise_linear_heaps_of_windows",
+        ),
+    ),
+)
+
+
+@formatting_check_cases
+def test_repr(ts, file_regression):
+    exp = (
+        "TimeseriesContinuous("
+        f"name={ts.name!r}, "
+        f"time_units={ts.time_units!r}, "
+        f"values_units={ts.values_units!r}, "
+        f"function={ts.function!r}"
+        ")"
+    )
+
+    assert repr(ts) == exp
+
+    # Avoid changing addresses causing issues
+    file_regression_value = re.sub("at .*>", "at address>", repr(ts))
+
+    file_regression.check(
+        f"{file_regression_value}\n",
+        extension=".txt",
+    )
+
+
+@formatting_check_cases
+def test_str(ts, file_regression):
+    exp = (
+        "TimeseriesContinuous("
+        f"name={ts.name}, "
+        f"time_units={ts.time_units}, "
+        f"values_units={ts.values_units}, "
+        f"function={ts.function}"
+        ")"
+    )
+
+    assert str(ts) == exp
+
+    file_regression.check(
+        f"{ts}\n",
+        extension=".txt",
+    )
+
+
+@formatting_check_cases
+def test_pretty(ts, file_regression):
+    file_regression.check(
+        f"{pretty(ts)}\n",
+        extension=".txt",
+    )
+
+
+@formatting_check_cases
+def test_html(ts, file_regression):
     file_regression.check(
         f"{ts._repr_html_()}\n",
         extension=".html",
     )
 
 
-# @pytest.mark.parametrize(
-#     "time_axis, values_at_bounds, expectation",
-#     (
-#         pytest.param(
-#             TimeAxis(Q([1750.0, 1850.0, 1950.0], "yr")),
-#             ValuesAtBounds(Q([1.0, 2.0, 3.0], "m")),
-#             does_not_raise(),
-#             id="valid",
-#         ),
-#         pytest.param(
-#             TimeAxis(Q([1750.0, 1850.0, 1950.0, 2000.0], "yr")),
-#             ValuesAtBounds(Q([1.0, 2.0, 3.0], "m")),
-#             pytest.raises(
-#                 AssertionError,
-#                 match=re.escape(
-#                     "`values_at_bounds` must have values "
-#                     "that are the same shape as `self.time_axis.bounds`. "
-#                     "Received values_at_bounds.values.shape=(3,) "
-#                     "while self.time_axis.bounds.shape=(4,)."
-#                 ),
-#             ),
-#             id="time_longer_than_values",
-#         ),
-#         pytest.param(
-#             TimeAxis(Q([1750.0, 1850.0], "yr")),
-#             ValuesAtBounds(Q([1.0, 2.0, 3.0], "m")),
-#             pytest.raises(
-#                 AssertionError,
-#                 match=re.escape(
-#                     "`values_at_bounds` must have values "
-#                     "that are the same shape as `self.time_axis.bounds`. "
-#                     "Received values_at_bounds.values.shape=(3,) "
-#                     "while self.time_axis.bounds.shape=(2,)."
-#                 ),
-#             ),
-#             id="time_shorter_than_values",
-#         ),
-#     ),
-# )
-# def test_validation_time_axis_values_same_shape(
-#     time_axis, values_at_bounds, expectation
-# ):
-#     with expectation:
-#         TimeseriesContinuous(
-#             name="name", time_axis=time_axis, values_at_bounds=values_at_bounds
-#         )
-#
-#
-# formatting_check_cases = pytest.mark.parametrize(
-#     "ts",
-#     (
-#         pytest.param(
-#             TimeseriesContinuous(
-#                 name="basic",
-#                 time_axis=TimeAxis(Q([1.0, 2.0, 3.0], "yr")),
-#                 values_at_bounds=ValuesAtBounds(Q([10.0, 20.0, 5.0], "kg")),
-#             ),
-#             id="basic",
-#         ),
-#         pytest.param(
-#             TimeseriesContinuous(
-#                 name="big_array",
-#                 time_axis=TimeAxis(Q(np.linspace(1750, 1850, 1000), "yr")),
-#                 values_at_bounds=ValuesAtBounds(Q(np.arange(1000), "kg")),
-#             ),
-#             id="big_array",
-#         ),
-#         pytest.param(
-#             TimeseriesContinuous(
-#                 name="really_big_array",
-#                 time_axis=TimeAxis(Q(np.linspace(1750, 1850, int(1e5)), "yr")),
-#                 values_at_bounds=ValuesAtBounds(Q(np.arange(1e5), "kg")),
-#             ),
-#             id="really_big_array",
-#         ),
-#     ),
-# )
-#
-#
-# @formatting_check_cases
-# def test_repr(ts, file_regression):
-#     exp = (
-#         "TimeseriesContinuous("
-#         f"name={ts.name!r}, "
-#         f"time_axis={ts.time_axis!r}, "
-#         f"values_at_bounds={ts.values_at_bounds!r}"
-#         ")"
-#     )
-#
-#     assert repr(ts) == exp
-#
-#     file_regression.check(
-#         f"{ts!r}\n",
-#         extension=".txt",
-#     )
-#
-#
-# @formatting_check_cases
-# def test_str(ts, file_regression):
-#     exp = (
-#         "TimeseriesContinuous("
-#         f"name={ts.name}, "
-#         f"time_axis={ts.time_axis}, "
-#         f"values_at_bounds={ts.values_at_bounds}"
-#         ")"
-#     )
-#
-#     assert str(ts) == exp
-#
-#     file_regression.check(
-#         f"{ts}\n",
-#         extension=".txt",
-#     )
-#
-#
-# @formatting_check_cases
-# def test_pretty(ts, file_regression):
-#     file_regression.check(
-#         f"{pretty(ts)}\n",
-#         extension=".txt",
-#     )
-#
-#
-# @formatting_check_cases
-# def test_html(ts, file_regression):
-#     file_regression.check(
-#         f"{ts._repr_html_()}\n",
-#         extension=".html",
-#     )
-#
-#
 # @pytest.mark.parametrize(
 #     "x_units, y_units, plot_kwargs",
 #     (

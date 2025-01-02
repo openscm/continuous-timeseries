@@ -118,16 +118,7 @@ class ContinuousFunctionScipyPPoly:
         ppoly_x = self.ppoly.x
         ppoly_c = self.ppoly.c
 
-        order = self.order
-
-        if order == 1:
-            order_s = "1st"
-        elif order == 2:  # noqa: PLR2004
-            order_s = "2nd"
-        elif order == 3:  # noqa: PLR2004
-            order_s = "3rd"
-        else:
-            order_s = f"{order}th"
+        order_s = self.order_str
 
         res = (
             f"{order_s} order {type_self}("
@@ -156,16 +147,7 @@ class ContinuousFunctionScipyPPoly:
         ppoly_x = self.ppoly.x
         ppoly_c = self.ppoly.c
 
-        order = self.ppoly.c.shape[0] - 1
-
-        if order == 1:
-            order_s = "1st"
-        elif order == 2:  # noqa: PLR2004
-            order_s = "2nd"
-        elif order == 3:  # noqa: PLR2004
-            order_s = "3rd"
-        else:
-            order_s = f"{order}th"
+        order_s = self.order_str
 
         with p.group(indent, f"{order_s} order {type_self}(", ")"):
             p.breakable("")  # type: ignore
@@ -238,6 +220,24 @@ class ContinuousFunctionScipyPPoly:
         Order of the polynomial used by this instance
         """
         return self.ppoly.c.shape[0] - 1
+
+    @property
+    def order_str(self) -> int:
+        """
+        String name for the order of the polynomial used by this instance
+        """
+        order = self.order
+
+        if order == 1:
+            order_str = "1st"
+        elif order == 2:  # noqa: PLR2004
+            order_str = "2nd"
+        elif order == 3:  # noqa: PLR2004
+            order_str = "3rd"
+        else:
+            order_str = f"{order}th"
+
+        return order_str
 
     def __call__(
         self, x: npt.NDArray[np.number[Any]], allow_extrapolation: bool = False
