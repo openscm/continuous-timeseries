@@ -129,7 +129,11 @@ class ContinuousFunctionScipyPPoly:
         else:
             order_s = f"{order}th"
 
-        res = f"{order_s} order {type_self}(ppoly={ppoly_display}(c={ppoly_c}, x={ppoly_x}))"
+        res = (
+            f"{order_s} order {type_self}("
+            f"ppoly={ppoly_display}(c={ppoly_c}, x={ppoly_x})"
+            ")"
+        )
 
         return res
 
@@ -191,21 +195,9 @@ class ContinuousFunctionScipyPPoly:
 
         repr_internal_row = self._repr_html_internal_row_()
 
-        html_l = [
-            "<div>",
-            # "  <style>",
-            # f"{css_style}",
-            # "  </style>",
-            "  <div class='continuous-timeseries-wrap'>",
-            "    <div class='continuous-timeseries-header'>",
-            f"      <div class='continuous-timeseries-cls'>{header}</div>",
-            repr_internal_row,
-            "    </div>",
-            "  </div>",
-            "</div>",
-        ]
-
-        return "\n".join(html_l)
+        return continuous_timeseries.formatting.apply_ct_html_styling(
+            display_name=header, attribute_table=repr_internal_row
+        )
 
     def _repr_html_internal_row_(self) -> str:
         """
@@ -215,26 +207,28 @@ class ContinuousFunctionScipyPPoly:
         """
         attribute_rows: list[str] = []
         attribute_rows = continuous_timeseries.formatting.add_html_attribute_row(
-            "order", self.order, attribute_rows
+            "order",
+            continuous_timeseries.formatting.get_html_repr_safe(self.order),
+            attribute_rows,
         )
-        attribute_rows = continuous_timeseries.formatting.add_html_attribute_row(
-            "c", str(self.ppoly.c), attribute_rows
-        )
-        attribute_rows = continuous_timeseries.formatting.add_html_attribute_row(
-            "x", str(self.ppoly.x), attribute_rows
-        )
+        for attr in ["c", "x"]:
+            attribute_rows = continuous_timeseries.formatting.add_html_attribute_row(
+                attr,
+                continuous_timeseries.formatting.get_html_repr_safe(
+                    getattr(self.ppoly, attr)
+                ),
+                attribute_rows,
+            )
 
-        attribute_rows_for_table = "\n    ".join(attribute_rows)
+        attribute_table = continuous_timeseries.formatting.make_html_attribute_table(
+            attribute_rows
+        )
         html_l = [
             "<table><tbody>",
             "  <tr>",
             "    <th>ppoly</th>",
             "    <td style='text-align:left;'>",
-            "      <div>",
-            "        <table><tbody>",
-            f"          {attribute_rows_for_table}",
-            "        </tbody></table>",
-            "      </div>",
+            textwrap.indent(attribute_table, "      "),
             "    </td>",
             "  </tr>",
             "</tbody></table>",

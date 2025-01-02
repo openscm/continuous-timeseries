@@ -191,25 +191,6 @@ ts_quadratic.plot(time_axis=time_axis)
 # We also create an instance of `ContinuousFunctionScipyPPoly`
 # that represents data that is cubic between the defined discrete values.
 
-# %% [markdown]
-# y = a x**3 + b x**2 + cx + d
-# dy/dx = 3a x**2 + 2b x + c
-# d2y/dx2 = 6a x + 2b
-#
-# y(0) = 10 ==> d = 10
-# dy/dx(0) = 0 ==> c = 0
-# y(10) = 20 ==> 20 = 1000a + 100b + 10 ==> 1 = 100a + 10b
-# dy/dx(10) = 1.0 ==> 1.0 = 3a (100) + 2b (10) ==> 1 = 300a + 20b
-#
-# therefore 2 = 10b ==> b = 0.2
-# a = -1 / 100
-#
-# y(0) = 20 ==> d = 20
-# dy/dx(0) = 1.0 ==> c = 1.0
-# d2y/dx2(0) = 6 (-1 / 100) (10) + 2 (0.2) ==> -0.2 = 2b ==> b = -0.1
-# y(20) = 50 ==> 50 = 8000a + 400(-0.1) + 20 + 20 ==> 10 = 8000a -40 ==> a = 5 / 800
-#
-
 # %%
 a_values = Q([-1 / 100, 5 / 800], values.u / time_axis.u**3)
 b_values = Q([0.2, -0.1], values.u / time_axis.u**2)
