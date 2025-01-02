@@ -5,6 +5,9 @@ Test the `timeseries_continuous` module
 from __future__ import annotations
 
 import re
+import sys
+from contextlib import nullcontext as does_not_raise
+from unittest.mock import patch
 
 import numpy as np
 import pint
@@ -14,7 +17,10 @@ import scipy.interpolate
 from attrs import define
 from IPython.lib.pretty import pretty
 
-from continuous_timeseries.exceptions import ExtrapolationNotAllowedError
+from continuous_timeseries.exceptions import (
+    ExtrapolationNotAllowedError,
+    MissingOptionalDependencyError,
+)
 from continuous_timeseries.time_axis import TimeAxis
 from continuous_timeseries.timeseries_continuous import (
     ContinuousFunctionScipyPPoly,
@@ -231,6 +237,32 @@ def test_order_continuous_function_scipy_ppoly(
     assert continuous_function_scipy_ppoly.order_str == order_str_exp
 
 
+@pytest.mark.parametrize(
+    "sys_modules_patch, expectation",
+    (
+        pytest.param({}, does_not_raise(), id="scipy_available"),
+        pytest.param(
+            {"scipy": None},
+            pytest.raises(
+                MissingOptionalDependencyError,
+                match=(
+                    "`ContinuousFunctionScipyPPoly.integrate` "
+                    "requires scipy to be installed"
+                ),
+            ),
+            id="scipy_not_available",
+        ),
+    ),
+)
+def test_integrate_no_scipy(sys_modules_patch, expectation):
+    continuous_function_scipy_ppoly = ContinuousFunctionScipyPPoly(
+        scipy.interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
+    )
+    with patch.dict(sys.modules, sys_modules_patch):
+        with expectation:
+            continuous_function_scipy_ppoly.integrate(0.0)
+
+
 formatting_check_cases = pytest.mark.parametrize(
     "ts",
     (
@@ -349,6 +381,17 @@ class OperationsTestCase:
     exp_extrap: UR.Quantity
     """Expected values of extrapolation at `time_extrap`"""
 
+    time_integral_check: UR.Quantity
+    """Times to use for checking the values of the integral"""
+
+    exp_integral_values_excl_integration_constant: UR.Quantity
+    """
+    Expected values of the derivate at `time_integral_check`
+
+    This excludes the integration constant
+    (i.e. assumes the integration constant is zero).
+    """
+
     time_derivative_check: UR.Quantity
     """Times to use for checking the values of the derivative"""
 
@@ -373,6 +416,15 @@ operations_test_cases = pytest.mark.parametrize(
                 exp_interp=Q([2.5, 2.5, 2.5], "Gt"),
                 time_extrap=Q([0.0, 1.0, 2.0, 3.0], "yr"),
                 exp_extrap=Q([2.5, 2.5, 2.5, 2.5], "Gt"),
+                time_integral_check=Q([1.0, 1.5, 2.0], "yr"),
+                exp_integral_values_excl_integration_constant=Q(
+                    [
+                        0.0,
+                        2.5 / 2,
+                        2.5,
+                    ],
+                    "Gt yr",
+                ),
                 time_derivative_check=Q([1.0, 1.5, 2.0], "yr"),
                 exp_derivative_values=Q([0.0, 0.0, 0.0], "Gt / yr"),
             ),
@@ -392,6 +444,15 @@ operations_test_cases = pytest.mark.parametrize(
                 exp_interp=Q([2.75, 3.0, 3.25], "Gt"),
                 time_extrap=Q([0.0, 1.0, 2.0, 3.0], "yr"),
                 exp_extrap=Q([1.5, 2.5, 3.5, 4.5], "Gt"),
+                time_integral_check=Q([1.0, 1.5, 2.0], "yr"),
+                exp_integral_values_excl_integration_constant=Q(
+                    [
+                        0.0,
+                        (1 / 2) ** 2 / 2 + 2.5 / 2,
+                        1 / 2 + 2.5,
+                    ],
+                    "Gt yr",
+                ),
                 time_derivative_check=Q([1.0, 1.5, 2.0], "yr"),
                 exp_derivative_values=Q([1.0, 1.0, 1.0], "Gt / yr"),
             ),
@@ -411,6 +472,15 @@ operations_test_cases = pytest.mark.parametrize(
                 exp_interp=Q([1 / 16 + 1 / 4, 1 / 4 + 1 / 2, 9 / 16 + 3 / 4], "Gt"),
                 time_extrap=Q([0.0, 0.5, 1.0, 2.0, 3.0], "yr"),
                 exp_extrap=Q([0.0, 1 / 4 - 1 / 2, 0.0, 2.0, 6.0], "Gt"),
+                time_integral_check=Q([1.0, 1.5, 2.0], "yr"),
+                exp_integral_values_excl_integration_constant=Q(
+                    [
+                        0.0,
+                        (1 / 2) ** 3 / 3 + (1 / 2) ** 2 / 2,
+                        1 / 3 + 1 / 2,
+                    ],
+                    "Gt yr",
+                ),
                 time_derivative_check=Q([1.0, 1.5, 2.0], "yr"),
                 exp_derivative_values=Q([1.0, 2.0, 3.0], "Gt / yr"),
             ),
@@ -419,7 +489,7 @@ operations_test_cases = pytest.mark.parametrize(
         pytest.param(
             OperationsTestCase(
                 ts=TimeseriesContinuous(
-                    name="piecewise_linear",
+                    name="time_axis_is_time_axis",
                     time_units=UR.Unit("yr"),
                     values_units=UR.Unit("Gt"),
                     function=ContinuousFunctionScipyPPoly(
@@ -430,6 +500,15 @@ operations_test_cases = pytest.mark.parametrize(
                 exp_interp=Q([2.75, 3.0, 3.25], "Gt"),
                 time_extrap=TimeAxis(Q([0.0, 1.0, 2.0, 3.0], "yr")),
                 exp_extrap=Q([1.5, 2.5, 3.5, 4.5], "Gt"),
+                time_integral_check=Q([1.0, 1.5, 2.0], "yr"),
+                exp_integral_values_excl_integration_constant=Q(
+                    [
+                        0.0,
+                        (1 / 2) ** 2 / 2 + 2.5 / 2,
+                        1 / 2 + 2.5,
+                    ],
+                    "Gt yr",
+                ),
                 time_derivative_check=TimeAxis(Q([1.0, 1.5, 2.0], "yr")),
                 exp_derivative_values=Q([1.0, 1.0, 1.0], "Gt / yr"),
             ),
@@ -438,7 +517,7 @@ operations_test_cases = pytest.mark.parametrize(
         pytest.param(
             OperationsTestCase(
                 ts=TimeseriesContinuous(
-                    name="piecewise_linear",
+                    name="linear_using_unit_conversion",
                     time_units=UR.Unit("yr"),
                     values_units=UR.Unit("Gt"),
                     function=ContinuousFunctionScipyPPoly(
@@ -449,6 +528,15 @@ operations_test_cases = pytest.mark.parametrize(
                 exp_interp=Q([2750, 3000, 3250], "Mt"),
                 time_extrap=Q([0, 12, 24, 36], "month"),
                 exp_extrap=Q([1500, 2500, 3500, 4500], "Mt"),
+                time_integral_check=Q([12, 18, 24], "month"),
+                exp_integral_values_excl_integration_constant=Q(
+                    [
+                        0.0,
+                        1000.0 * 12.0 * ((1 / 2) ** 2 / 2 + 2.5 / 2),
+                        1000.0 * 12.0 * (1 / 2 + 2.5),
+                    ],
+                    "Mt month",
+                ),
                 time_derivative_check=Q([12, 18, 24], "month"),
                 exp_derivative_values=Q(
                     [
@@ -492,6 +580,25 @@ def test_extrapolate(operations_test_case):
 
 
 @operations_test_cases
+@pytest.mark.parametrize(
+    "integration_constant",
+    (
+        Q(0, "Gt yr"),
+        Q(1.0, "Gt yr"),
+    ),
+)
+def test_integration(operations_test_case, integration_constant):
+    pint.testing.assert_allclose(
+        operations_test_case.ts.integrate(
+            integration_constant=integration_constant
+        ).interpolate(operations_test_case.time_integral_check),
+        operations_test_case.exp_integral_values_excl_integration_constant
+        + integration_constant,
+        rtol=1e-10,
+    )
+
+
+@operations_test_cases
 def test_differentiate(operations_test_case):
     pint.testing.assert_allclose(
         operations_test_case.ts.differentiate().interpolate(
@@ -501,9 +608,6 @@ def test_differentiate(operations_test_case):
         rtol=1e-10,
     )
 
-
-# Test integration
-# Test differentation
 
 # @pytest.mark.parametrize(
 #     "x_units, y_units, plot_kwargs",
