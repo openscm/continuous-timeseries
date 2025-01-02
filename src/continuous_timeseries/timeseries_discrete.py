@@ -20,6 +20,7 @@ import attr
 from attrs import define, field
 
 import continuous_timeseries.formatting
+from continuous_timeseries.discrete_to_continuous import discrete_to_continuous
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
 from continuous_timeseries.plotting_helpers import get_plot_vals
 from continuous_timeseries.time_axis import TimeAxis
@@ -28,6 +29,11 @@ from continuous_timeseries.values_at_bounds import ValuesAtBounds
 if TYPE_CHECKING:
     import IPython.lib.pretty
     import matplotlib.axes
+
+    from continuous_timeseries.discrete_to_continuous.interpolation_option import (
+        InterpolationOption,
+    )
+    from continuous_timeseries.timeseries_continuous import TimeseriesContinuous
 
 
 @define
@@ -120,15 +126,14 @@ class TimeseriesDiscrete:
             include_header=False,
         )
 
-    # # When we have TimeseriesContinuous, add
-    # def to_continuous_timeseries(
-    #     self,
-    #     interpolation: InterpolationOption,
-    # ) -> TimeseriesContinuous:
-    #     return discrete_to_continuous(
-    #         discrete=self,
-    #         interpolation=interpolation,
-    #     )
+    def to_continuous_timeseries(
+        self,
+        interpolation: InterpolationOption,
+    ) -> TimeseriesContinuous:
+        return discrete_to_continuous(
+            discrete=self,
+            interpolation=interpolation,
+        )
 
     def plot(
         self,

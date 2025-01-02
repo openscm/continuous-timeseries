@@ -39,12 +39,7 @@ from continuous_timeseries.timeseries_continuous import (
 )
 
 # %% [markdown]
-# ## Set up pint
-#
-# For details, see the pint docs
-# ([stable docs](https://pint.readthedocs.io/en/stable/user/plotting.html),
-# [last version that we checked at the time of writing](https://pint.readthedocs.io/en/0.24.4/user/plotting.html))
-# [or our docs on unit-aware plotting](../discrete_timeseries_tutorial#unit-aware-plotting).  # noqa: E501
+# ## Handy pint aliases
 
 # %%
 UR = pint.get_application_registry()
@@ -52,6 +47,11 @@ Q = UR.Quantity
 
 # %% [markdown]
 # ## Set up matplotlib to work with pint
+#
+# For details, see the pint docs
+# ([stable docs](https://pint.readthedocs.io/en/stable/user/plotting.html),
+# [last version that we checked at the time of writing](https://pint.readthedocs.io/en/0.24.4/user/plotting.html))
+# [or our docs on unit-aware plotting](../discrete_timeseries_tutorial#unit-aware-plotting).  # noqa: E501
 
 # %%
 UR.setup_matplotlib(enable=True)

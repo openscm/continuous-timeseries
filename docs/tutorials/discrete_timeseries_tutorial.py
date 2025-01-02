@@ -35,7 +35,7 @@ from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
 
 # %% [markdown]
-# ## Set up pint
+# ## Handy pint aliases
 
 # %%
 UR = pint.get_application_registry()
