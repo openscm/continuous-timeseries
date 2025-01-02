@@ -483,6 +483,8 @@ class TimeseriesContinuous:
             # This is an escape hatch.
             # In general, we expect `self.function` to handle NaNs
             # before we get to this point.
+            # (If we added a `domain` property to ContinuousFunctionLike
+            # then we could simplify this.)
             msg_l = ["The result of calling `self.function` contains NaNs."]
             if not allow_extrapolation:
                 msg_l.append(

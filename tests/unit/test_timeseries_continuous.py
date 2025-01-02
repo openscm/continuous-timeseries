@@ -331,19 +331,36 @@ def test_html(ts, file_regression):
 
 
 @define
-class InterpolationCasesTest:
+class OperationsTestCase:
+    """A test case for operations with `TimeseriesContinuous`"""
+
     ts: TimeseriesContinuous
+    """Timeseries to use for the tests"""
+
     time_interp: UR.Quantity
+    """Times to use for checking interpolation"""
+
     exp_interp: UR.Quantity
+    """Expected values of interpolation at `time_interp`"""
+
     time_extrap: UR.Quantity
+    """Times to use for checking extrapolation"""
+
     exp_extrap: UR.Quantity
+    """Expected values of extrapolation at `time_extrap`"""
+
+    time_derivative_check: UR.Quantity
+    """Times to use for checking the values of the derivative"""
+
+    exp_derivative_values: UR.Quantity
+    """Expected values of the derivate at `time_derivative_check`"""
 
 
-interpolation_cases = pytest.mark.parametrize(
-    "interpolation_case",
+operations_test_cases = pytest.mark.parametrize(
+    "operations_test_case",
     (
         pytest.param(
-            InterpolationCasesTest(
+            OperationsTestCase(
                 ts=TimeseriesContinuous(
                     name="piecewise_constant",
                     time_units=UR.Unit("yr"),
@@ -356,11 +373,13 @@ interpolation_cases = pytest.mark.parametrize(
                 exp_interp=Q([2.5, 2.5, 2.5], "Gt"),
                 time_extrap=Q([0.0, 1.0, 2.0, 3.0], "yr"),
                 exp_extrap=Q([2.5, 2.5, 2.5, 2.5], "Gt"),
+                time_derivative_check=Q([1.0, 1.5, 2.0], "yr"),
+                exp_derivative_values=Q([0.0, 0.0, 0.0], "Gt / yr"),
             ),
             id="basic_constant",
         ),
         pytest.param(
-            InterpolationCasesTest(
+            OperationsTestCase(
                 ts=TimeseriesContinuous(
                     name="piecewise_linear",
                     time_units=UR.Unit("yr"),
@@ -373,11 +392,13 @@ interpolation_cases = pytest.mark.parametrize(
                 exp_interp=Q([2.75, 3.0, 3.25], "Gt"),
                 time_extrap=Q([0.0, 1.0, 2.0, 3.0], "yr"),
                 exp_extrap=Q([1.5, 2.5, 3.5, 4.5], "Gt"),
+                time_derivative_check=Q([1.0, 1.5, 2.0], "yr"),
+                exp_derivative_values=Q([1.0, 1.0, 1.0], "Gt / yr"),
             ),
             id="basic_linear",
         ),
         pytest.param(
-            InterpolationCasesTest(
+            OperationsTestCase(
                 ts=TimeseriesContinuous(
                     name="piecewise_quadratic",
                     time_units=UR.Unit("yr"),
@@ -390,11 +411,13 @@ interpolation_cases = pytest.mark.parametrize(
                 exp_interp=Q([1 / 16 + 1 / 4, 1 / 4 + 1 / 2, 9 / 16 + 3 / 4], "Gt"),
                 time_extrap=Q([0.0, 0.5, 1.0, 2.0, 3.0], "yr"),
                 exp_extrap=Q([0.0, 1 / 4 - 1 / 2, 0.0, 2.0, 6.0], "Gt"),
+                time_derivative_check=Q([1.0, 1.5, 2.0], "yr"),
+                exp_derivative_values=Q([1.0, 2.0, 3.0], "Gt / yr"),
             ),
             id="basic_quadratic",
         ),
         pytest.param(
-            InterpolationCasesTest(
+            OperationsTestCase(
                 ts=TimeseriesContinuous(
                     name="piecewise_linear",
                     time_units=UR.Unit("yr"),
@@ -407,11 +430,13 @@ interpolation_cases = pytest.mark.parametrize(
                 exp_interp=Q([2.75, 3.0, 3.25], "Gt"),
                 time_extrap=TimeAxis(Q([0.0, 1.0, 2.0, 3.0], "yr")),
                 exp_extrap=Q([1.5, 2.5, 3.5, 4.5], "Gt"),
+                time_derivative_check=TimeAxis(Q([1.0, 1.5, 2.0], "yr")),
+                exp_derivative_values=Q([1.0, 1.0, 1.0], "Gt / yr"),
             ),
             id="time_axis_is_time_axis",
         ),
         pytest.param(
-            InterpolationCasesTest(
+            OperationsTestCase(
                 ts=TimeseriesContinuous(
                     name="piecewise_linear",
                     time_units=UR.Unit("yr"),
@@ -424,6 +449,15 @@ interpolation_cases = pytest.mark.parametrize(
                 exp_interp=Q([2750, 3000, 3250], "Mt"),
                 time_extrap=Q([0, 12, 24, 36], "month"),
                 exp_extrap=Q([1500, 2500, 3500, 4500], "Mt"),
+                time_derivative_check=Q([12, 18, 24], "month"),
+                exp_derivative_values=Q(
+                    [
+                        1000.0 / 12,
+                        1000.0 / 12,
+                        1000.0 / 12,
+                    ],
+                    "Mt / month",
+                ),
             ),
             id="linear_using_unit_conversion",
         ),
@@ -431,28 +465,39 @@ interpolation_cases = pytest.mark.parametrize(
 )
 
 
-@interpolation_cases
-def test_interpolation(interpolation_case):
+@operations_test_cases
+def test_interpolate(operations_test_case):
     pint.testing.assert_allclose(
-        interpolation_case.ts.interpolate(interpolation_case.time_interp),
-        interpolation_case.exp_interp,
+        operations_test_case.ts.interpolate(operations_test_case.time_interp),
+        operations_test_case.exp_interp,
         rtol=1e-10,
     )
 
 
-@interpolation_cases
-def test_extrapolation_not_allowed_raises(interpolation_case):
-    with pytest.raises(ExtrapolationNotAllowedError, match="hi"):
-        interpolation_case.ts.interpolate(interpolation_case.time_extrap)
+@operations_test_cases
+def test_extrapolate_not_allowed_raises(operations_test_case):
+    with pytest.raises(ExtrapolationNotAllowedError):
+        operations_test_case.ts.interpolate(operations_test_case.time_extrap)
 
 
-@interpolation_cases
-def test_extrapolation(interpolation_case):
+@operations_test_cases
+def test_extrapolate(operations_test_case):
     pint.testing.assert_allclose(
-        interpolation_case.ts.interpolate(
-            interpolation_case.time_extrap, allow_extrapolation=True
+        operations_test_case.ts.interpolate(
+            operations_test_case.time_extrap, allow_extrapolation=True
         ),
-        interpolation_case.exp_extrap,
+        operations_test_case.exp_extrap,
+        rtol=1e-10,
+    )
+
+
+@operations_test_cases
+def test_differentiate(operations_test_case):
+    pint.testing.assert_allclose(
+        operations_test_case.ts.differentiate().interpolate(
+            operations_test_case.time_derivative_check
+        ),
+        operations_test_case.exp_derivative_values,
         rtol=1e-10,
     )
 
