@@ -179,10 +179,6 @@ class ContinuousFunctionScipyPPoly:
 
                 p.text("x=")  # type: ignore
                 p.pretty(ppoly_x)  # type: ignore
-                p.text(",")  # type: ignore
-                p.breakable("")  # type: ignore
-
-            p.breakable("")  # type: ignore
 
     def _repr_html_(self) -> str:
         """
@@ -236,6 +232,13 @@ class ContinuousFunctionScipyPPoly:
 
         return "\n".join(html_l)
 
+    @property
+    def order(self) -> int:
+        """
+        Order of the polynomial used by this instance
+        """
+        return self.ppoly.c.shape[0] - 1
+
     def __call__(
         self, x: npt.NDArray[np.number[Any]], allow_extrapolation: bool = False
     ) -> npt.NDArray[np.number[Any]]:
@@ -267,13 +270,6 @@ class ContinuousFunctionScipyPPoly:
             raise ValueError(msg)
 
         return res
-
-    @property
-    def order(self) -> int:
-        """
-        Order of the polynomial used by this instance
-        """
-        return self.ppoly.c.shape[0] - 1
 
     def integrate(self, integration_constant: np.number[Any]) -> ContinuousFunctionLike:
         """

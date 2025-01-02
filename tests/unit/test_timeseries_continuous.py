@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 
+import numpy as np
 import pint
 import pint.testing
 import pytest
@@ -54,16 +55,28 @@ def test_repr_continuous_function_scipy_ppoly(ts, exp_re):
             ContinuousFunctionScipyPPoly(
                 scipy.interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
             ),
-            "0th order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[10. 12.]], x=[ 1. 10. 20.]))",
+            "0th order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[10. 12.]], x=[ 1. 10. 20.]))",  # noqa: E501
         ),
         pytest.param(
             ContinuousFunctionScipyPPoly(
                 scipy.interpolate.PPoly(x=[1, 10, 20], c=[[-1.2, 2.3], [10, 12]])
             ),
             (
-                "1st order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[-1.2  2.3]\n"
+                "1st order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[-1.2  2.3]\n"  # noqa: E501
                 " [10.  12. ]], x=[ 1. 10. 20.]))"
             ),
+        ),
+        pytest.param(
+            ContinuousFunctionScipyPPoly(
+                scipy.interpolate.PPoly(
+                    x=np.arange(10001), c=np.arange(20000).reshape(2, 10000)
+                )
+            ),
+            (
+                "1st order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[0.0000e+00 1.0000e+00 2.0000e+00 ... 9.9970e+03 9.9980e+03 9.9990e+03]\n"  # noqa: E501
+                " [1.0000e+04 1.0001e+04 1.0002e+04 ... 1.9997e+04 1.9998e+04 1.9999e+04]], x=[0.000e+00 1.000e+00 2.000e+00 ... 9.998e+03 9.999e+03 1.000e+04]))"  # noqa: E501
+            ),
+            id="heaps_of_windows",
         ),
     ),
 )
@@ -80,16 +93,40 @@ def test_str_continuous_function_scipy_ppoly(ts, exp):
             ContinuousFunctionScipyPPoly(
                 scipy.interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
             ),
-            "0th order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[10. 12.]], x=[ 1. 10. 20.]))",
+            "0th order ContinuousFunctionScipyPPoly(\n"
+            "    ppoly=scipy.interpolate._interpolate.PPoly(\n"
+            "        c=array([[10., 12.]]),\n"
+            "        x=array([ 1., 10., 20.])))",
         ),
         pytest.param(
             ContinuousFunctionScipyPPoly(
                 scipy.interpolate.PPoly(x=[1, 10, 20], c=[[-1.2, 2.3], [10, 12]])
             ),
             (
-                "1st order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[-1.2  2.3]\n"
-                " [10.  12. ]], x=[ 1. 10. 20.]))"
+                "1st order ContinuousFunctionScipyPPoly(\n"
+                "    ppoly=scipy.interpolate._interpolate.PPoly(\n"
+                "        c=array([[-1.2,  2.3],\n"
+                "               [10. , 12. ]]),\n"
+                "        x=array([ 1., 10., 20.])))"
             ),
+        ),
+        pytest.param(
+            ContinuousFunctionScipyPPoly(
+                scipy.interpolate.PPoly(
+                    x=np.arange(10001), c=np.arange(20000).reshape(2, 10000)
+                )
+            ),
+            (
+                "1st order ContinuousFunctionScipyPPoly(\n"
+                "    ppoly=scipy.interpolate._interpolate.PPoly(\n"
+                "        c=array([[0.0000e+00, 1.0000e+00, 2.0000e+00, ..., 9.9970e+03, 9.9980e+03,\n"  # noqa: E501
+                "                9.9990e+03],\n"
+                "               [1.0000e+04, 1.0001e+04, 1.0002e+04, ..., 1.9997e+04, 1.9998e+04,\n"  # noqa: E501
+                "                1.9999e+04]], shape=(2, 10000)),\n"
+                "        x=array([0.000e+00, 1.000e+00, 2.000e+00, ..., 9.998e+03, 9.999e+03,\n"  # noqa: E501
+                "               1.000e+04], shape=(10001,))))"
+            ),
+            id="heaps_of_windows",
         ),
     ),
 )
@@ -100,29 +137,33 @@ def test_pretty_continuous_function_scipy_ppoly(ts, exp):
 
 
 @pytest.mark.parametrize(
-    "ts, exp",
+    "ts",
     (
         pytest.param(
             ContinuousFunctionScipyPPoly(
                 scipy.interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
             ),
-            "0th order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[10. 12.]], x=[ 1. 10. 20.]))",
         ),
         pytest.param(
             ContinuousFunctionScipyPPoly(
                 scipy.interpolate.PPoly(x=[1, 10, 20], c=[[-1.2, 2.3], [10, 12]])
             ),
-            (
-                "1st order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[-1.2  2.3]\n"
-                " [10.  12. ]], x=[ 1. 10. 20.]))"
+        ),
+        pytest.param(
+            ContinuousFunctionScipyPPoly(
+                scipy.interpolate.PPoly(
+                    x=np.arange(10001), c=np.arange(20000).reshape(2, 10000)
+                )
             ),
+            id="heaps_of_windows",
         ),
     ),
 )
-def test_pretty_continuous_function_scipy_ppoly(ts, exp):
-    html_value = ts._repr_html_()
-
-    assert html_value == exp
+def test_html_continuous_function_scipy_ppoly(ts, file_regression):
+    file_regression.check(
+        f"{ts._repr_html_()}\n",
+        extension=".html",
+    )
 
 
 # @pytest.mark.parametrize(
@@ -341,7 +382,7 @@ def test_pretty_continuous_function_scipy_ppoly(ts, exp):
 #                 match=re.escape(
 #                     "The units of `self.values_at_bounds.values` "
 #                     "are not registered with matplotlib. "
-#                     "The magnitude will be plotted without any consideration of units. "
+#                     "The magnitude will be plotted without any consideration of units. "  # noqa: E501
 #                     "For docs on how to set up unit-aware plotting, see "
 #                     "[the stable docs](https://pint.readthedocs.io/en/stable/user/plotting.html) "  # noqa: E501
 #                     "(at the time of writing, the latest version's docs were "
@@ -431,7 +472,7 @@ def test_pretty_continuous_function_scipy_ppoly(ts, exp):
 #             {"matplotlib": None},
 #             pytest.raises(
 #                 MissingOptionalDependencyError,
-#                 match="`TimeseriesContinuous.plot` requires matplotlib to be installed",
+#                 match="`TimeseriesContinuous.plot` requires matplotlib to be installed",  # noqa: E501
 #             ),
 #             id="matplotlib_not_available",
 #         ),
