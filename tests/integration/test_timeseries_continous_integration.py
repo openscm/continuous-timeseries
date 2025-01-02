@@ -137,7 +137,7 @@ def test_str_continuous_function_scipy_ppoly(continuous_function_scipy_ppoly, ex
                 "               1.000e+04], shape=(10001,))))"
             ),
             marks=pytest.mark.xfail(
-                condition=sys.version_info == (3, 9),
+                condition=not (sys.version_info >= (3, 10)),
                 reason="shape info only in Python>=3.10",
             ),
             id="heaps_of_windows",
@@ -324,6 +324,10 @@ def test_str(ts, file_regression):
     )
 
 
+@pytest.mark.xfail(
+    condition=not (sys.version_info >= (3, 10)),
+    reason="shape info only in Python>=3.10",
+)
 @formatting_check_cases
 def test_pretty(ts, file_regression):
     file_regression.check(
