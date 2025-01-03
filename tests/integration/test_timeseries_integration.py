@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import re
 import sys
+from contextlib import nullcontext as does_not_raise
+from unittest.mock import patch
 
 import numpy as np
 import pint
@@ -14,6 +16,7 @@ import pytest
 from IPython.lib.pretty import pretty
 
 from continuous_timeseries.discrete_to_continuous import InterpolationOption
+from continuous_timeseries.exceptions import MissingOptionalDependencyError
 from continuous_timeseries.timeseries import Timeseries
 
 UR = pint.get_application_registry()
@@ -368,7 +371,8 @@ def test_html(ts, file_regression):
 #
 # @operations_test_cases
 # @pytest.mark.parametrize(
-#     "differentiate_kwargs", ({}, dict(name_res=None), dict(name_res="name_overwritten"))
+#     "differentiate_kwargs",
+#     ({}, dict(name_res=None), dict(name_res="name_overwritten"))
 # )
 # def test_differentiate(operations_test_case, differentiate_kwargs):
 #     derivative = operations_test_case.ts.differentiate(**differentiate_kwargs)
@@ -387,213 +391,237 @@ def test_html(ts, file_regression):
 #         assert derivative.name == differentiate_kwargs["name_res"]
 #     else:
 #         assert derivative.name == f"{operations_test_case.ts.name}_derivative"
-#
-#
-# @pytest.mark.parametrize(
-#     "x_units, y_units, plot_kwargs, legend",
-#     (
-#         pytest.param(None, None, {}, False, id="no-units-set"),
-#         pytest.param("month", None, {}, False, id="x-units-set"),
-#         pytest.param(None, "t", {}, False, id="y-units-set"),
-#         pytest.param("s", "Gt", {}, False, id="x-and-y-units-set"),
-#         pytest.param(None, None, {}, True, id="default-labels"),
-#         pytest.param(
-#             None, None, dict(label="overwritten"), True, id="overwrite-labels"
-#         ),
-#         pytest.param(
-#             "yr",
-#             "Gt",
-#             dict(alpha=0.7, linewidth=2),
-#             False,
-#             id="x-and-y-units-set-kwargs",
-#         ),
-#         pytest.param(
-#             None,
-#             None,
-#             dict(res_increase=2, label="res_increase=2"),
-#             True,
-#             id="res-increase",
-#         ),
-#     ),
-# )
-# @pytest.mark.parametrize(
-#     "time_axis_plot",
-#     (
-#         pytest.param(Q([1.0, 2.0], "yr"), id="basic"),
-#         pytest.param(TimeAxis(Q([1.0, 2.0], "yr")), id="TimeAxis"),
-#         pytest.param(Q([1.25, 1.75], "yr"), id="within_domain"),
-#     ),
-# )
-# def test_plot(
-#     x_units, y_units, plot_kwargs, legend, time_axis_plot, image_regression, tmp_path
-# ):
-#     import matplotlib
-#
-#     # ensure matplotlib does not use a GUI backend (such as Tk)
-#     matplotlib.use("Agg")
-#
-#     import matplotlib.pyplot as plt
-#     import matplotlib.units
-#
-#     # Setup matplotlib to use units
-#     UR.setup_matplotlib(enable=True)
-#
-#     fig, ax = plt.subplots()
-#
-#     gt = TimeseriesContinuous(
-#         name="gt_quadratic",
-#         time_units=UR.Unit("yr"),
-#         values_units=UR.Unit("Gt"),
-#         function=ContinuousFunctionScipyPPoly(
-#             scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [1.0], [0.0]])
-#         ),
-#         domain=(Q(1.0, "yr"), Q(2.0, "yr")),
-#     )
-#     mt = TimeseriesContinuous(
-#         name="mt_linear",
-#         time_units=UR.Unit("yr"),
-#         values_units=UR.Unit("Mt"),
-#         function=ContinuousFunctionScipyPPoly(
-#             scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1000.0], [3.0]])
-#         ),
-#         domain=(Q(1.0, "yr"), Q(2.0, "yr")),
-#     )
-#
-#     gt_per_year = TimeseriesContinuous(
-#         name="gt_quadratic_per_year",
-#         time_units=UR.Unit("yr"),
-#         values_units=UR.Unit("Gt / yr"),
-#         function=ContinuousFunctionScipyPPoly(
-#             scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [1.0], [0.0]])
-#         ),
-#         domain=(Q(1.0, "yr"), Q(2.0, "yr")),
-#     )
-#
-#     if x_units is not None:
-#         ax.set_xlabel(x_units)
-#         ax.xaxis.set_units(UR.Unit(x_units))
-#
-#     if y_units is not None:
-#         ax.set_ylabel(y_units)
-#         ax.yaxis.set_units(UR.Unit(y_units))
-#
-#     # Even though timeseries are in different units,
-#     # use of pint with matplotib will ensure sensible units on plot.
-#     mt.plot(ax=ax, time_axis=time_axis_plot, **plot_kwargs)
-#     gt.plot(ax=ax, time_axis=time_axis_plot, **plot_kwargs)
-#
-#     # Trying to plot something with incompatible units will raise.
-#     with pytest.raises(matplotlib.units.ConversionError):
-#         gt_per_year.plot(ax=ax, time_axis=time_axis_plot, **plot_kwargs)
-#
-#     if legend:
-#         ax.legend()
-#
-#     fig.tight_layout()
-#
-#     out_file = tmp_path / "fig.png"
-#     fig.savefig(out_file)
-#
-#     image_regression.check(out_file.read_bytes(), diff_threshold=0.01)
-#
-#     # Ensure we tear down
-#     UR.setup_matplotlib(enable=False)
-#     plt.close()
-#
-#
-# @pytest.mark.parametrize(
-#     "plot_kwargs, expectation",
-#     (
-#         pytest.param(
-#             {},
-#             pytest.warns(
-#                 UserWarning,
-#                 match=(
-#                     "The magnitude will be plotted "
-#                     "without any consideration of units"
-#                 ),
-#             ),
-#             id="defaults",
-#         ),
-#         pytest.param(
-#             dict(warn_if_plotting_magnitudes=True),
-#             pytest.warns(
-#                 UserWarning,
-#                 match=(
-#                     "The magnitude will be plotted "
-#                     "without any consideration of units"
-#                 ),
-#             ),
-#             id="warning",
-#         ),
-#         pytest.param(
-#             dict(warn_if_plotting_magnitudes=False),
-#             does_not_raise(),
-#             id="no-warning",
-#         ),
-#     ),
-# )
-# def test_plot_matplotlib_units_not_registered(
-#     plot_kwargs, expectation, image_regression, tmp_path
-# ):
-#     import matplotlib
-#
-#     # ensure matplotlib does not use a GUI backend (such as Tk)
-#     matplotlib.use("Agg")
-#
-#     import matplotlib.pyplot as plt
-#
-#     fig, ax = plt.subplots()
-#
-#     ts = TimeseriesContinuous(
-#         name="piecewise_quadratic",
-#         time_units=UR.Unit("yr"),
-#         values_units=UR.Unit("Gt"),
-#         function=ContinuousFunctionScipyPPoly(
-#             scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [1.0], [0.0]])
-#         ),
-#         domain=(Q(1.0, "yr"), Q(2.0, "yr")),
-#     )
-#
-#     time_axis_plot = Q([1.0, 2.0], "yr")
-#     with expectation:
-#         ts.plot(ax=ax, time_axis=time_axis_plot, **plot_kwargs)
-#
-#     out_file = tmp_path / "fig.png"
-#     fig.savefig(out_file)
-#
-#     plt.close()
-#
-#     image_regression.check(out_file.read_bytes(), diff_threshold=0.01)
-#
-#
-# @pytest.mark.parametrize(
-#     "sys_modules_patch, expectation",
-#     (
-#         pytest.param({}, does_not_raise(), id="matplotlib_available"),
-#         pytest.param(
-#             {"matplotlib": None},
-#             pytest.raises(
-#                 MissingOptionalDependencyError,
-#                 match="`TimeseriesContinuous.plot` requires matplotlib to be installed",
-#             ),
-#             id="matplotlib_not_available",
-#         ),
-#     ),
-# )
-# def test_plot_ax_creation(sys_modules_patch, expectation):
-#     ts = TimeseriesContinuous(
-#         name="piecewise_quadratic",
-#         time_units=UR.Unit("yr"),
-#         values_units=UR.Unit("Gt"),
-#         function=ContinuousFunctionScipyPPoly(
-#             scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [1.0], [0.0]])
-#         ),
-#         domain=(Q(1.0, "yr"), Q(2.0, "yr")),
-#     )
-#     with patch.dict(sys.modules, sys_modules_patch):
-#         with expectation:
-#             ts.plot(
-#                 time_axis=Q(ts.function.ppoly.x, ts.time_units),
-#                 warn_if_plotting_magnitudes=False,
-#             )
+
+
+@pytest.mark.parametrize(
+    "x_units, y_units, plot_kwargs, legend",
+    (
+        pytest.param(None, None, {}, False, id="no-units-set"),
+        pytest.param("month", None, {}, False, id="x-units-set"),
+        pytest.param(None, "t", {}, False, id="y-units-set"),
+        pytest.param("s", "Gt", {}, False, id="x-and-y-units-set"),
+        pytest.param(None, None, {}, True, id="default-labels"),
+        pytest.param(
+            None,
+            None,
+            dict(
+                continuous_plot_kwargs=dict(label="overwritten-continuous"),
+                show_discrete=True,
+                discrete_plot_kwargs=dict(label="overwritten-discrete"),
+            ),
+            True,
+            id="overwrite-labels",
+        ),
+        pytest.param(
+            "yr",
+            "Gt",
+            dict(continuous_plot_kwargs=dict(alpha=0.7, linewidth=2)),
+            False,
+            id="x-and-y-units-set-kwargs-continuous",
+        ),
+        pytest.param(
+            None,
+            None,
+            dict(continuous_plot_kwargs=dict(res_increase=2, label="res_increase=2")),
+            True,
+            id="res-increase",
+        ),
+        pytest.param(
+            None,
+            None,
+            dict(show_discrete=True),
+            True,
+            id="show-discrete",
+        ),
+        pytest.param(
+            None,
+            None,
+            dict(show_discrete=True, show_continuous=False),
+            True,
+            id="discrete-only",
+        ),
+        pytest.param(
+            None,
+            None,
+            dict(
+                show_discrete=True,
+                discrete_plot_kwargs=dict(marker="x", s=150),
+                show_continuous=False,
+                # Should be ignored
+                continuous_plot_kwargs=dict(explode=4),
+            ),
+            True,
+            id="discrete-kwargs",
+        ),
+        pytest.param(
+            None,
+            None,
+            dict(
+                show_discrete=True,
+                discrete_plot_kwargs=dict(marker="x", s=150, zorder=3),
+                continuous_plot_kwargs=dict(linewidth=2, alpha=0.7),
+            ),
+            True,
+            id="continuous-and-discrete-kwargs",
+        ),
+    ),
+)
+def test_plot(  # noqa: PLR0913
+    x_units, y_units, plot_kwargs, legend, image_regression, tmp_path
+):
+    import matplotlib
+
+    # ensure matplotlib does not use a GUI backend (such as Tk)
+    matplotlib.use("Agg")
+
+    import matplotlib.pyplot as plt
+    import matplotlib.units
+
+    # Setup matplotlib to use units
+    UR.setup_matplotlib(enable=True)
+
+    fig, ax = plt.subplots()
+
+    gt = Timeseries.from_arrays(
+        time_axis_bounds=Q([1.0, 10.0, 20.0], "yr"),
+        values_at_bounds=Q([10.0, 12.0, 32.0], "Gt"),
+        interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+        name="gt_piecewise_constant",
+    )
+
+    mt = Timeseries.from_arrays(
+        time_axis_bounds=Q([0.0, 10.0, 32.0], "yr"),
+        values_at_bounds=Q([150.0, 1500.0, 2232.0], "Mt"),
+        interpolation=InterpolationOption.Linear,
+        name="mt_piecewise_linear",
+    )
+
+    gt_per_year = Timeseries.from_arrays(
+        time_axis_bounds=Q([0.0, 10.0, 32.0], "yr"),
+        values_at_bounds=Q([150.0, 1500.0, 2232.0], "Gt / yr"),
+        interpolation=InterpolationOption.Linear,
+        name="gt_per_year_piecewise_linear",
+    )
+
+    if x_units is not None:
+        ax.set_xlabel(x_units)
+        ax.xaxis.set_units(UR.Unit(x_units))
+
+    if y_units is not None:
+        ax.set_ylabel(y_units)
+        ax.yaxis.set_units(UR.Unit(y_units))
+
+    # Even though timeseries are in different units,
+    # use of pint with matplotib will ensure sensible units on plot.
+    mt.plot(ax=ax, **plot_kwargs)
+    gt.plot(ax=ax, **plot_kwargs)
+
+    # Trying to plot something with incompatible units will raise.
+    with pytest.raises(matplotlib.units.ConversionError):
+        gt_per_year.plot(ax=ax, **plot_kwargs)
+
+    if legend:
+        ax.legend()
+
+    fig.tight_layout()
+
+    out_file = tmp_path / "fig.png"
+    fig.savefig(out_file)
+
+    image_regression.check(out_file.read_bytes(), diff_threshold=0.01)
+
+    # Ensure we tear down
+    UR.setup_matplotlib(enable=False)
+    plt.close()
+
+
+@pytest.mark.parametrize(
+    "plot_kwargs, expectation",
+    (
+        pytest.param(
+            {},
+            pytest.warns(
+                UserWarning,
+                match=(
+                    "The magnitude will be plotted "
+                    "without any consideration of units"
+                ),
+            ),
+            id="defaults",
+        ),
+        pytest.param(
+            dict(continuous_plot_kwargs=dict(warn_if_plotting_magnitudes=True)),
+            pytest.warns(
+                UserWarning,
+                match=(
+                    "The magnitude will be plotted "
+                    "without any consideration of units"
+                ),
+            ),
+            id="warning",
+        ),
+        pytest.param(
+            dict(continuous_plot_kwargs=dict(warn_if_plotting_magnitudes=False)),
+            does_not_raise(),
+            id="no-warning",
+        ),
+    ),
+)
+def test_plot_matplotlib_units_not_registered(
+    plot_kwargs, expectation, image_regression, tmp_path
+):
+    import matplotlib
+
+    # ensure matplotlib does not use a GUI backend (such as Tk)
+    matplotlib.use("Agg")
+
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+
+    ts = Timeseries.from_arrays(
+        time_axis_bounds=Q([1.0, 10.0, 20.0], "yr"),
+        values_at_bounds=Q([10.0, 12.0, 32.0], "Mt / yr"),
+        interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+        name="piecewise_constant",
+    )
+
+    with expectation:
+        ts.plot(ax=ax, **plot_kwargs)
+
+    out_file = tmp_path / "fig.png"
+    fig.savefig(out_file)
+
+    plt.close()
+
+    image_regression.check(out_file.read_bytes(), diff_threshold=0.01)
+
+
+@pytest.mark.parametrize(
+    "sys_modules_patch, expectation",
+    (
+        pytest.param({}, does_not_raise(), id="matplotlib_available"),
+        pytest.param(
+            {"matplotlib": None},
+            pytest.raises(
+                MissingOptionalDependencyError,
+                match="`TimeseriesContinuous.plot` requires matplotlib to be installed",
+            ),
+            id="matplotlib_not_available",
+        ),
+    ),
+)
+def test_plot_ax_creation(sys_modules_patch, expectation):
+    ts = Timeseries.from_arrays(
+        time_axis_bounds=Q([1.0, 10.0, 20.0], "yr"),
+        values_at_bounds=Q([10.0, 12.0, 32.0], "Mt / yr"),
+        interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+        name="piecewise_constant",
+    )
+    with patch.dict(sys.modules, sys_modules_patch):
+        with expectation:
+            ts.plot(
+                continuous_plot_kwargs=dict(
+                    warn_if_plotting_magnitudes=False,
+                )
+            )
