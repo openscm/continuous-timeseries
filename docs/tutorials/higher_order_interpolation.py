@@ -166,6 +166,7 @@ custom = ct.Timeseries(
         time_units=time_points.u,
         values_units=emissions.u,
         function=ct.timeseries_continuous.ContinuousFunctionScipyPPoly(cubic_spline),
+        domain=(time_points.min(), time_points.max()),
     ),
 )
 custom
@@ -175,11 +176,13 @@ custom
 # and might be a better choice of fit.
 
 # %%
-fig, axes = plt.subplots(nrows=3, figsize=(8, 6))
+fig, axs = plt.subplot_mosaic(
+    [["full", "full"], ["early_zoom", "late_zoom"]], figsize=(8, 6)
+)
 
 for i, (ax, xlim, ylim) in enumerate(
     zip(
-        axes,
+        axs.values(),
         ((1750, 2100), (1750, 1760), (2090, 2100)),
         ((-14, 14), (-0.05, 0.3), (-5, 1)),
     )
@@ -208,7 +211,7 @@ for i, (ax, xlim, ylim) in enumerate(
 
     ax.grid()
 
-axes[1].legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
+axs["full"].legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
 
 fig.tight_layout()
 

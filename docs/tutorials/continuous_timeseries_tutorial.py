@@ -63,9 +63,10 @@ UR.setup_matplotlib(enable=True)
 # It needs a few pieces.
 # The first is a name, this is straight-forward.
 # The next pieces are the units of time (`time_units`),
-# the units for the values in the timeseries (`values_units`)
-# and a class which holds
-# the continuous representation of the timeseries.
+# the units for the values in the timeseries (`values_units`),
+# a class which holds the continuous representation of the timeseries (`function`)
+# and the domain over which the continuous representation applies
+# (given that the function may not place any restriction on its domain).
 # This class must match the interface defined by
 # `continuous_timeseries.timeseries_continuous.ContinuousFunctionLike`,
 # i.e. it should support evaluating the function,
@@ -114,6 +115,7 @@ ts = TimeseriesContinuous(
     time_units=time_axis.u,
     values_units=values.u,
     function=continuous_constant,
+    domain=(time_axis.min(), time_axis.max()),
 )
 ts
 
@@ -146,6 +148,7 @@ ts_linear = TimeseriesContinuous(
     time_units=time_axis.u,
     values_units=values.u,
     function=continuous_linear,
+    domain=(time_axis.min(), time_axis.max()),
 )
 ts_linear
 
@@ -180,6 +183,7 @@ ts_quadratic = TimeseriesContinuous(
     time_units=time_axis.u,
     values_units=values.u,
     function=continuous_quadratic,
+    domain=(time_axis.min(), time_axis.max()),
 )
 ts_quadratic
 
@@ -216,6 +220,7 @@ ts_cubic = TimeseriesContinuous(
     time_units=time_axis.u,
     values_units=values.u,
     function=continuous_quadratic,
+    domain=(time_axis.min(), time_axis.max()),
 )
 ts_cubic
 
