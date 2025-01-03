@@ -6,4 +6,5 @@ TimeseriesContinuous(
         ppoly=scipy.interpolate._interpolate.PPoly(
             c=array([[-1.2,  2.3],
                    [10. , 12. ]]),
-            x=array([ 1., 10., 20.]))))
+            x=array([ 1., 10., 20.]))),
+    domain=(<Quantity(1, 'year')>, <Quantity(20, 'year')>))

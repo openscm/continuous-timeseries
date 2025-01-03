@@ -49,7 +49,7 @@ def test_integrate_no_scipy(sys_modules_patch, expectation):
     )
     with patch.dict(sys.modules, sys_modules_patch):
         with expectation:
-            continuous_function_scipy_ppoly.integrate(0.0)
+            continuous_function_scipy_ppoly.integrate(0.0, domain_start=1.0)
 
 
 @pytest.mark.parametrize(
