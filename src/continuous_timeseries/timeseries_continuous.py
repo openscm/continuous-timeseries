@@ -78,7 +78,9 @@ class ContinuousFunctionLike(Protocol):
         """
 
     def integrate(
-        self, integration_constant: NP_FLOAT_OR_INT
+        self,
+        integration_constant: NP_FLOAT_OR_INT,
+        domain_start: NP_FLOAT_OR_INT,
     ) -> ContinuousFunctionLike:
         """
         Integrate
@@ -89,6 +91,12 @@ class ContinuousFunctionLike(Protocol):
             Integration constant
 
             This is required for the integral to be a definite integral.
+
+        domain_start
+            The start of the domain.
+
+            This is required to ensure that we start at the right point
+            when evaluating the definite integral.
 
         Returns
         -------
@@ -359,7 +367,7 @@ class ContinuousFunctionScipyPPoly:
 
         c_new = indefinite_integral.c
         c_new[-1, :] = (
-            c_new[-1, :] + integration_constant - indefinite_integral(domain_start)
+            c_new[-1, :] + integration_constant - indefinite_integral(domain_start)  # type: ignore # scipy-stubs expects array
         )
 
         ppoly_integral = scipy.interpolate.PPoly(

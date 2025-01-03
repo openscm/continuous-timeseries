@@ -166,7 +166,7 @@ class PPolyPiecewiseConstantNextLeftOpen:
         )
 
         c_new = indefinite_integral.c
-        c_new[-1, :] = c_new[-1, :] - indefinite_integral(domain_start)
+        c_new[-1, :] = c_new[-1, :] - indefinite_integral(domain_start)  # type: ignore # scipy-stubs expects array
 
         ppoly_integral = scipy.interpolate.PPoly(
             c=c_new,
