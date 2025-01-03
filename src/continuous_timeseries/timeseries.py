@@ -242,6 +242,36 @@ class Timeseries:
             timeseries_continuous=integral,
         )
 
+    def interpolate(
+        self, time_axis: TimeAxis | PINT_NUMPY_ARRAY, allow_extrapolation: bool = False
+    ) -> Timeseries:
+        """
+        Interpolate onto a new time axis
+
+        Parameters
+        ----------
+        time_axis
+            Time axis to update to
+
+        allow_extrapolation
+            Should extrapolation be allowed?
+
+        Returns
+        -------
+        :
+            `self`, interpolated onto `time_axis`.
+        """
+        if allow_extrapolation:
+            raise NotImplementedError(allow_extrapolation)
+        # TODO: add checks about extrapolation here
+        if not isinstance(time_axis, TimeAxis):
+            time_axis = TimeAxis(time_axis)
+
+        return type(self)(
+            time_axis=time_axis,
+            timeseries_continuous=self.timeseries_continuous,
+        )
+
     def update_interpolation(self, interpolation: InterpolationOption) -> Timeseries:
         """
         Update the interpolation
@@ -353,6 +383,8 @@ class Timeseries:
         """
         Update the time axis of `self`
 
+        This is really just an alias for [`interpolate`][(c)].
+
         Parameters
         ----------
         time_axis
@@ -364,15 +396,10 @@ class Timeseries:
         Returns
         -------
         :
-            `self` on the time axis `time_axis`
+            `self` updated to the time axis `time_axis`
         """
-        if allow_extrapolation:
-            raise NotImplementedError(allow_extrapolation)
-        # TODO: add checks about extrapolation here
-
-        return type(self)(
-            time_axis=time_axis,
-            timeseries_continuous=self.timeseries_continuous,
+        return self.interpolate(
+            time_axis=time_axis, allow_extrapolation=allow_extrapolation
         )
 
     def plot(

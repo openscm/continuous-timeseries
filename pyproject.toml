@@ -170,6 +170,12 @@ ignore = [
     "E402",
     "S101",
 ]
+"scripts/*" = [
+    "S101",
+]
+"stubs/*" = [
+    "PLR0913",
+]
 # ruff doesn't recognise the markdown hyperlinks.
 # Figuring out how to make this work nice with jupytext
 # is a problem for another day.
@@ -179,11 +185,8 @@ ignore = [
 "docs/tutorials/higher_order_interpolation.py" = [
     "E501",
 ]
-"scripts/*" = [
-    "S101",
-]
-"stubs/*" = [
-    "PLR0913",
+"docs/how-to-guides/how-to-make-a-step-forcing.py" = [
+    "E501",
 ]
 
 [tool.ruff.lint.isort]
