@@ -51,7 +51,7 @@ def check_no_times_outside_domain(
     if outside_domain.size >= 1:
         msg = (
             f"The {domain=}. "
-            "There are time values that are outside this domain. "
-            f"{outside_domain=}. "
+            "There are time values that are outside this domain: "
+            f"{outside_domain=}."
         )
         raise ValueError(msg)
