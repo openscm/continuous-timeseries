@@ -27,6 +27,7 @@ from continuous_timeseries.exceptions import MissingOptionalDependencyError
 from continuous_timeseries.time_axis import TimeAxis
 from continuous_timeseries.timeseries_continuous import TimeseriesContinuous
 from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
+from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
 
 if TYPE_CHECKING:
@@ -109,7 +110,7 @@ class Timeseries:
         return self.timeseries_continuous.name
 
     @property
-    def discrete(self):
+    def discrete(self) -> TimeseriesDiscrete:
         """
         Discrete view of the time series
         """
@@ -126,8 +127,8 @@ class Timeseries:
     @classmethod
     def from_arrays(
         cls,
-        values_at_bounds,  # array
-        time_axis_bounds,  # array
+        values_at_bounds: PINT_NUMPY_ARRAY,
+        time_axis_bounds: PINT_NUMPY_ARRAY,
         interpolation: InterpolationOption,
         name: str,
     ) -> Timeseries:
@@ -205,7 +206,7 @@ class Timeseries:
 
     def integrate(
         self,
-        integration_constant,  # scalar
+        integration_constant: PINT_SCALAR,
         name_res: str | None = None,
     ) -> Timeseries:
         """
