@@ -13,10 +13,10 @@ in combination with linear or higher order interpolation isn't clear.
 
 from __future__ import annotations
 
-from enum import UNIQUE, IntEnum, verify
+from enum import IntEnum, unique
 
 
-@verify(UNIQUE)
+@unique
 class InterpolationOption(IntEnum):
     """
     Interpolation options
