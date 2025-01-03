@@ -14,6 +14,15 @@ We aim to:
 - Provide the minimum necessary explanation
 - Avoid any distraction
 
+## Timeseries handling
+
+See [Timeseries](./timeseries_tutorial)
+for an introduction to our handing of timeseries.
+This is the key API within this package.
+This tutorial builds on the lower-level tutorials provided in
+[the continuous timeseries tutorial](./continuous_timeseries_tutorial)
+and [the discrete timeseries tutorial](./discrete_timeseries_tutorial).
+
 ## Higher-order interpolation
 
 See [higher-order interpolation](./higher_order_interpolation)

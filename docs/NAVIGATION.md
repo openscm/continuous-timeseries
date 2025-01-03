@@ -8,6 +8,7 @@ See https://oprypin.github.io/mkdocs-literate-nav/
 - [How-to guides](how-to-guides/index.md)
     - [How-to make a step forcing](how-to-guides/how-to-make-a-step-forcing.py)
 - [Tutorials](tutorials/index.md)
+    - [Timeseries tutorial](tutorials/timeseries_tutorial.py)
     - [Higher-order interpolation](tutorials/higher_order_interpolation.py)
     - [Continuous timeseries tutorial](tutorials/continuous_timeseries_tutorial.py)
     - [Discrete timeseries tutorial](tutorials/discrete_timeseries_tutorial.py)

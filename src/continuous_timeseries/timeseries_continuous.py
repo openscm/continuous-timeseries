@@ -24,6 +24,7 @@ import numpy.typing as npt
 from attrs import define
 
 import continuous_timeseries.formatting
+from continuous_timeseries.domain_helpers import check_no_times_outside_domain
 from continuous_timeseries.exceptions import (
     ExtrapolationNotAllowedError,
     MissingOptionalDependencyError,
@@ -322,7 +323,9 @@ class ContinuousFunctionScipyPPoly:
         return res
 
     def integrate(
-        self, integration_constant: NP_FLOAT_OR_INT
+        self,
+        integration_constant: NP_FLOAT_OR_INT,
+        domain_start: NP_FLOAT_OR_INT,
     ) -> ContinuousFunctionLike:
         """
         Integrate
@@ -333,6 +336,12 @@ class ContinuousFunctionScipyPPoly:
             Integration constant
 
             This is required for the integral to be a definite integral.
+
+        domain_start
+            The start of the domain.
+
+            This is required to ensure that we start at the right point
+            when evaluating the definite integral.
 
         Returns
         -------
@@ -349,7 +358,9 @@ class ContinuousFunctionScipyPPoly:
         indefinite_integral = self.ppoly.antiderivative()
 
         c_new = indefinite_integral.c
-        c_new[-1, :] = c_new[-1, :] + integration_constant
+        c_new[-1, :] = (
+            c_new[-1, :] + integration_constant - indefinite_integral(domain_start)
+        )
 
         ppoly_integral = scipy.interpolate.PPoly(
             c=c_new,
@@ -390,6 +401,12 @@ class TimeseriesContinuous:
     """
     The continuous function that represents this timeseries.
     """
+
+    domain: tuple[PINT_SCALAR, PINT_SCALAR]
+    """
+    Domain over which the function can be evaluated
+    """
+    # TODO: validation domain[1] > domain[0]
 
     # Let attrs take care of __repr__
 
@@ -447,6 +464,7 @@ class TimeseriesContinuous:
     def to_discrete_timeseries(
         self,
         time_axis: TimeAxis,
+        allow_extrapolation: bool,
     ) -> TimeseriesDiscrete:
         """
         Convert to [`TimeseriesDiscrete`][(p)]
@@ -455,6 +473,9 @@ class TimeseriesContinuous:
         ----------
         time_axis
             Time axis to use for the conversion
+
+        allow_extrapolation
+            Should extrapolation be allowed during the conversion?
 
         Returns
         -------
@@ -467,7 +488,9 @@ class TimeseriesContinuous:
         res = TimeseriesDiscrete(
             name=self.name,
             time_axis=time_axis,
-            values_at_bounds=ValuesAtBounds(self.interpolate(time_axis)),
+            values_at_bounds=ValuesAtBounds(
+                self.interpolate(time_axis, allow_extrapolation=allow_extrapolation)
+            ),
         )
 
         return res
@@ -494,36 +517,32 @@ class TimeseriesContinuous:
         if isinstance(time_axis, TimeAxis):
             time_axis = time_axis.bounds
 
-        times_m = time_axis.to(self.time_units).m
-        try:
-            values_m = self.function(times_m, allow_extrapolation=allow_extrapolation)
-        except ExtrapolationNotAllowedError as exc:  # pragma: no cover
-            if allow_extrapolation:
-                msg = (
-                    "`self.function` raised a `ExtrapolationNotAllowedError`, "
-                    f"even though {allow_extrapolation=}. "
-                    "Please check the implementation of `self.function`. "
-                    f"{self.function=}"
+        if not allow_extrapolation:
+            try:
+                check_no_times_outside_domain(
+                    time_axis,
+                    domain=self.domain,
                 )
-                raise AssertionError(msg) from exc
+            except ValueError as exc:
+                msg = f"Extrapolation is not allowed ({allow_extrapolation=})."
+                raise ExtrapolationNotAllowedError(msg) from exc
 
-            raise
+        times_m = time_axis.to(self.time_units).m
+        values_m = self.function(
+            times_m,
+            # We have already checked the domain above.
+            # Hence, we want the function to extrapolate if needed.
+            allow_extrapolation=True,
+        )
 
         if np.isnan(values_m).any():  # pragma: no cover
             # This is an escape hatch.
             # In general, we expect `self.function` to handle NaNs
             # before we get to this point.
-            # (If we added a `domain` property to ContinuousFunctionLike
-            # then we could simplify this.)
-            msg_l = ["The result of calling `self.function` contains NaNs."]
-            if not allow_extrapolation:
-                msg_l.append(
-                    "This might be the result of extrapolating when it is not allowed "
-                    f"({allow_extrapolation=})."
-                )
-
-            msg_l.append(f"Result of calling `self.function` was {values_m!r}.")
-            msg = " ".join(msg_l)
+            msg = (
+                "The result of calling `self.function` contains NaNs. "
+                f"The result is {values_m!r}."
+            )
             raise AssertionError(msg)
 
         res: PINT_NUMPY_ARRAY = values_m * self.values_units
@@ -557,7 +576,8 @@ class TimeseriesContinuous:
         integral_values_units = self.values_units * self.time_units
 
         integral = self.function.integrate(
-            integration_constant=integration_constant.to(integral_values_units).m
+            integration_constant=integration_constant.to(integral_values_units).m,
+            domain_start=self.domain[0].to(self.time_units).m,
         )
 
         return type(self)(
@@ -565,6 +585,7 @@ class TimeseriesContinuous:
             time_units=self.time_units,
             values_units=integral_values_units,
             function=integral,
+            domain=self.domain,
         )
 
     def differentiate(self, name_res: str | None = None) -> TimeseriesContinuous:
@@ -595,6 +616,7 @@ class TimeseriesContinuous:
             time_units=self.time_units,
             values_units=derivative_values_units,
             function=derivative,
+            domain=self.domain,
         )
 
     def plot(

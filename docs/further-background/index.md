@@ -19,7 +19,7 @@ Points we aim to cover:
 [Why this API][why-this-api] explains why we built this API the way we did.
 In particular, the problems that this API solves.
 This is a good starting point if you're wondering,
-"Why yet another timeseries representation?"
+"Why yet another timeseries representation?".
 
 ## Representations of objects
 

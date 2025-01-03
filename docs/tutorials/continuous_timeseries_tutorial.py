@@ -51,7 +51,7 @@ Q = UR.Quantity
 # For details, see the pint docs
 # ([stable docs](https://pint.readthedocs.io/en/stable/user/plotting.html),
 # [last version that we checked at the time of writing](https://pint.readthedocs.io/en/0.24.4/user/plotting.html))
-# [or our docs on unit-aware plotting](../discrete_timeseries_tutorial#unit-aware-plotting).  # noqa: E501
+# [or our docs on unit-aware plotting](../discrete_timeseries_tutorial#unit-aware-plotting).
 
 # %%
 UR.setup_matplotlib(enable=True)
@@ -59,7 +59,7 @@ UR.setup_matplotlib(enable=True)
 # %% [markdown]
 # ## The `TimeseriesContinuous` class
 #
-# The `TimeseriesContinuous` is our representation of continuous timeseries.
+# The `TimeseriesContinuous` class is our representation of continuous timeseries.
 # It needs a few pieces.
 # The first is a name, this is straight-forward.
 # The next pieces are the units of time (`time_units`),

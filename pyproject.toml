@@ -182,6 +182,9 @@ ignore = [
 "docs/further-background/why-this-api.py" = [
     "E501",
 ]
+"docs/tutorials/continuous_timeseries_tutorial.py" = [
+    "E501",
+]
 "docs/tutorials/higher_order_interpolation.py" = [
     "E501",
 ]

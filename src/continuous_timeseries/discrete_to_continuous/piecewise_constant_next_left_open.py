@@ -104,7 +104,7 @@ class PPolyPiecewiseConstantNextLeftOpen:
         return res
 
     def integrate(
-        self, integration_constant: NP_FLOAT_OR_INT
+        self, integration_constant: NP_FLOAT_OR_INT, domain_start: NP_FLOAT_OR_INT
     ) -> ContinuousFunctionScipyPPoly:
         """
         Integrate
@@ -115,6 +115,12 @@ class PPolyPiecewiseConstantNextLeftOpen:
             Integration constant
 
             This is required for the integral to be a definite integral.
+
+        domain_start
+            The start of the domain.
+
+            This is required to ensure that we start at the right point
+            when evaluating the definite integral.
 
         Returns
         -------
@@ -137,9 +143,9 @@ class PPolyPiecewiseConstantNextLeftOpen:
         x = self.x
         x_steps = x[1:] - x[:-1]
 
-        values_in_domain = self.values[:-1]
-        gradients = values_in_domain
-        definite_integrals = np.cumsum(values_in_domain * x_steps)
+        values_in_window = self.values[:-1]
+        gradients = values_in_window
+        definite_integrals = np.cumsum(values_in_window * x_steps)
 
         constant_terms = np.hstack(
             [
@@ -151,20 +157,24 @@ class PPolyPiecewiseConstantNextLeftOpen:
             ]
         )
 
-        c = np.vstack(
-            [
-                gradients,
-                constant_terms,
-            ]
+        c = np.vstack([gradients, constant_terms])
+
+        indefinite_integral = scipy.interpolate.PPoly(
+            x=x,
+            c=c,
+            extrapolate=False,
         )
 
-        return ContinuousFunctionScipyPPoly(
-            scipy.interpolate.PPoly(
-                x=x,
-                c=c,
-                extrapolate=False,  # no extrapolation by default
-            )
+        c_new = indefinite_integral.c
+        c_new[-1, :] = c_new[-1, :] - indefinite_integral(domain_start)
+
+        ppoly_integral = scipy.interpolate.PPoly(
+            c=c_new,
+            x=indefinite_integral.x,
+            extrapolate=False,
         )
+
+        return ContinuousFunctionScipyPPoly(ppoly_integral)
 
     def differentiate(self) -> ContinuousFunctionScipyPPoly:
         """
@@ -237,6 +247,7 @@ def discrete_to_continuous_piecewise_constant_next_left_open(
         time_units=time_bounds.u,
         values_units=all_vals.u,
         function=piecewise_polynomial,
+        domain=(time_bounds.min(), time_bounds.max()),
     )
 
     return res

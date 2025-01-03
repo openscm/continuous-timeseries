@@ -16,14 +16,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from attrs import define
+from attrs import define, evolve
 
 import continuous_timeseries.formatting
 from continuous_timeseries.discrete_to_continuous import (
     InterpolationOption,
     discrete_to_continuous,
 )
-from continuous_timeseries.exceptions import MissingOptionalDependencyError
+from continuous_timeseries.domain_helpers import check_no_times_outside_domain
+from continuous_timeseries.exceptions import (
+    ExtrapolationNotAllowedError,
+    MissingOptionalDependencyError,
+)
 from continuous_timeseries.time_axis import TimeAxis
 from continuous_timeseries.timeseries_continuous import TimeseriesContinuous
 from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
@@ -261,15 +265,27 @@ class Timeseries:
         :
             `self`, interpolated onto `time_axis`.
         """
-        if allow_extrapolation:
-            raise NotImplementedError(allow_extrapolation)
-        # TODO: add checks about extrapolation here
         if not isinstance(time_axis, TimeAxis):
             time_axis = TimeAxis(time_axis)
 
+        if not allow_extrapolation:
+            try:
+                check_no_times_outside_domain(
+                    time_axis.bounds,
+                    domain=self.timeseries_continuous.domain,
+                )
+            except ValueError as exc:
+                msg = f"Extrapolation is not allowed ({allow_extrapolation=})."
+                raise ExtrapolationNotAllowedError(msg) from exc
+
+        timeseries_continuous_new = evolve(
+            self.timeseries_continuous,
+            domain=(time_axis.bounds.min(), time_axis.bounds.max()),
+        )
+
         return type(self)(
             time_axis=time_axis,
-            timeseries_continuous=self.timeseries_continuous,
+            timeseries_continuous=timeseries_continuous_new,
         )
 
     def update_interpolation(self, interpolation: InterpolationOption) -> Timeseries:
