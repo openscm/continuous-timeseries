@@ -376,7 +376,7 @@ for label, updated_time_axis, updated_interpolation in (
     ),
 ):
     if updated_time_axis is not None:
-        updated_time = ts_varying_step_size.update_time(updated_time_axis)
+        updated_time = ts_varying_step_size.interpolate(updated_time_axis)
     else:
         updated_time = ts_varying_step_size
 
