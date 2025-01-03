@@ -1,11 +1,11 @@
 """
 Conversion of discrete to continuous using 'previous' piecewise constant steps
 
-Each interval is closed on the left.
+Each interval is open on the left.
 
 In other words,
 between t(i) and t(i + 1), the value is equal to y(i).
-At t(i + 1), the value is equal to y(i + 1).
+At t(i + 1), the value is equal to y(i).
 
 If helpful, we have drawn a picture of how this works below.
 Symbols:
@@ -15,10 +15,10 @@ Symbols:
 - o: open (i.e. exclusive) boundary
 
 ```
-y(4):                                                ixxxxxxxxxxxxxx
-y(3):                                    ixxxxxxxxxxxo
-y(2):                        ixxxxxxxxxxxo
-y(1): xxxxxxxxxxxxxxxxxxxxxxxo
+y(4):                                                oxxxxxxxxxxxxxx
+y(3):                                    oxxxxxxxxxxxi
+y(2):                        oxxxxxxxxxxxi
+y(1): xxxxxxxxxxxxxxxxxxxxxxxi
       -----------|-----------|-----------|-----------|--------------
               time(1)     time(2)     time(3)     time(4)
 ```
@@ -44,9 +44,9 @@ if TYPE_CHECKING:
 
 
 @define
-class PPolyPiecewiseConstantPreviousLeftClosed:
+class PPolyPiecewiseConstantPreviousLeftOpen:
     """
-    Piecewise polynomial that implements our 'previous' constant left-closed logic
+    Piecewise polynomial that implements our 'previous' constant left-open logic
 
     We can't use [`scipy.interpolate.PPoly`][scipy.interpolate.PPoly] directly
     because it doesn't behave as we want (it does 'next' logic).
@@ -64,7 +64,7 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
     Value to return in each interval.
 
     Must have same number of elements as `x`
-    so that we know what to use at the last boundary too.
+    so that we know what to use for extrapolation beyond the last boundary too.
     """
 
     # TODO: add validation
@@ -95,7 +95,7 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
         """
         # TODO: extrapolation checks
         res_idxs: npt.NDArray[np.int_] = (
-            np.searchsorted(a=self.x, v=np.atleast_1d(x), side="right") - 1
+            np.searchsorted(a=self.x, v=np.atleast_1d(x), side="left") - 1
         )
         # Fix up any overrun
         res_idxs[res_idxs == -1] = 0
@@ -130,7 +130,7 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
             import scipy.interpolate
         except ImportError as exc:
             raise MissingOptionalDependencyError(
-                "PPolyPiecewiseConstantPreviousLeftClosed.integrate",
+                "PPolyPiecewiseConstantPreviousLeftOpen.integrate",
                 requirement="scipy",
             ) from exc
 
@@ -184,7 +184,7 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
             import scipy.interpolate
         except ImportError as exc:
             raise MissingOptionalDependencyError(
-                "PPolyPiecewiseConstantPreviousLeftClosed.differentiate",
+                "PPolyPiecewiseConstantPreviousLeftOpen.differentiate",
                 requirement="scipy",
             ) from exc
 
@@ -197,15 +197,15 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
         )
 
 
-def discrete_to_continuous_piecewise_constant_previous_left_closed(
+def discrete_to_continuous_piecewise_constant_previous_left_open(
     discrete: TimeseriesDiscrete,
 ) -> TimeseriesContinuous:
     """
     Convert a discrete timeseries to piecewise constant
 
-    Here we use piecewise constant, previous, left-closed interpolation.
+    Here we use piecewise constant, previous, left-open interpolation.
     For details, see
-    [the module's docstring][continuous_timeseries.discrete_to_continuous.piecewise_constant_previous_left_closed].
+    [the module's docstring][continuous_timeseries.discrete_to_continuous.piecewise_constant_previous_left_open].
 
     Parameters
     ----------
@@ -216,7 +216,7 @@ def discrete_to_continuous_piecewise_constant_previous_left_closed(
     -------
     :
         Continuous version of `discrete`
-        based on piecewise constant, previous, left-closed interpolation.
+        based on piecewise constant, previous, left-open interpolation.
     """  # noqa: E501
     # Late import to avoid circularity
     from continuous_timeseries.timeseries_continuous import (
@@ -227,7 +227,7 @@ def discrete_to_continuous_piecewise_constant_previous_left_closed(
 
     all_vals = discrete.values_at_bounds.values
 
-    piecewise_polynomial = PPolyPiecewiseConstantPreviousLeftClosed(
+    piecewise_polynomial = PPolyPiecewiseConstantPreviousLeftOpen(
         x=time_bounds.m,
         values=all_vals.m,
     )

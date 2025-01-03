@@ -31,12 +31,15 @@ from continuous_timeseries.exceptions import (
 from continuous_timeseries.plotting_helpers import get_plot_vals
 from continuous_timeseries.time_axis import TimeAxis
 from continuous_timeseries.typing import NP_FLOAT_OR_INT, PINT_NUMPY_ARRAY, PINT_SCALAR
+from continuous_timeseries.values_at_bounds import ValuesAtBounds
 
 if TYPE_CHECKING:
     import IPython.lib.pretty
     import matplotlib.axes
     import pint.facets.plain
     import scipy.interpolate
+
+    from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
 
 
 class ContinuousFunctionLike(Protocol):
@@ -441,13 +444,33 @@ class TimeseriesContinuous:
             include_header=False,
         )
 
-    # # When we have discrete_to_continuous, add
-    # def to_discrete_timeseries(
-    #     self,
-    #     time_axis: TimeAxis,
-    # ) -> TimeseriesDiscrete:
-    #     interpolate onto time_axis values,
-    #     then return TimeseriesDiscrete with same name.
+    def to_discrete_timeseries(
+        self,
+        time_axis: TimeAxis,
+    ) -> TimeseriesDiscrete:
+        """
+        Convert to [`TimeseriesDiscrete`][(p)]
+
+        Parameters
+        ----------
+        time_axis
+            Time axis to use for the conversion
+
+        Returns
+        -------
+        :
+            Discrete representation of `self`
+        """
+        # Late import to avoid circularity
+        from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
+
+        res = TimeseriesDiscrete(
+            name=self.name,
+            time_axis=time_axis,
+            values_at_bounds=ValuesAtBounds(self.interpolate(time_axis)),
+        )
+
+        return res
 
     def interpolate(
         self, time_axis: TimeAxis | PINT_NUMPY_ARRAY, allow_extrapolation: bool = False

@@ -31,6 +31,9 @@ class InterpolationOption(IntEnum):
     Cubic = 3
     """Cubic interpolation"""
 
+    Quartic = 4
+    """Quartic interpolation"""
+
     PiecewiseConstantNextLeftClosed = 10
     """
     Piecewise constant 'next' interpolation, each interval is closed on the left

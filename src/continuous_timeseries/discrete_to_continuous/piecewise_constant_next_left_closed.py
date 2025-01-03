@@ -40,6 +40,24 @@ if TYPE_CHECKING:
 def discrete_to_continuous_piecewise_constant_next_left_closed(
     discrete: TimeseriesDiscrete,
 ) -> TimeseriesContinuous:
+    """
+    Convert a discrete timeseries to piecewise constant
+
+    Here we use piecewise constant, next, left-closed interpolation.
+    For details, see
+    [the module's docstring][continuous_timeseries.discrete_to_continuous.piecewise_constant_next_left_closed].
+
+    Parameters
+    ----------
+    discrete
+        Discrete timeseries to convert
+
+    Returns
+    -------
+    :
+        Continuous version of `discrete`
+        based on piecewise constant, next, left-closed interpolation.
+    """  # noqa: E501
     try:
         import scipy.interpolate
     except ImportError as exc:
