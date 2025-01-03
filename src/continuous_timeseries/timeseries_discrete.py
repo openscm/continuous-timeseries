@@ -130,6 +130,20 @@ class TimeseriesDiscrete:
         self,
         interpolation: InterpolationOption,
     ) -> TimeseriesContinuous:
+        """
+        Convert to [`TimeseriesContinuous`][(p)]
+
+        Parameters
+        ----------
+        interpolation
+            Interpolation to use for the conversion
+
+        Returns
+        -------
+        :
+            Continuous representation of `self` for the interpolation
+            specified by `interpolation`
+        """
         return discrete_to_continuous(
             discrete=self,
             interpolation=interpolation,
