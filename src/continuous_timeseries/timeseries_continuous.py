@@ -17,7 +17,7 @@ We include straight-forward methods to convert to
 from __future__ import annotations
 
 import textwrap
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -30,12 +30,12 @@ from continuous_timeseries.exceptions import (
 )
 from continuous_timeseries.plotting_helpers import get_plot_vals
 from continuous_timeseries.time_axis import TimeAxis
-from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
+from continuous_timeseries.typing import NP_FLOAT_OR_INT, PINT_NUMPY_ARRAY, PINT_SCALAR
 
 if TYPE_CHECKING:
     import IPython.lib.pretty
     import matplotlib.axes
-    import pint.registry
+    import pint.facets.plain
     import scipy.interpolate
 
 
@@ -45,8 +45,8 @@ class ContinuousFunctionLike(Protocol):
     """
 
     def __call__(
-        self, x: npt.NDArray[np.number[Any]], allow_extrapolation: bool = False
-    ) -> npt.NDArray[np.number[Any]]:
+        self, x: npt.NDArray[NP_FLOAT_OR_INT], allow_extrapolation: bool = False
+    ) -> npt.NDArray[NP_FLOAT_OR_INT]:
         """
         Evaluate the function at specific points
 
@@ -73,7 +73,9 @@ class ContinuousFunctionLike(Protocol):
             the domain over which they are defined.
         """
 
-    def integrate(self, integration_constant: np.number[Any]) -> ContinuousFunctionLike:
+    def integrate(
+        self, integration_constant: NP_FLOAT_OR_INT
+    ) -> ContinuousFunctionLike:
         """
         Integrate
 
@@ -252,8 +254,8 @@ class ContinuousFunctionScipyPPoly:
         return order_str
 
     def __call__(
-        self, x: npt.NDArray[np.number[Any]], allow_extrapolation: bool = False
-    ) -> npt.NDArray[np.number[Any]]:
+        self, x: npt.NDArray[NP_FLOAT_OR_INT], allow_extrapolation: bool = False
+    ) -> npt.NDArray[NP_FLOAT_OR_INT]:
         """
         Evaluate the function at specific points
 
@@ -275,7 +277,10 @@ class ContinuousFunctionScipyPPoly:
         ExtrapolationNotAllowedError
             The user attempted to extrapolate when it isn't allowed.
         """
-        res = self.ppoly(x=x, extrapolate=allow_extrapolation)
+        res = cast(
+            npt.NDArray[NP_FLOAT_OR_INT],
+            self.ppoly(x=x, extrapolate=allow_extrapolation),
+        )
 
         if np.isnan(res).any():
             if allow_extrapolation:  # pragma: no cover
@@ -313,7 +318,9 @@ class ContinuousFunctionScipyPPoly:
 
         return res
 
-    def integrate(self, integration_constant: np.number[Any]) -> ContinuousFunctionLike:
+    def integrate(
+        self, integration_constant: NP_FLOAT_OR_INT
+    ) -> ContinuousFunctionLike:
         """
         Integrate
 
@@ -370,10 +377,10 @@ class TimeseriesContinuous:
     name: str
     """Name of the timeseries"""
 
-    time_units: pint.registry.Unit
+    time_units: pint.facets.plain.PlainUnit
     """The units of the time axis"""
 
-    values_units: pint.registry.Unit
+    values_units: pint.facets.plain.PlainUnit
     """The units of the values"""
 
     function: ContinuousFunctionLike

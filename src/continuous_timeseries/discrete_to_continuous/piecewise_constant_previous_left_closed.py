@@ -26,13 +26,14 @@ y(1): xxxxxxxxxxxxxxxxxxxxxxxo
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
 from attrs import define
 
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
+from continuous_timeseries.typing import NP_FLOAT_OR_INT
 
 if TYPE_CHECKING:
     from continuous_timeseries.timeseries_continuous import (
@@ -53,12 +54,12 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
     but that is more trouble than its worth for such a simple implementation.
     """
 
-    x: npt.NDArray[np.number[Any]]
+    x: npt.NDArray[NP_FLOAT_OR_INT]
     """
     Breakpoints between each piecewise constant interval
     """
 
-    values: npt.NDArray[np.number[Any]]
+    values: npt.NDArray[NP_FLOAT_OR_INT]
     """
     Value to return in each interval.
 
@@ -68,8 +69,8 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
     # TODO: add validation
 
     def __call__(
-        self, x: npt.NDArray[np.number[Any]], allow_extrapolation: bool = False
-    ) -> npt.NDArray[np.number[Any]]:
+        self, x: npt.NDArray[NP_FLOAT_OR_INT], allow_extrapolation: bool = False
+    ) -> npt.NDArray[NP_FLOAT_OR_INT]:
         """
         Evaluate the function at specific points
 
@@ -92,7 +93,9 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
             The user attempted to extrapolate when it isn't allowed.
         """
         # TODO: extrapolation checks
-        res_idxs = np.searchsorted(a=self.x, v=np.atleast_1d(x), side="right") - 1
+        res_idxs: npt.NDArray[np.int_] = (
+            np.searchsorted(a=self.x, v=np.atleast_1d(x), side="right") - 1
+        )
         # Fix up any overrun
         res_idxs[res_idxs == -1] = 0
         res = self.values[res_idxs]
@@ -100,7 +103,7 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
         return res
 
     def integrate(
-        self, integration_constant: np.number[Any]
+        self, integration_constant: NP_FLOAT_OR_INT
     ) -> ContinuousFunctionScipyPPoly:
         """
         Integrate
@@ -196,6 +199,24 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
 def discrete_to_continuous_piecewise_constant_previous_left_closed(
     discrete: TimeseriesDiscrete,
 ) -> TimeseriesContinuous:
+    """
+    Convert a discrete timeseries to piecewise constant
+
+    Here we use piecewise constant, previous, left-closed interpolation.
+    For details, see
+    [the module's docstring][continuous_timeseries.discrete_to_continuous.piecewise_constant_previous_left_closed].
+
+    Parameters
+    ----------
+    discrete
+        Discrete timeseries to convert
+
+    Returns
+    -------
+    :
+        Continuous version of `discrete`
+        based on piecewise constant, previous, left-closed interpolation.
+    """  # noqa: E501
     # Late import to avoid circularity
     from continuous_timeseries.timeseries_continuous import (
         TimeseriesContinuous,

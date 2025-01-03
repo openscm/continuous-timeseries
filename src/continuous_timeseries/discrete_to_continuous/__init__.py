@@ -28,6 +28,22 @@ if TYPE_CHECKING:
 def discrete_to_continuous(
     discrete: TimeseriesDiscrete, interpolation: InterpolationOption
 ) -> TimeseriesContinuous:
+    """
+    Convert a discrete timeseries to continuous
+
+    Parameters
+    ----------
+    discrete
+        Discrete timeseries to convert
+
+    interpolation
+        Interpolation type to use for converting from discrete to continuous.
+
+    Returns
+    -------
+    :
+        Continuous version of `discrete` based on `interpolation`.
+    """
     if interpolation == InterpolationOption.PiecewiseConstantNextLeftClosed:
         return discrete_to_continuous_piecewise_constant_next_left_closed(
             discrete=discrete,
@@ -64,3 +80,6 @@ def discrete_to_continuous(
     #     )
 
     raise NotImplementedError(interpolation.name)
+
+
+__all__ = ["InterpolationOption", "discrete_to_continuous"]
