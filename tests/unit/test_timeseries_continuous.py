@@ -19,11 +19,48 @@ from continuous_timeseries.exceptions import (
 )
 from continuous_timeseries.timeseries_continuous import (
     ContinuousFunctionScipyPPoly,
+    TimeseriesContinuous,
     get_plot_points,
 )
 
 UR = pint.get_application_registry()
 Q = UR.Quantity
+
+
+@pytest.mark.parametrize(
+    "domain, expectation",
+    (
+        pytest.param(
+            (Q(1750, "yr"), Q(1850, "yr")),
+            does_not_raise(),
+            id="valid",
+        ),
+        pytest.param(
+            (Q(1850, "yr"), Q(1750, "yr")),
+            pytest.raises(ValueError),
+            id="wrong_order",
+        ),
+        pytest.param(
+            (Q(1850, "yr"),),
+            pytest.raises(ValueError),
+            id="wrong_size_too_short",
+        ),
+        pytest.param(
+            (Q(1850, "yr"), Q(1750, "yr"), Q(1950, "yr")),
+            pytest.raises(ValueError),
+            id="wrong_size_too_long",
+        ),
+    ),
+)
+def test_validation_time_axis_values_same_shape(domain, expectation):
+    with expectation:
+        TimeseriesContinuous(
+            name="name",
+            time_units=UR.Unit("yr"),
+            values_units=UR.Unit("Gt"),
+            function="not_checked",
+            domain=domain,
+        )
 
 
 @pytest.mark.parametrize(

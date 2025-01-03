@@ -72,7 +72,7 @@ def discrete_to_continuous_linear(
         time_units=time_bounds.u,
         values_units=all_vals.u,
         function=ContinuousFunctionScipyPPoly(piecewise_polynomial),
-        domain=(time_bounds.min(), time_bounds.max()),
+        domain=(np.min(time_bounds), np.max(time_bounds)),
     )
 
     return res

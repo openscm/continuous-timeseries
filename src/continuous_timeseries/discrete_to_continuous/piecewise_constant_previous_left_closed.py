@@ -26,11 +26,12 @@ y(1): xxxxxxxxxxxxxxxxxxxxxxxo
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+import attr
 import numpy as np
 import numpy.typing as npt
-from attrs import define
+from attrs import define, field
 
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
 from continuous_timeseries.typing import NP_FLOAT_OR_INT
@@ -59,7 +60,7 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
     Breakpoints between each piecewise constant interval
     """
 
-    values: npt.NDArray[NP_FLOAT_OR_INT]
+    values: npt.NDArray[NP_FLOAT_OR_INT] = field()
     """
     Value to return in each interval.
 
@@ -67,7 +68,21 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
     so that we know what to use at the last boundary too.
     """
 
-    # TODO: add validation
+    @values.validator
+    def values_validator(
+        self,
+        attribute: attr.Attribute[Any],
+        value: npt.NDArray[NP_FLOAT_OR_INT],
+    ) -> None:
+        """
+        Validate the received values
+        """
+        if value.shape != self.x.shape:
+            msg = (
+                "`values` and `self.x` must have the same shape. "
+                f"Received: values.shape={value.shape}. {self.x.shape=}"
+            )
+            raise AssertionError(msg)
 
     def __call__(
         self, x: npt.NDArray[NP_FLOAT_OR_INT], allow_extrapolation: bool = False
@@ -252,7 +267,7 @@ def discrete_to_continuous_piecewise_constant_previous_left_closed(
         time_units=time_bounds.u,
         values_units=all_vals.u,
         function=piecewise_polynomial,
-        domain=(time_bounds.min(), time_bounds.max()),
+        domain=(np.min(time_bounds), np.max(time_bounds)),
     )
 
     return res

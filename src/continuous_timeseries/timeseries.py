@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 from attrs import define, evolve
 
 import continuous_timeseries.formatting
@@ -280,7 +281,7 @@ class Timeseries:
 
         timeseries_continuous_new = evolve(
             self.timeseries_continuous,
-            domain=(time_axis.bounds.min(), time_axis.bounds.max()),
+            domain=(np.min(time_axis.bounds), np.max(time_axis.bounds)),
         )
 
         return type(self)(
@@ -392,31 +393,6 @@ class Timeseries:
         )
 
         return res
-
-    def update_time(
-        self, time_axis: TimeAxis, allow_extrapolation: bool = False
-    ) -> Timeseries:
-        """
-        Update the time axis of `self`
-
-        This is really just an alias for [`interpolate`][(c)].
-
-        Parameters
-        ----------
-        time_axis
-            Time axis to update to
-
-        allow_extrapolation
-            Should extrapolation be allowed while updating `self.time_axis`?
-
-        Returns
-        -------
-        :
-            `self` updated to the time axis `time_axis`
-        """
-        return self.interpolate(
-            time_axis=time_axis, allow_extrapolation=allow_extrapolation
-        )
 
     def plot(
         self,

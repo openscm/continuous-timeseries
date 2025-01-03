@@ -19,12 +19,16 @@ from __future__ import annotations
 import textwrap
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
+import attr
 import numpy as np
 import numpy.typing as npt
-from attrs import define
+from attrs import define, field
 
 import continuous_timeseries.formatting
-from continuous_timeseries.domain_helpers import check_no_times_outside_domain
+from continuous_timeseries.domain_helpers import (
+    check_no_times_outside_domain,
+    validate_domain,
+)
 from continuous_timeseries.exceptions import (
     ExtrapolationNotAllowedError,
     MissingOptionalDependencyError,
@@ -215,11 +219,11 @@ class ContinuousFunctionScipyPPoly:
             continuous_timeseries.formatting.get_html_repr_safe(self.order),
             attribute_rows,
         )
-        for attr in ["c", "x"]:
+        for attr_to_show in ["c", "x"]:
             attribute_rows = continuous_timeseries.formatting.add_html_attribute_row(
-                attr,
+                attr_to_show,
                 continuous_timeseries.formatting.get_html_repr_safe(
-                    getattr(self.ppoly, attr)
+                    getattr(self.ppoly, attr_to_show)
                 ),
                 attribute_rows,
             )
@@ -293,40 +297,6 @@ class ContinuousFunctionScipyPPoly:
             npt.NDArray[NP_FLOAT_OR_INT],
             self.ppoly(x=x, extrapolate=allow_extrapolation),
         )
-
-        if np.isnan(res).any():
-            if allow_extrapolation:  # pragma: no cover
-                msg = (
-                    f"The result contains NaNs, even though {allow_extrapolation=}."
-                    f"Result of calling `self.ppoly` was {res!r}."
-                )
-                raise AssertionError(msg)
-
-            outside_x = np.hstack(
-                [
-                    x[np.where(x < self.ppoly.x.min())],
-                    x[np.where(x > self.ppoly.x.max())],
-                ]
-            )
-            if outside_x.size < 1:  # pragma: no cover
-                # Should be impossible, but just in case
-                msg = (
-                    f"The result contains NaNs, "
-                    "even though all the interpolation values "
-                    "are within the piecewise polynomial's domain. "
-                    f"{x=}. {self.ppoly.x=}. "
-                    f"Result of calling `self.ppoly` was {res!r}."
-                )
-                raise AssertionError(msg)
-
-            msg = (
-                f"The result contains NaNs. "
-                "This is because you tried to extrapolate "
-                f"even though {allow_extrapolation=}. "
-                f"The x-values that are outside the known domain are {outside_x}. "
-                f"Result of calling `self.ppoly` was {res!r}. {self.ppoly.x=}."
-            )
-            raise ExtrapolationNotAllowedError(msg)
 
         return res
 
@@ -410,11 +380,25 @@ class TimeseriesContinuous:
     The continuous function that represents this timeseries.
     """
 
-    domain: tuple[PINT_SCALAR, PINT_SCALAR]
+    domain: tuple[PINT_SCALAR, PINT_SCALAR] = field()
     """
     Domain over which the function can be evaluated
     """
-    # TODO: validation domain[1] > domain[0]
+
+    @domain.validator
+    def domain_validator(
+        self,
+        attribute: attr.Attribute[Any],
+        value: tuple[PINT_SCALAR, PINT_SCALAR],
+    ) -> None:
+        """
+        Validate the received values
+        """
+        try:
+            validate_domain(value)
+        except AssertionError as exc:
+            msg = "The value supplied for `domain` failed validation."
+            raise ValueError(msg) from exc
 
     # Let attrs take care of __repr__
 
