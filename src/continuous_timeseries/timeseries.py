@@ -127,8 +127,8 @@ class Timeseries:
     @classmethod
     def from_arrays(
         cls,
-        values_at_bounds: PINT_NUMPY_ARRAY,
         time_axis_bounds: PINT_NUMPY_ARRAY,
+        values_at_bounds: PINT_NUMPY_ARRAY,
         interpolation: InterpolationOption,
         name: str,
     ) -> Timeseries:

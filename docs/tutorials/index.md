@@ -14,6 +14,12 @@ We aim to:
 - Provide the minimum necessary explanation
 - Avoid any distraction
 
+## Higher-order interpolation
+
+See [higher-order interpolation](./higher_order_interpolation)
+for a tutorial on how to do higher-order interpolation with Continuous Timeseries
+and some tips on how to go beyond the default options available.
+
 ## Continuous timeseries handling
 
 See [Continuous timeseries](./continuous_timeseries_tutorial)

@@ -7,6 +7,7 @@ See https://oprypin.github.io/mkdocs-literate-nav/
 - [Installation](installation.md)
 - [How-to guides](how-to-guides/index.md)
 - [Tutorials](tutorials/index.md)
+    - [Higher-order interpolation](tutorials/higher_order_interpolation.py)
     - [Continuous timeseries tutorial](tutorials/continuous_timeseries_tutorial.py)
     - [Discrete timeseries tutorial](tutorials/discrete_timeseries_tutorial.py)
 - [Further background](further-background/index.md)

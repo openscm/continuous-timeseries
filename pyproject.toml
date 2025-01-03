@@ -170,10 +170,13 @@ ignore = [
     "E402",
     "S101",
 ]
+# ruff doesn't recognise the markdown hyperlinks.
+# Figuring out how to make this work nice with jupytext
+# is a problem for another day.
 "docs/further-background/why-this-api.py" = [
-    # ruff doesn't recognise the markdown hyperlinks.
-    # Figuring out how to make this work nice with jupytext
-    # is a problem for another day.
+    "E501",
+]
+"docs/tutorials/higher_order_interpolation.py" = [
     "E501",
 ]
 "scripts/*" = [
