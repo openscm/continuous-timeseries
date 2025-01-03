@@ -938,8 +938,8 @@ files = [
 
 [[package]]
 name = "importlib-resources"
-version = "6.4.5"
-requires_python = ">=3.8"
+version = "6.5.1"
+requires_python = ">=3.9"
 summary = "Read resources from Python packages"
 groups = ["all-dev", "dev", "full", "plots"]
 marker = "python_version < \"3.10\""
@@ -947,8 +947,8 @@ dependencies = [
     "zipp>=3.1.0; python_version < \"3.10\"",
 ]
 files = [
-    {file = "importlib_resources-6.4.5-py3-none-any.whl", hash = "sha256:ac29d5f956f01d5e4bb63102a5a19957f1b9175e45649977264a1416783bb717"},
-    {file = "importlib_resources-6.4.5.tar.gz", hash = "sha256:980862a1d16c9e147a59603677fa2aa5fd82b87f223b6cb870695bcfce830065"},
+    {file = "importlib_resources-6.5.1-py3-none-any.whl", hash = "sha256:1db285ef06f980573f0a2c33de835cf9bcbd511c320d7bb332adfc4860c1ec2c"},
+    {file = "importlib_resources-6.5.1.tar.gz", hash = "sha256:095007d90b03799a362408af71a9657657b2f147358585ba451bb4214d72c7a8"},
 ]
 
 [[package]]

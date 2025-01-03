@@ -36,7 +36,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import openscm_units
 import pint
-import scipy.interpolate
 
 import continuous_timeseries as ct
 from continuous_timeseries.exceptions import ExtrapolationNotAllowedError
@@ -73,13 +72,13 @@ UR.setup_matplotlib(enable=True)
 # %% [markdown]
 # ### Initialising from arrays
 #
-# The most familiar/easiest way to initialise it is with its 
+# The most familiar/easiest way to initialise it is with its
 # `from_arrays` class method.
 # This takes in arrays which define the time series
-# as well as an 
+# as well as an
 # [`InterpolationOption`](../../api/continuous_timeseries/discrete_to_continuous/interpolation_option/#continuous_timeseries.discrete_to_continuous.interpolation_option.InterpolationOption).
 # The interpolation option is key,
-# because it allows us to take all the guesswork out of 
+# because it allows us to take all the guesswork out of
 # interpolation, extrapolation, integration and differentiateion.
 #
 # Let's assume that our arrays are the following.
@@ -89,9 +88,9 @@ time_axis = Q([1850.0, 1900.0, 1950.0, 2000.0, 2010.0, 2020.0, 2030.0, 2050.0], 
 values = Q([0.0, 10.0, 20.0, 50.0, 100.0, 100.0, 80.0, 60.0], "MtC / yr")
 
 # %% [markdown]
-# The interpolation option defines how to translate 
+# The interpolation option defines how to translate
 # from the values in the arrays to a continuous timeseries.
-# For example, let's assume 
+# For example, let's assume
 # that we want linear interpolation between our points.
 # This can be achieved as shown below.
 
@@ -137,7 +136,7 @@ ts_linear.timeseries_continuous
 # However, any class which matches the
 # [`ContinuousFunctionLike`](../../api/continuous_timeseries/timeseries_continuous/#continuous_timeseries.timeseries_continuous.ContinuousFunctionLike)
 # interface could be used.
-# Having said that, in general we expect most users 
+# Having said that, in general we expect most users
 # to not need to worry about these details
 # (although, if you really want to get into the details of interpolation,
 # maybe have a look at
@@ -159,18 +158,10 @@ ts_linear.timeseries_continuous.function
 # Create a dictionary of `Timeseries` for easier re-use.
 ts_interp = {}
 for interp_option in (
-    (
-        ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed
-    ),
-    (
-        ct.InterpolationOption.PiecewiseConstantPreviousLeftOpen
-    ),
-    (
-        ct.InterpolationOption.PiecewiseConstantNextLeftClosed
-    ),
-    (
-        ct.InterpolationOption.PiecewiseConstantNextLeftOpen
-    ),
+    (ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed),
+    (ct.InterpolationOption.PiecewiseConstantPreviousLeftOpen),
+    (ct.InterpolationOption.PiecewiseConstantNextLeftClosed),
+    (ct.InterpolationOption.PiecewiseConstantNextLeftOpen),
     (ct.InterpolationOption.Linear),
     (ct.InterpolationOption.Cubic),
 ):
@@ -238,7 +229,7 @@ for ts, ax, marker in (
             label=f"{ts.name} values at boundaries",
             zorder=3,
             marker=marker,
-        )
+        ),
     )
 
 for ax in axs.values():
@@ -268,7 +259,7 @@ for interp_option, ts in ts_interp.items():
             alpha=0.7,
             s=130,
             label=f"{ts.name} interpolated",
-        )
+        ),
     )
 
 ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
@@ -303,7 +294,7 @@ for interp_option, ts in ts_interp.items():
 
 for ax in axes:
     ax.set_xlim(extrap_times.min(), extrap_times.max())
-    
+
 axes[0].set_title("Raw")
 axes[1].set_title("Extrapolated")
 axes[1].legend()
@@ -317,21 +308,24 @@ ax.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
 # integration and differentiation are also trivial.
 
 # %%
-continuous_plot_kwargs=dict(alpha=0.7, linestyle="-")
+continuous_plot_kwargs = dict(alpha=0.7, linestyle="-")
 
 fig, axes_ar = plt.subplots(nrows=2, ncols=2, figsize=(12, 8))
 axes = axes_ar.flatten()
 
 for ts_plot in ts_interp.values():
     ts_plot.plot(ax=axes[0], continuous_plot_kwargs=continuous_plot_kwargs)
-    ts_plot.differentiate().plot(ax=axes[1], continuous_plot_kwargs={**continuous_plot_kwargs, "label": ts_plot.name})
+    ts_plot.differentiate().plot(
+        ax=axes[1],
+        continuous_plot_kwargs={**continuous_plot_kwargs, "label": ts_plot.name},
+    )
 
     integration_constant = Q(0, "GtC")
     integral = ts_plot.integrate(integration_constant=integration_constant)
     integral.plot(ax=axes[2], continuous_plot_kwargs=continuous_plot_kwargs)
 
     integral.integrate(integration_constant=Q(0.0, "GtC yr")).plot(
-         ax=axes[3], continuous_plot_kwargs=continuous_plot_kwargs
+        ax=axes[3], continuous_plot_kwargs=continuous_plot_kwargs
     )
 
 axes[0].set_title("Time series")
@@ -365,18 +359,27 @@ ts_integral_preserving_demo_start = ct.Timeseries.from_arrays(
     time_axis_bounds=Q([2025, 2030, 2040, 2050, 2060, 2100], "yr"),
     values_at_bounds=Q([10.0, 10.0, 5.0, 0.0, -2.0, 0.0], "GtC / yr"),
     interpolation=ct.InterpolationOption.Linear,
-    name="integral_preserving_demo_start"
+    name="integral_preserving_demo_start",
 )
 
 # %%
-integral_preserving_demo_annual_time_axis = Q(np.arange(ts_integral_preserving_demo_start.time_axis.bounds.min().to("yr").m, ts_integral_preserving_demo_start.time_axis.bounds.max().to("yr").m + 0.1, 1), "yr")
+integral_preserving_demo_annual_time_axis = Q(
+    np.arange(
+        ts_integral_preserving_demo_start.time_axis.bounds.min().to("yr").m,
+        ts_integral_preserving_demo_start.time_axis.bounds.max().to("yr").m + 0.1,
+        1,
+    ),
+    "yr",
+)
 integral_preserving_demo_annual_time_axis
 
 # %%
-ts_linear_annual_to_show = ts_integral_preserving_demo_start.interpolate(integral_preserving_demo_annual_time_axis)
+ts_linear_annual_to_show = ts_integral_preserving_demo_start.interpolate(
+    integral_preserving_demo_annual_time_axis
+)
 annual_average = ts_linear_annual_to_show.update_interpolation_integral_preserving(
     interpolation=ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed,
-    name_res="annual_average"
+    name_res="annual_average",
 )
 
 # %%
@@ -394,14 +397,15 @@ axes[1].set_ylim([5, 10])
 fig.tight_layout()
 
 # %% [markdown]
-# If we want, we could also calculate integral-preserving average emissions over some custom time period.
+# If we want, we could also calculate integral-preserving average emissions
+# over some custom time period.
 
 # %%
 decadal_average = ts_integral_preserving_demo_start.interpolate(
     Q(np.hstack([[2025, 2040], np.arange(2060, 2100 + 1, 20)]), "yr"),
 ).update_interpolation_integral_preserving(
     interpolation=ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed,
-    name_res="custom_average"
+    name_res="custom_average",
 )
 
 # %%
@@ -451,11 +455,11 @@ for i, ts_plot in enumerate(ts_interp.values()):
                 label=f"{res_increase=}",
                 alpha=0.7,
                 linestyle="--",
-            )
+            ),
         )
 
     axes[i].set_title(ts_plot.name)
-    
+
 axes[0].legend()
 
 fig.tight_layout()
@@ -495,7 +499,7 @@ ts_linear.plot(
         color="tab:orange",
         label="demo",
         linestyle="--",
-        linewidth=2,        
+        linewidth=2,
     ),
 )
 ts_linear.plot(
@@ -515,7 +519,7 @@ ts_interp[ct.InterpolationOption.Cubic].plot(
     continuous_plot_kwargs=dict(
         color="tab:blue",
         label="demo_continuous_and_discrete",
-        linestyle=":",        
+        linestyle=":",
     ),
     show_discrete=True,
     discrete_plot_kwargs=dict(

@@ -13,7 +13,27 @@ def check_no_times_outside_domain(
     times: PINT_NUMPY_ARRAY,
     domain: tuple[PINT_SCALAR, PINT_SCALAR],
 ) -> None:
-    if len(domain) != 2:
+    """
+    Check that no times are outside the supported domain
+
+    Parameters
+    ----------
+    times
+        Times to check
+
+    domain
+        Supported domain
+
+    Raises
+    ------
+    ValueError
+        There are values in `time` that are outside the supported domain.
+
+    AssertionError
+        `len(domain) != 2` or `domain[1] <= domain[0]`.
+    """
+    expected_domain_length = 2
+    if len(domain) != expected_domain_length:
         raise AssertionError(len(domain))
 
     if domain[1] <= domain[0]:
