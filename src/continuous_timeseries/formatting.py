@@ -103,7 +103,14 @@ def to_pretty(
                 p.text(",")  # type: ignore
 
 
-def get_html_repr_safe(instance: Any) -> str:
+def get_html_repr_safe(
+    instance: Any,
+    escapes: tuple[tuple[str, str], ...] = (
+        ("&", "&amp;"),
+        ("<", "&lt;"),
+        (">", "&gt;"),
+    ),
+) -> str:
     """
     Get the HTML representation of an instance
 
@@ -111,6 +118,9 @@ def get_html_repr_safe(instance: Any) -> str:
     ----------
     instance
         Instance of which to get the HTML representation
+
+    escapes
+        Escape characters to apply when a raw string has to be used
 
     Returns
     -------
@@ -120,10 +130,26 @@ def get_html_repr_safe(instance: Any) -> str:
         If `instance` has a `_repr_html_` method, this is used.
         Otherwise the string representation of `instance` is returned.
     """
+    # Workaround to make our domain render nicely
+    if isinstance(instance, (tuple, list)):
+        elements_html = [get_html_repr_safe(v, escapes=escapes) for v in instance]
+        elements_comma_separated = ", ".join(elements_html)
+
+        if isinstance(instance, tuple):
+            brackets = "()"
+
+        if isinstance(instance, list):
+            brackets = "[]"
+
+        return f"{brackets[0]}{elements_comma_separated}{brackets[1]}"
+
     try:
         repr_html = cast(str, instance._repr_html_())
     except AttributeError:
         repr_html = str(instance)
+
+        for raw, escaped in escapes:
+            repr_html = repr_html.replace(raw, escaped)
 
     return repr_html
 
