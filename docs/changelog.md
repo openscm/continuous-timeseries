@@ -21,6 +21,33 @@ from the examples given in that link.
 
 <!-- towncrier release notes start -->
 
+## Continuous Timeseries v0.2.0 (2025-01-04)
+
+### 🆕 Features
+
+- Added [`ValuesAtBounds`][continuous_timeseries.values_at_bounds.ValuesAtBounds]. ([#12](https://github.com/openscm/continuous-timeseries/pull/12))
+- Added [`TimeAxis`][continuous_timeseries.time_axis.TimeAxis]. ([#13](https://github.com/openscm/continuous-timeseries/pull/13))
+- Added [`TimeseriesDiscrete`][continuous_timeseries.timeseries_discrete.TimeseriesDiscrete]. ([#14](https://github.com/openscm/continuous-timeseries/pull/14))
+- Added [`TimeseriesContinuous`][continuous_timeseries.timeseries_continuous.TimeseriesContinuous]. ([#15](https://github.com/openscm/continuous-timeseries/pull/15))
+- Added [`Timeseries`][continuous_timeseries.Timeseries]. ([#16](https://github.com/openscm/continuous-timeseries/pull/16))
+
+### 📚 Improved Documentation
+
+- Added background about how we handle representing our objects (see [Representations][representations]) and updated the default colour scheme. ([#12](https://github.com/openscm/continuous-timeseries/pull/12))
+- Added a tutorial into our discrete timeseries handling (see [Discrete timeseries](../tutorials/discrete_timeseries_tutorial)). ([#14](https://github.com/openscm/continuous-timeseries/pull/14))
+- Added a tutorial into our continuous timeseries handling (see [Continuous timeseries](../tutorials/continuous_timeseries_tutorial)). ([#15](https://github.com/openscm/continuous-timeseries/pull/15))
+- - Added background into why we built this API (see [Why this API?](../further-background/why-this-api)).
+  - Added a tutorial into our timeseries handling (see [Timeseries](../tutorials/timeseries_tutorial)).
+  - Added a tutorial into higher-order interpolation (see [Higher-order interpolation](../tutorials/higher_order_interpolation)).
+  - Added a how-to guide about how to make sharp, step forcings (see [How-to make a step forcing](../how-to-guides/how-to-make-a-step-forcing)).
+
+  ([#16](https://github.com/openscm/continuous-timeseries/pull/16))
+
+### 🔧 Trivial/Internal Changes
+
+- [#11](https://github.com/openscm/continuous-timeseries/pull/11), [#12](https://github.com/openscm/continuous-timeseries/pull/12), [#15](https://github.com/openscm/continuous-timeseries/pull/15), [#16](https://github.com/openscm/continuous-timeseries/pull/16)
+
+
 ## Continuous Timeseries v0.1.7 (2024-12-27)
 
 ### 🔧 Trivial/Internal Changes
