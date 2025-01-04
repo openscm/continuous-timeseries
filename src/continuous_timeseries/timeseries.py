@@ -495,7 +495,7 @@ class Timeseries:
         elif interpolation in (InterpolationOption.Cubic,):
             interpolation_cumulative = InterpolationOption.Quartic
 
-        else:
+        else:  # pragma: no cover
             raise NotImplementedError(interpolation)
 
         res = (

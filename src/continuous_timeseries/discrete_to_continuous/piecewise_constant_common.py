@@ -282,7 +282,7 @@ def integrate_piecewise_constant(
         import scipy.interpolate
     except ImportError as exc:
         raise MissingOptionalDependencyError(
-            "get_piecewise_constant_integral",
+            "integrate_piecewise_constant",
             requirement="scipy",
         ) from exc
 

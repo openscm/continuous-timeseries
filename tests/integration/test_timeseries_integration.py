@@ -915,7 +915,7 @@ def test_update_interpolation(  # noqa: PLR0913
 
 def get_test_update_interpolation_integral_preserving_cases() -> tuple[pytest.param]:
     res = []
-    for start, end in itertools.combinations(
+    for a, b in itertools.combinations(
         (
             InterpolationOption.PiecewiseConstantNextLeftClosed,
             InterpolationOption.PiecewiseConstantNextLeftOpen,
@@ -927,23 +927,26 @@ def get_test_update_interpolation_integral_preserving_cases() -> tuple[pytest.pa
         ),
         2,
     ):
-        # Raise for to piecewise constant except PiecewiseConstantNextLeftClosed
-        exp_successful = end not in (
-            InterpolationOption.PiecewiseConstantNextLeftOpen,
-            InterpolationOption.PiecewiseConstantPreviousLeftClosed,
-            InterpolationOption.PiecewiseConstantPreviousLeftOpen,
-        )
-        res.append(
-            pytest.param(
-                start,
-                end,
-                exp_successful,
-                dict(
-                    check_change_func=partial(pint.testing.assert_allclose, atol=1e-10)
-                ),
-                id=f"{start.name}__to__{end.name}",
+        for start, end in ((a, b), (b, a)):
+            # Raise for to piecewise constant except PiecewiseConstantNextLeftClosed
+            exp_successful = end not in (
+                InterpolationOption.PiecewiseConstantNextLeftOpen,
+                InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+                InterpolationOption.PiecewiseConstantPreviousLeftOpen,
             )
-        )
+            res.append(
+                pytest.param(
+                    start,
+                    end,
+                    exp_successful,
+                    dict(
+                        check_change_func=partial(
+                            pint.testing.assert_allclose, atol=1e-10
+                        )
+                    ),
+                    id=f"{start.name}__to__{end.name}",
+                )
+            )
 
     return tuple(res)
 
