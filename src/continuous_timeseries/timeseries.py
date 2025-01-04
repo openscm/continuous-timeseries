@@ -45,6 +45,43 @@ if TYPE_CHECKING:
     import matplotlib.axes
 
 
+class UnreachableIntegralPreservingInterpolationTarget(ValueError):
+    """
+    Raised when an integral-preserving interpolation target is unreachable
+
+    This occurs because
+    there is some information loss with integration and differentiation
+    so some interpolation targets can't be reached.
+    """
+
+    def __init__(self, interpolation_target: InterpolationOption) -> None:
+        """
+        Initialise the error
+
+        Parameters
+        ----------
+        interpolation_target
+            The interpolation target
+        """
+        if interpolation_target not in (
+            InterpolationOption.PiecewiseConstantNextLeftOpen,
+            InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+            InterpolationOption.PiecewiseConstantPreviousLeftOpen,
+        ):  # pragma: no cover
+            msg_emergency = (
+                f"Did not expect to raise this error {interpolation_target!r}"
+            )
+            raise AssertionError(msg_emergency)
+
+        msg = (
+            f"The interpolation target {interpolation_target!r} is unreachable "
+            "via integral-preserving interpolation. "
+            "Please target "
+            f"{InterpolationOption.PiecewiseConstantNextLeftClosed!r} instead."
+        )
+        super().__init__(msg)
+
+
 @define
 class Timeseries:
     """Timeseries representation"""
@@ -375,6 +412,10 @@ class Timeseries:
         self,
         interpolation: InterpolationOption,
         name_res: str | None = None,
+        warn_if_values_at_bounds_change: bool = True,
+        check_change_func: Callable[
+            [PINT_NUMPY_ARRAY, PINT_NUMPY_ARRAY], None
+        ] = pint.testing.assert_allclose,
     ) -> Timeseries:
         """
         Update the interpolation while preserving the integral
@@ -405,7 +446,13 @@ class Timeseries:
             Name of the result
 
             If not supplied, we use
-            `f"{self.name}_integral-preserving-interpolation"`.
+            `f"{self.name}_integral-preserving-interpolation-{interpolation.name}"`.
+
+        warn_if_values_at_bounds_change
+            Passed to [`update_interpolation`][(c)].
+
+        check_change_func
+            Passed to [`update_interpolation`][(c)].
 
         Returns
         -------
@@ -413,8 +460,17 @@ class Timeseries:
             `self` with interpolation updated to `interpolation`
             while preserving the integral at `self.time_axis`.
         """
+        if interpolation in (
+            InterpolationOption.PiecewiseConstantNextLeftOpen,
+            InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+            InterpolationOption.PiecewiseConstantPreviousLeftOpen,
+        ):
+            raise UnreachableIntegralPreservingInterpolationTarget(interpolation)
+
         if name_res is None:
-            name_res = f"{self.name}_integral-preserving-interpolation"
+            name_res = (
+                f"{self.name}_integral-preserving-interpolation-{interpolation.name}"
+            )
 
         # Value doesn't matter as the value will be lost when we differentiate.
         integration_constant = 0.0 * (
@@ -444,7 +500,11 @@ class Timeseries:
 
         res = (
             self.integrate(integration_constant)
-            .update_interpolation(interpolation_cumulative)
+            .update_interpolation(
+                interpolation_cumulative,
+                warn_if_values_at_bounds_change=warn_if_values_at_bounds_change,
+                check_change_func=check_change_func,
+            )
             .differentiate(name_res=name_res)
         )
 

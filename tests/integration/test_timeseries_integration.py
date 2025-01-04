@@ -8,6 +8,7 @@ import itertools
 import re
 import sys
 from contextlib import nullcontext as does_not_raise
+from functools import partial
 from unittest.mock import patch
 
 import numpy as np
@@ -23,7 +24,10 @@ from continuous_timeseries.exceptions import (
     MissingOptionalDependencyError,
 )
 from continuous_timeseries.time_axis import TimeAxis
-from continuous_timeseries.timeseries import Timeseries
+from continuous_timeseries.timeseries import (
+    Timeseries,
+    UnreachableIntegralPreservingInterpolationTarget,
+)
 from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
@@ -139,6 +143,18 @@ class OperationsTestCase:
         validator=[validators.max_len(3), validators.min_len(3)]
     )
 
+    time_interp: PINT_NUMPY_ARRAY
+    """Times to use for checking interpolation"""
+
+    exp_interp: PINT_NUMPY_ARRAY
+    """Expected values of interpolation at `time_interp`"""
+
+    time_extrap: PINT_NUMPY_ARRAY
+    """Times to use for checking extrapolation"""
+
+    exp_extrap: PINT_NUMPY_ARRAY
+    """Expected values of extrapolation at `time_extrap`"""
+
     time_derivative: PINT_NUMPY_ARRAY
     """Times to use for checking differentiation"""
 
@@ -153,12 +169,6 @@ class OperationsTestCase:
 
     exp_integral: PINT_NUMPY_ARRAY
     """Expected values of the integral at `time_integral`"""
-
-    time_interp: PINT_NUMPY_ARRAY
-    """Times to use for checking interpolation"""
-
-    exp_interp: PINT_NUMPY_ARRAY
-    """Expected values of interpolation at `time_interp`"""
 
     ts: Timeseries = field()
 
@@ -201,46 +211,90 @@ operations_test_cases = pytest.mark.parametrize(
     (
         pytest.param(
             OperationsTestCase(
-                name="linear",
-                interpolation=InterpolationOption.Linear,
+                name="piecewise_constant_next_left_closed",
+                interpolation=InterpolationOption.PiecewiseConstantNextLeftClosed,
                 time_axis_bounds=Q([2010, 2020, 2050], "yr"),
                 values_at_bounds=Q([-1.0, 0.0, 2.0], "Gt"),
-                time_derivative=Q([2010.0, 2015.0, 2020.0, 2030.0, 2050.0], "yr"),
+                time_interp=Q([2010.0, 2015.0, 2020.0, 2030.0, 2050.0], "yr"),
+                exp_interp=Q([0.0, 0.0, 2.0, 2.0, 2.0], "Gt"),
+                time_extrap=Q([2005.0, 2020.0, 2060.0], "yr"),
+                exp_extrap=Q([-1.0, 2.0, 2.0], "Gt"),
+                time_derivative=Q(
+                    [2000.0, 2010.0, 2015.0, 2020.0, 2030.0, 2050.0, 2060.0], "yr"
+                ),
                 exp_derivative=Q(
-                    [
-                        1.0 / 10.0,
-                        1.0 / 10.0,
-                        # On boundary, get the value from the next window
-                        # (next closed logic).
-                        2.0 / 30.0,
-                        2.0 / 30.0,
-                        2.0 / 30.0,
-                    ],
+                    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                     "Gt / yr",
                 ),
-                time_integral=Q([2010.0, 2020.0, 2030.0, 2050.0], "yr"),
+                time_integral=Q(
+                    [2005.0, 2010.0, 2015.0, 2020.0, 2030.0, 2050.0, 2060.0], "yr"
+                ),
                 integration_constant_integral=Q(10.0, "Gt yr"),
                 exp_integral=(
-                    Q(10.0, "Gt yr")
-                    + Q(
+                    Q(
                         np.cumsum(
                             [
+                                10.0,  # integration constant
+                                # y = c
+                                # int y dx = c * dx + const
+                                -1.0 * 5.0,
                                 0.0,
-                                # y = mx + c
-                                # int y dx = mx^2 / 2 + cx + const
-                                0.1 * 10.0**2 / 2 - 1 * 10.0,
-                                2 / 30.0 * 10.0**2 / 2,
-                                2 / 30.0 * 20.0**2 / 2 + 2 / 3 * 20.0,
+                                0.0,
+                                2.0 * 10.0,
+                                2.0 * 20.0,
+                                2.0 * 10.0,
                             ]
                         ),
                         "Gt yr",
                     )
                 ),
-                time_interp=Q([2015.0, 2020.0, 2030.0], "yr"),
-                exp_interp=Q([-500.0, 0.0, 2000.0 / 3.0], "Mt"),
             ),
-            id="linear",
+            id="piecewise_constant_next_left_closed",
         ),
+        # pytest.param(
+        #     OperationsTestCase(
+        #         name="linear",
+        #         interpolation=InterpolationOption.Linear,
+        #         time_axis_bounds=Q([2010, 2020, 2050], "yr"),
+        #         values_at_bounds=Q([-1.0, 0.0, 2.0], "Gt"),
+        #         time_derivative=Q(
+        #             [2000.0, 2010.0, 2015.0, 2020.0, 2030.0, 2050.0, 2060.0], "yr"
+        #         ),
+        #         exp_derivative=Q(
+        #             [
+        #                 1.0 / 10.0,
+        #                 1.0 / 10.0,
+        #                 # On boundary, get the value from the next window
+        #                 # (next closed logic).
+        #                 2.0 / 30.0,
+        #                 2.0 / 30.0,
+        #                 2.0 / 30.0,
+        #             ],
+        #             "Gt / yr",
+        #         ),
+        #         time_integral=Q([2010.0, 2020.0, 2030.0, 2050.0], "yr"),
+        #         integration_constant_integral=Q(10.0, "Gt yr"),
+        #         exp_integral=(
+        #             Q(10.0, "Gt yr")
+        #             + Q(
+        #                 np.cumsum(
+        #                     [
+        #                         0.0,
+        #                         # y = mx + c
+        #                         # int y dx = mx^2 / 2 + cx + const
+        #                         0.1 * 10.0**2 / 2 - 1 * 10.0,
+        #                         2 / 30.0 * 10.0**2 / 2,
+        #                         2 / 30.0 * 20.0**2 / 2 + 2 / 3 * 20.0,
+        #                     ]
+        #                 ),
+        #                 "Gt yr",
+        #             )
+        #         ),
+        #         time_interp=Q([2015.0, 2020.0, 2030.0], "yr"),
+        #         exp_interp=Q([-500.0, 0.0, 2000.0 / 3.0], "Mt"),
+        #     ),
+        #     id="linear",
+        # ),
     ),
 )
 
@@ -277,7 +331,9 @@ def test_differentiate(operations_test_case, name_res):
     if name_res is not None:
         kwargs["name_res"] = name_res
 
-    derivative = operations_test_case.ts.differentiate(**kwargs)
+    derivative = operations_test_case.ts.interpolate(
+        operations_test_case.time_derivative, allow_extrapolation=True
+    ).differentiate(**kwargs)
 
     if name_res is None:
         assert derivative.name == f"{operations_test_case.ts.name}_derivative"
@@ -287,7 +343,7 @@ def test_differentiate(operations_test_case, name_res):
     assert isinstance(derivative, Timeseries)
 
     pint.testing.assert_equal(
-        operations_test_case.ts.time_axis.bounds, derivative.time_axis.bounds
+        operations_test_case.time_derivative, derivative.time_axis.bounds
     )
 
     pint.testing.assert_allclose(
@@ -306,7 +362,9 @@ def test_integrate(operations_test_case, name_res):
     if name_res is not None:
         kwargs["name_res"] = name_res
 
-    integral = operations_test_case.ts.integrate(
+    integral = operations_test_case.ts.interpolate(
+        operations_test_case.time_integral, allow_extrapolation=True
+    ).integrate(
         integration_constant=operations_test_case.integration_constant_integral,
         **kwargs,
     )
@@ -317,9 +375,8 @@ def test_integrate(operations_test_case, name_res):
         assert integral.name == name_res
 
     assert isinstance(integral, Timeseries)
-
     pint.testing.assert_equal(
-        operations_test_case.ts.time_axis.bounds, integral.time_axis.bounds
+        operations_test_case.time_integral, integral.time_axis.bounds
     )
 
     pint.testing.assert_allclose(
@@ -364,9 +421,40 @@ def test_interpolate(operations_test_case, time_axis_arg_raw_pint):
         res.interpolate(time_axis=np.atleast_1d(time_interp_raw[-1] + Q(1 / 10, "yr")))
 
 
-def get_self_interpolation_update_cases() -> tuple[pytest.param]:
+@operations_test_cases
+def test_extrapolate(operations_test_case):
+    time_extrap_raw = operations_test_case.time_extrap
+    time_axis = TimeAxis(time_extrap_raw)
+
+    res = operations_test_case.ts.interpolate(
+        time_axis=time_axis, allow_extrapolation=True
+    )
+
+    assert isinstance(res, Timeseries)
+
+    pint.testing.assert_allclose(
+        res.discrete.values_at_bounds.values,
+        operations_test_case.exp_extrap,
+        rtol=1e-10,
+    )
+
+    # Check that domain was updated correctly
+    for res_v, exp_v in zip(
+        (time_extrap_raw.min(), time_extrap_raw.max()),
+        res.timeseries_continuous.domain,
+    ):
+        pint.testing.assert_equal(res_v, exp_v)
+
+    # Check that times outside time_interp now raise
+    with pytest.raises(ExtrapolationNotAllowedError):
+        res.interpolate(time_axis=np.atleast_1d(time_extrap_raw[0] - Q(1 / 10, "yr")))
+    with pytest.raises(ExtrapolationNotAllowedError):
+        res.interpolate(time_axis=np.atleast_1d(time_extrap_raw[-1] + Q(1 / 10, "yr")))
+
+
+def get_test_update_interpolation_self_cases() -> tuple[pytest.param]:
     res = []
-    for interp_option, exp_bounds_same in (
+    for interp_option, exp_values_at_bounds_same in (
         # All the values effectively get shifted back one time window
         (InterpolationOption.PiecewiseConstantNextLeftClosed, False),
         (InterpolationOption.PiecewiseConstantNextLeftOpen, True),
@@ -380,7 +468,7 @@ def get_self_interpolation_update_cases() -> tuple[pytest.param]:
     ):
         expectation = (
             does_not_raise()
-            if exp_bounds_same
+            if exp_values_at_bounds_same
             else pytest.warns(
                 InterpolationUpdateChangedValuesAtBoundsWarning,
                 match=(
@@ -395,7 +483,7 @@ def get_self_interpolation_update_cases() -> tuple[pytest.param]:
                 interp_option,
                 interp_option,
                 False,
-                exp_bounds_same,
+                exp_values_at_bounds_same,
                 {},
                 expectation,
                 id=f"{interp_option.name}__to__{interp_option.name}",
@@ -405,7 +493,7 @@ def get_self_interpolation_update_cases() -> tuple[pytest.param]:
     return tuple(res)
 
 
-def get_higher_order_interpolation_update_cases() -> tuple[pytest.param]:
+def get_test_update_interpolation_higher_order_cases() -> tuple[pytest.param]:
     res = []
     for a, b in itertools.combinations(
         (
@@ -432,7 +520,7 @@ def get_higher_order_interpolation_update_cases() -> tuple[pytest.param]:
     return tuple(res)
 
 
-def get_piecewise_constant_interpolation_update_cases() -> tuple[pytest.param]:
+def get_test_update_interpolation_piecewise_constant_cases() -> tuple[pytest.param]:
     res = []
     for a, b in itertools.combinations(
         (
@@ -444,7 +532,7 @@ def get_piecewise_constant_interpolation_update_cases() -> tuple[pytest.param]:
         2,
     ):
         for start, end in ((a, b), (b, a)):
-            exp_bounds_change = (
+            exp_bounds_values_change = (
                 end
                 in (
                     # The interpolation choices where the interpolated value
@@ -465,7 +553,7 @@ def get_piecewise_constant_interpolation_update_cases() -> tuple[pytest.param]:
                         "`self.time_axis` to change."
                     ),
                 )
-                if exp_bounds_change
+                if exp_bounds_values_change
                 else does_not_raise()
             )
 
@@ -474,7 +562,7 @@ def get_piecewise_constant_interpolation_update_cases() -> tuple[pytest.param]:
                     start,
                     end,
                     True,
-                    not exp_bounds_change,
+                    not exp_bounds_values_change,
                     {},
                     expectation,
                     id=f"{start.name}__to__{end.name}",
@@ -484,7 +572,7 @@ def get_piecewise_constant_interpolation_update_cases() -> tuple[pytest.param]:
     return tuple(res)
 
 
-def get_piecewise_constant_to_higher_order_interpolation_update_cases() -> (
+def get_test_update_interpolation_piecewise_constant_to_higher_order_cases() -> (
     tuple[pytest.param]
 ):
     res = []
@@ -503,7 +591,7 @@ def get_piecewise_constant_to_higher_order_interpolation_update_cases() -> (
         ),
     ):
         for start, end in ((a, b), (b, a)):
-            exp_bounds_change = end in (
+            exp_bounds_values_change = end in (
                 # The interpolation choices where the interpolated value
                 # at t(i) is y(i + 1), where i is the index in the original
                 # discrete arrays.
@@ -520,7 +608,7 @@ def get_piecewise_constant_to_higher_order_interpolation_update_cases() -> (
                         "`self.time_axis` to change."
                     ),
                 )
-                if exp_bounds_change
+                if exp_bounds_values_change
                 else does_not_raise()
             )
 
@@ -529,7 +617,7 @@ def get_piecewise_constant_to_higher_order_interpolation_update_cases() -> (
                     start,
                     end,
                     True,
-                    not exp_bounds_change,
+                    not exp_bounds_values_change,
                     {},
                     expectation,
                     id=f"{start.name}__to__{end.name}",
@@ -540,12 +628,19 @@ def get_piecewise_constant_to_higher_order_interpolation_update_cases() -> (
 
 
 @pytest.mark.parametrize(
-    "start, end, exp_values_changed, exp_bounds_same, kwargs, expectation",
+    [
+        "start_interp",
+        "end_interp",
+        "exp_values_changed",
+        "exp_values_at_bounds_same",
+        "kwargs",
+        "expectation",
+    ],
     (
-        *get_self_interpolation_update_cases(),
-        *get_higher_order_interpolation_update_cases(),
-        *get_piecewise_constant_interpolation_update_cases(),
-        *get_piecewise_constant_to_higher_order_interpolation_update_cases(),
+        *get_test_update_interpolation_self_cases(),
+        *get_test_update_interpolation_higher_order_cases(),
+        *get_test_update_interpolation_piecewise_constant_cases(),
+        *get_test_update_interpolation_piecewise_constant_to_higher_order_cases(),
         pytest.param(
             InterpolationOption.PiecewiseConstantPreviousLeftClosed,
             InterpolationOption.PiecewiseConstantNextLeftClosed,
@@ -559,31 +654,40 @@ def get_piecewise_constant_to_higher_order_interpolation_update_cases() -> (
 )
 @pytest.mark.parametrize("name_res", (None, "overwritten"))
 def test_update_interpolation(  # noqa: PLR0913
-    name_res, start, end, exp_values_changed, exp_bounds_same, kwargs, expectation
+    name_res,
+    start_interp,
+    end_interp,
+    exp_values_changed,
+    exp_values_at_bounds_same,
+    kwargs,
+    expectation,
 ):
     if name_res is not None:
         kwargs["name_res"] = name_res
 
     time_axis_bounds = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
 
-    start = Timeseries.from_arrays(
+    ts_start = Timeseries.from_arrays(
         time_axis_bounds=time_axis_bounds,
         values_at_bounds=Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt"),
-        interpolation=start,
+        interpolation=start_interp,
         name="start",
     )
 
     with expectation:
-        res = start.update_interpolation(end, **kwargs)
+        res = ts_start.update_interpolation(end_interp, **kwargs)
+
+    assert isinstance(res, Timeseries)
+    pint.testing.assert_equal(ts_start.time_axis.bounds, res.time_axis.bounds)
 
     if name_res is None:
-        assert res.name == f"{start.name}_{end.name}"
+        assert res.name == f"{ts_start.name}_{end_interp.name}"
     else:
         assert res.name == name_res
 
-    if exp_bounds_same:
+    if exp_values_at_bounds_same:
         pint.testing.assert_allclose(
-            start.discrete.values_at_bounds.values,
+            ts_start.discrete.values_at_bounds.values,
             res.discrete.values_at_bounds.values,
             rtol=1e-10,
         )
@@ -602,7 +706,7 @@ def test_update_interpolation(  # noqa: PLR0913
                 * time_axis_bounds.u
             )
             with pytest.raises(AssertionError):
-                start_vals = start.interpolate(
+                start_vals = ts_start.interpolate(
                     check_values_different_times, allow_extrapolation=True
                 ).discrete.values_at_bounds.values
 
@@ -616,15 +720,111 @@ def test_update_interpolation(  # noqa: PLR0913
         # We expect the bounds to have been updated, hence the warning.
         with pytest.raises(AssertionError):
             pint.testing.assert_equal(
-                start.discrete.values_at_bounds.values,
+                ts_start.discrete.values_at_bounds.values,
                 res.discrete.values_at_bounds.values,
             )
 
 
-# @pytest.mark.parametrize("name_res", (None, "overwritten"))
-# def test_update_interpolation_integral_preserving():
-#     start = InterpolationOption.Linear
-#     end = InterpolationOption.PiecewiseConstantNextLeftClosed
+def get_test_update_interpolation_integral_preserving_cases() -> tuple[pytest.param]:
+    res = []
+    for start, end in itertools.combinations(
+        (
+            InterpolationOption.PiecewiseConstantNextLeftClosed,
+            InterpolationOption.PiecewiseConstantNextLeftOpen,
+            InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+            InterpolationOption.PiecewiseConstantPreviousLeftOpen,
+            InterpolationOption.Linear,
+            InterpolationOption.Quadratic,
+            InterpolationOption.Cubic,
+        ),
+        2,
+    ):
+        # Raise for to piecewise constant except PiecewiseConstantNextLeftClosed
+        exp_successful = end not in (
+            InterpolationOption.PiecewiseConstantNextLeftOpen,
+            InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+            InterpolationOption.PiecewiseConstantPreviousLeftOpen,
+        )
+        res.append(
+            pytest.param(
+                start,
+                end,
+                exp_successful,
+                dict(
+                    check_change_func=partial(pint.testing.assert_allclose, atol=1e-10)
+                ),
+                id=f"{start.name}__to__{end.name}",
+            )
+        )
+
+    return tuple(res)
+
+
+@pytest.mark.parametrize(
+    "start_interp, end_interp, exp_successful, kwargs",
+    (
+        *get_test_update_interpolation_integral_preserving_cases(),
+        # TODO: add test that warn_if_values_at_bounds_change is passed
+        # (maybe as separate test)
+    ),
+)
+@pytest.mark.parametrize("name_res", (None, "overwritten"))
+def test_update_interpolation_integral_preserving(
+    name_res, start_interp, end_interp, exp_successful, kwargs
+):
+    if name_res is not None:
+        kwargs["name_res"] = name_res
+
+    time_axis_bounds = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
+
+    start = Timeseries.from_arrays(
+        time_axis_bounds=time_axis_bounds,
+        values_at_bounds=Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt"),
+        interpolation=start_interp,
+        name="start",
+    )
+
+    expectation = (
+        does_not_raise()
+        if exp_successful
+        else pytest.raises(
+            UnreachableIntegralPreservingInterpolationTarget,
+            match=(
+                f"The interpolation target {end_interp!r} is unreachable "
+                "via integral-preserving interpolation. "
+                "Please target "
+                f"{InterpolationOption.PiecewiseConstantNextLeftClosed!r} "
+                "instead."
+            ),
+        )
+    )
+
+    with expectation:
+        res = start.update_interpolation_integral_preserving(
+            interpolation=end_interp, **kwargs
+        )
+
+    if not exp_successful:
+        return
+
+    assert isinstance(res, Timeseries)
+    pint.testing.assert_equal(start.time_axis.bounds, res.time_axis.bounds)
+
+    if name_res is None:
+        assert (
+            res.name
+            == f"{start.name}_integral-preserving-interpolation-{end_interp.name}"
+        )
+    else:
+        assert res.name == name_res
+
+    # Check integral preserved
+    pint.testing.assert_allclose(
+        start.integrate(Q(10, "Gt yr")).discrete.values_at_bounds.values,
+        res.integrate(Q(10, "Gt yr")).discrete.values_at_bounds.values,
+        rtol=1e-10,
+    )
+
 
 # @operations_test_cases
 # def test_extrapolate_not_allowed_raises(operations_test_case):
