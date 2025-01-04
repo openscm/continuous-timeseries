@@ -335,6 +335,48 @@ operations_test_cases = pytest.mark.parametrize(
             ),
             id="piecewise_constant_previous_left_closed",
         ),
+        pytest.param(
+            OperationsTestCase(
+                name="piecewise_constant_previous_left_open",
+                interpolation=InterpolationOption.PiecewiseConstantPreviousLeftOpen,
+                time_axis_bounds=Q([2010, 2020, 2050], "yr"),
+                values_at_bounds=Q([-1.0, 0.0, 2.0], "Gt"),
+                time_interp=Q([2010.0, 2015.0, 2020.0, 2030.0, 2050.0], "yr"),
+                exp_interp=Q([-1.0, -1.0, -1.0, 0.0, 0.0], "Gt"),
+                time_extrap=Q([2005.0, 2020.0, 2060.0], "yr"),
+                exp_extrap=Q([-1.0, -1.0, 2.0], "Gt"),
+                time_derivative=Q(
+                    [2000.0, 2010.0, 2015.0, 2020.0, 2030.0, 2050.0, 2060.0], "yr"
+                ),
+                exp_derivative=Q(
+                    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    "Gt / yr",
+                ),
+                time_integral=Q(
+                    [2005.0, 2010.0, 2015.0, 2020.0, 2030.0, 2050.0, 2060.0], "yr"
+                ),
+                integration_constant_integral=Q(5.2, "Gt yr"),
+                exp_integral=(
+                    Q(
+                        np.cumsum(
+                            [
+                                5.2,  # integration constant
+                                # y = c
+                                # int y dx = c * dx + const
+                                -1.0 * 5.0,
+                                -1.0 * 5.0,
+                                -1.0 * 5.0,
+                                0.0 * 10.0,
+                                0.0 * 20.0,
+                                2.0 * 10.0,
+                            ]
+                        ),
+                        "Gt yr",
+                    )
+                ),
+            ),
+            id="piecewise_constant_previous_left_open",
+        ),
         # pytest.param(
         #     OperationsTestCase(
         #         name="linear",
