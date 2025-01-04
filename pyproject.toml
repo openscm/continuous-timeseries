@@ -63,6 +63,7 @@ docs = [
     "jupytext>=1.16.3",
     "ruff>=0.8.4",
     "scipy>=1.13.1",
+    "openscm-units>=0.6.3",
 ]
 tests = [
     "pytest>=8.3.3",
@@ -174,6 +175,24 @@ ignore = [
 ]
 "stubs/*" = [
     "PLR0913",
+]
+# ruff doesn't recognise the markdown hyperlinks.
+# Figuring out how to make this work nice with jupytext
+# is a problem for another day.
+"docs/further-background/why-this-api.py" = [
+    "E501",
+]
+"docs/how-to-guides/how-to-make-a-step-forcing.py" = [
+    "E501",
+]
+"docs/tutorials/continuous_timeseries_tutorial.py" = [
+    "E501",
+]
+"docs/tutorials/higher_order_interpolation.py" = [
+    "E501",
+]
+"docs/tutorials/timeseries_tutorial.py" = [
+    "E501",
 ]
 
 [tool.ruff.lint.isort]

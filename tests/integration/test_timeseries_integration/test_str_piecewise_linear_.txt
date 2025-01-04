@@ -1,0 +1,2 @@
+Timeseries(time_axis=TimeAxis(bounds=[1.0 10.0 20.0] year), timeseries_continuous=TimeseriesContinuous(name=piecewise_linear, time_units=year, values_units=megametric_ton / year, function=1st order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[ 0.22222222  2.        ]
+ [10.         12.        ]], x=[ 1. 10. 20.])), domain=(<Quantity(1.0, 'year')>, <Quantity(20.0, 'year')>)))

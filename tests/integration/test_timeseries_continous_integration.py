@@ -252,6 +252,7 @@ formatting_check_cases = pytest.mark.parametrize(
                 function=ContinuousFunctionScipyPPoly(
                     scipy.interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
                 ),
+                domain=(Q(1, "yr"), Q(20, "yr")),
             ),
             id="piecewise_constant",
         ),
@@ -263,6 +264,7 @@ formatting_check_cases = pytest.mark.parametrize(
                 function=ContinuousFunctionScipyPPoly(
                     scipy.interpolate.PPoly(x=[1, 10, 20], c=[[-1.2, 2.3], [10, 12]])
                 ),
+                domain=(Q(1, "yr"), Q(20, "yr")),
             ),
             id="piecewise_linear",
         ),
@@ -276,6 +278,7 @@ formatting_check_cases = pytest.mark.parametrize(
                         x=np.arange(10001), c=np.arange(20000).reshape(2, 10000)
                     )
                 ),
+                domain=(Q(0, "yr"), Q(1000, "yr")),
             ),
             id="piecewise_linear_heaps_of_windows",
         ),
@@ -290,7 +293,8 @@ def test_repr(ts, file_regression):
         f"name={ts.name!r}, "
         f"time_units={ts.time_units!r}, "
         f"values_units={ts.values_units!r}, "
-        f"function={ts.function!r}"
+        f"function={ts.function!r}, "
+        f"domain={ts.domain!r}"
         ")"
     )
 
@@ -312,7 +316,8 @@ def test_str(ts, file_regression):
         f"name={ts.name}, "
         f"time_units={ts.time_units}, "
         f"values_units={ts.values_units}, "
-        f"function={ts.function}"
+        f"function={ts.function}, "
+        f"domain={ts.domain}"
         ")"
     )
 
@@ -393,6 +398,7 @@ operations_test_cases = pytest.mark.parametrize(
                     function=ContinuousFunctionScipyPPoly(
                         scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[2.5]])
                     ),
+                    domain=(Q(1.0, "yr"), Q(2.0, "yr")),
                 ),
                 time_interp=Q([1.25, 1.5, 1.75], "yr"),
                 exp_interp=Q([2.5, 2.5, 2.5], "Gt"),
@@ -421,6 +427,7 @@ operations_test_cases = pytest.mark.parametrize(
                     function=ContinuousFunctionScipyPPoly(
                         scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [2.5]])
                     ),
+                    domain=(Q(1.0, "yr"), Q(2.0, "yr")),
                 ),
                 time_interp=Q([1.25, 1.5, 1.75], "yr"),
                 exp_interp=Q([2.75, 3.0, 3.25], "Gt"),
@@ -449,6 +456,7 @@ operations_test_cases = pytest.mark.parametrize(
                     function=ContinuousFunctionScipyPPoly(
                         scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [1.0], [0.0]])
                     ),
+                    domain=(Q(1.0, "yr"), Q(2.0, "yr")),
                 ),
                 time_interp=Q([1.25, 1.5, 1.75], "yr"),
                 exp_interp=Q([1 / 16 + 1 / 4, 1 / 4 + 1 / 2, 9 / 16 + 3 / 4], "Gt"),
@@ -477,6 +485,7 @@ operations_test_cases = pytest.mark.parametrize(
                     function=ContinuousFunctionScipyPPoly(
                         scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [2.5]])
                     ),
+                    domain=(Q(1.0, "yr"), Q(2.0, "yr")),
                 ),
                 time_interp=TimeAxis(Q([1.25, 1.5, 1.75], "yr")),
                 exp_interp=Q([2.75, 3.0, 3.25], "Gt"),
@@ -505,6 +514,7 @@ operations_test_cases = pytest.mark.parametrize(
                     function=ContinuousFunctionScipyPPoly(
                         scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [2.5]])
                     ),
+                    domain=(Q(1.0, "yr"), Q(2.0, "yr")),
                 ),
                 time_interp=Q([15, 18, 21], "month"),
                 exp_interp=Q([2750, 3000, 3250], "Mt"),
@@ -675,6 +685,7 @@ def test_plot(  # noqa: PLR0913
         function=ContinuousFunctionScipyPPoly(
             scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [1.0], [0.0]])
         ),
+        domain=(Q(1.0, "yr"), Q(2.0, "yr")),
     )
     mt = TimeseriesContinuous(
         name="mt_linear",
@@ -683,6 +694,7 @@ def test_plot(  # noqa: PLR0913
         function=ContinuousFunctionScipyPPoly(
             scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1000.0], [3.0]])
         ),
+        domain=(Q(1.0, "yr"), Q(2.0, "yr")),
     )
 
     gt_per_year = TimeseriesContinuous(
@@ -692,6 +704,7 @@ def test_plot(  # noqa: PLR0913
         function=ContinuousFunctionScipyPPoly(
             scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [1.0], [0.0]])
         ),
+        domain=(Q(1.0, "yr"), Q(2.0, "yr")),
     )
 
     if x_units is not None:
@@ -777,6 +790,7 @@ def test_plot_matplotlib_units_not_registered(
         function=ContinuousFunctionScipyPPoly(
             scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [1.0], [0.0]])
         ),
+        domain=(Q(1.0, "yr"), Q(2.0, "yr")),
     )
 
     time_axis_plot = Q([1.0, 2.0], "yr")
@@ -813,6 +827,7 @@ def test_plot_ax_creation(sys_modules_patch, expectation):
         function=ContinuousFunctionScipyPPoly(
             scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [1.0], [0.0]])
         ),
+        domain=(Q(1.0, "yr"), Q(2.0, "yr")),
     )
     with patch.dict(sys.modules, sys_modules_patch):
         with expectation:

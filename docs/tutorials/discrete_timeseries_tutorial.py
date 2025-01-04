@@ -30,12 +30,10 @@ import matplotlib.pyplot as plt
 import matplotlib.units
 import pint
 
-from continuous_timeseries.time_axis import TimeAxis
-from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
-from continuous_timeseries.values_at_bounds import ValuesAtBounds
+import continuous_timeseries as ct
 
 # %% [markdown]
-# ## Set up pint
+# ## Handy pint aliases
 
 # %%
 UR = pint.get_application_registry()
@@ -55,7 +53,7 @@ Q = UR.Quantity
 # the third from `bounds[2]`, to `bounds[3]` etc.
 
 # %%
-time_axis = TimeAxis(
+time_axis = ct.TimeAxis(
     Q([1900.0, 1950.0, 1975.0, 2000.0, 2010.0, 2020.0, 2030.0, 2050.0], "yr")
 )
 time_axis
@@ -67,7 +65,7 @@ time_axis
 # These must represent the values at each bound (i.e. value) in `time_axis`.
 
 # %%
-values_at_bounds = ValuesAtBounds(
+values_at_bounds = ct.ValuesAtBounds(
     Q([2.3, 4.5, 6.4, 10.0, 11.0, 12.3, 10.2, 3.5], "Gt / yr")
 )
 values_at_bounds
@@ -79,7 +77,7 @@ values_at_bounds
 # and initialise our instance.
 
 # %%
-ts = TimeseriesDiscrete(
+ts = ct.TimeseriesDiscrete(
     name="example",
     time_axis=time_axis,
     values_at_bounds=values_at_bounds,
@@ -134,15 +132,15 @@ ts.plot()
 # will automatically be plotted with the same units.
 
 # %%
-ts_compatible_unit = TimeseriesDiscrete(
+ts_compatible_unit = ct.TimeseriesDiscrete(
     name="example_compatible_unit",
-    time_axis=TimeAxis(
+    time_axis=ct.TimeAxis(
         Q(
             [(1932 + 6) * 12.0, 2000 * 12.0, (2010 + 5) * 12.0, (2025 + 3) * 12.0],
             "month",
         )
     ),
-    values_at_bounds=ValuesAtBounds(Q([140.0, 160.0, 120.0, -10.0], "Mt / month")),
+    values_at_bounds=ct.ValuesAtBounds(Q([140.0, 160.0, 120.0, -10.0], "Mt / month")),
 )
 
 ax = ts.plot()
@@ -177,15 +175,15 @@ ax.legend()
 # Instead, you will get an error.
 
 # %%
-ts_incompatible_unit = TimeseriesDiscrete(
+ts_incompatible_unit = ct.TimeseriesDiscrete(
     name="example_incompatible_unit",
-    time_axis=TimeAxis(
+    time_axis=ct.TimeAxis(
         Q(
             [(1932 + 6) * 12.0, 2000 * 12.0, (2010 + 5) * 12.0, (2025 + 3) * 12.0],
             "month",
         )
     ),
-    values_at_bounds=ValuesAtBounds(Q([10.0, 20.0, 30.0, 40.0], "Mt")),
+    values_at_bounds=ct.ValuesAtBounds(Q([10.0, 20.0, 30.0, 40.0], "Mt")),
 )
 
 ax = ts.plot()

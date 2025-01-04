@@ -1,0 +1,8 @@
+Timeseries(
+    time_axis=TimeAxis(bounds=<Quantity([ 1. 10. 20.], 'year')>),
+    timeseries_continuous=TimeseriesContinuous(
+        name='piecewise_constant',
+        time_units=<Unit('year')>,
+        values_units=<Unit('megametric_ton / year')>,
+        function=PPolyPiecewiseConstantPreviousLeftClosed(x=array([ 1., 10., 20.]), y=array([10., 12., 32.])),
+        domain=(<Quantity(1.0, 'year')>, <Quantity(20.0, 'year')>)))

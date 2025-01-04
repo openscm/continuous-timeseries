@@ -1,0 +1,2 @@
+Timeseries(time_axis=TimeAxis(bounds=[1750.0 1751.0 1752.0 ... 2998.0 2999.0 3000.0] year), timeseries_continuous=TimeseriesContinuous(name=piecewise_linear_heaps_of_windows, time_units=year, values_units=megametric_ton / year, function=1st order ContinuousFunctionScipyPPoly(ppoly=scipy.interpolate._interpolate.PPoly(c=[[1.000e+00 1.000e+00 1.000e+00 ... 1.000e+00 1.000e+00 1.000e+00]
+ [1.000e+01 1.100e+01 1.200e+01 ... 1.257e+03 1.258e+03 1.259e+03]], x=[1750. 1751. 1752. ... 2998. 2999. 3000.])), domain=(<Quantity(1750.0, 'year')>, <Quantity(3000.0, 'year')>)))
