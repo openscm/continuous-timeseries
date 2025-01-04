@@ -99,7 +99,7 @@ Additional dependencies can be installed using
     # To add scipy-related dependencies
     pip install continuous-timeseries[scipy]
 
-    # To add all optionatl dependencies
+    # To add all optional dependencies
     pip install continuous-timeseries[full]
     ```
 
