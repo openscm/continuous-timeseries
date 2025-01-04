@@ -33,6 +33,7 @@ import numpy as np
 import numpy.typing as npt
 from attrs import define, field
 
+from continuous_timeseries.domain_helpers import check_no_times_outside_domain
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
 from continuous_timeseries.typing import NP_FLOAT_OR_INT
 
@@ -108,7 +109,10 @@ class PPolyPiecewiseConstantPreviousLeftOpen:
         ExtrapolationNotAllowedError
             The user attempted to extrapolate when it isn't allowed.
         """
-        # TODO: extrapolation checks
+        if not allow_extrapolation:
+            # If need be, no cover this, should never be used anyway
+            check_no_times_outside_domain(times=x, domain=(self.x.min(), self.x.max()))
+
         res_idxs: npt.NDArray[np.int_] = (
             np.searchsorted(a=self.x, v=np.atleast_1d(x), side="left") - 1
         )
