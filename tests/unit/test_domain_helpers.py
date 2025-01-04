@@ -32,9 +32,9 @@ Q = UR.Quantity
             pytest.raises(
                 ValueError,
                 match=re.escape(
-                    "The domain=(<Quantity(10, 'year')>, <Quantity(20, 'year')>). "
+                    "The domain=(<Quantity(1, 'year')>, <Quantity(100, 'year')>). "
                     "There are time values that are outside this domain: "
-                    "outside_domain=<Quantity([9.99999], 'year')>."
+                    "outside_domain=<Quantity([0], 'year')>."
                 ),
             ),
             id="scalar_pre_domain",
@@ -45,9 +45,9 @@ Q = UR.Quantity
             pytest.raises(
                 ValueError,
                 match=re.escape(
-                    "The domain=(<Quantity(10, 'year')>, <Quantity(20, 'year')>). "
+                    "The domain=(<Quantity(1, 'year')>, <Quantity(100, 'year')>). "
                     "There are time values that are outside this domain: "
-                    "outside_domain=<Quantity([9.99999], 'year')>."
+                    "outside_domain=<Quantity([110], 'year')>."
                 ),
             ),
             id="scalar_post_domain",

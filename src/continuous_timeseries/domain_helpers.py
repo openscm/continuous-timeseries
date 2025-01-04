@@ -4,6 +4,8 @@ Support for our domain handling
 
 from __future__ import annotations
 
+from typing import Union
+
 import numpy as np
 
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
@@ -36,7 +38,7 @@ def validate_domain(
 
 
 def check_no_times_outside_domain(
-    times: PINT_NUMPY_ARRAY,
+    times: Union[PINT_NUMPY_ARRAY, PINT_SCALAR],
     domain: tuple[PINT_SCALAR, PINT_SCALAR],
 ) -> None:
     """
@@ -57,10 +59,12 @@ def check_no_times_outside_domain(
     """
     validate_domain(domain)
 
+    times = np.atleast_1d(times)
+
     outside_domain = np.hstack(
         [
-            times[np.where(times < domain[0])],
-            times[np.where(times > domain[1])],
+            times[times < domain[0]],
+            times[times > domain[1]],
         ]
     )
 
