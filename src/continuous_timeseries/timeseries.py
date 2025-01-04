@@ -14,9 +14,11 @@ We include straight-forward methods to convert to
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import pint.testing
 from attrs import define, evolve
 
 import continuous_timeseries.formatting
@@ -34,6 +36,9 @@ from continuous_timeseries.timeseries_continuous import TimeseriesContinuous
 from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
+from continuous_timeseries.warnings import (
+    InterpolationUpdateChangedValuesAtBoundsWarning,
+)
 
 if TYPE_CHECKING:
     import IPython.lib.pretty
@@ -289,31 +294,62 @@ class Timeseries:
             timeseries_continuous=timeseries_continuous_new,
         )
 
-    def update_interpolation(self, interpolation: InterpolationOption) -> Timeseries:
+    def update_interpolation(
+        self,
+        interpolation: InterpolationOption,
+        warn_if_values_at_bounds_change: bool = True,
+    ) -> Timeseries:
         """
         Update the interpolation
+
+        Note that this uses default interpolation choices.
+        This might not always be what you want.
 
         Parameters
         ----------
         interpolation
             Interpolation to change to
 
+        warn_if_values_at_bounds_change
+            Should a warning be raised if the `interpolation`
+            causes the values at the time bounds defined by `self.time_axis` to change?
+
         Returns
         -------
         :
             `self` with its interpolation updated to `interpolation`.
+
+        Warns
+        -----
+        InterpolationUpdateChangedValuesAtBoundsWarning
+            If updating the interpolation could the values at the time bounds to change
+            and `warn_if_values_at_bounds_change` is `True`.
         """
-        # Put note in here that using this with piecewise constant can be confusing
-        # TODO: tests of what happens
         continuous = discrete_to_continuous(
             discrete=self.discrete,
             interpolation=interpolation,
         )
 
-        return type(self)(
+        res = type(self)(
             time_axis=self.time_axis,
             timeseries_continuous=continuous,
         )
+
+        if warn_if_values_at_bounds_change:
+            try:
+                pint.testing.assert_equal(
+                    self.discrete.values_at_bounds.values,
+                    res.discrete.values_at_bounds.values,
+                )
+            except AssertionError:
+                msg = (
+                    f"Updating interpolation to {interpolation.name} "
+                    "has caused the values "
+                    "at the bounds defined by `self.time_axis` to change."
+                )
+                warnings.warn(msg, InterpolationUpdateChangedValuesAtBoundsWarning)
+
+        return res
 
     def update_interpolation_integral_preserving(
         self,

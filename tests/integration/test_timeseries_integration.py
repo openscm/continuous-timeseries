@@ -26,6 +26,9 @@ from continuous_timeseries.timeseries import Timeseries
 from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
+from continuous_timeseries.warnings import (
+    InterpolationUpdateChangedValuesAtBoundsWarning,
+)
 
 UR = pint.get_application_registry()
 Q = UR.Quantity
@@ -358,6 +361,88 @@ def test_interpolate(operations_test_case, time_axis_arg_raw_pint):
         res.interpolate(time_axis=np.atleast_1d(time_interp_raw[0] - Q(1 / 10, "yr")))
     with pytest.raises(ExtrapolationNotAllowedError):
         res.interpolate(time_axis=np.atleast_1d(time_interp_raw[-1] + Q(1 / 10, "yr")))
+
+
+@pytest.mark.parametrize(
+    "start, end, exp_bounds_same, kwargs, expectation",
+    (
+        pytest.param(
+            InterpolationOption.Linear,
+            InterpolationOption.Quadratic,
+            True,
+            {},
+            does_not_raise(),
+            id="linear_to_quadratic",
+        ),
+        pytest.param(
+            InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+            InterpolationOption.PiecewiseConstantNextLeftClosed,
+            False,
+            {},
+            pytest.warns(
+                InterpolationUpdateChangedValuesAtBoundsWarning,
+                match=(
+                    "Updating interpolation to PiecewiseConstantNextLeftClosed "
+                    "has caused the values at the bounds defined by "
+                    "`self.time_axis` to change."
+                ),
+            ),
+            id="previous_left_closed_to_previous_next_closed",
+        ),
+        pytest.param(
+            InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+            InterpolationOption.PiecewiseConstantNextLeftClosed,
+            False,
+            dict(warn_if_values_at_bounds_change=False),
+            does_not_raise(),
+            id="previous_left_closed_to_previous_next_closed_warning_silenced",
+        ),
+    ),
+)
+def test_update_interpolation_a_to_b(start, end, exp_bounds_same, kwargs, expectation):
+    time_axis_bounds = Q([1.0, 10.0, 20.0], "yr")
+
+    start = Timeseries.from_arrays(
+        time_axis_bounds=Q([1.0, 10.0, 20.0], "yr"),
+        values_at_bounds=Q([10.0, 12.0, 32.0], "Gt"),
+        interpolation=start,
+        name="start",
+    )
+
+    with expectation:
+        res = start.update_interpolation(end, **kwargs)
+
+    if exp_bounds_same:
+        pint.testing.assert_equal(
+            start.discrete.values_at_bounds.values,
+            res.discrete.values_at_bounds.values,
+        )
+
+        # We've updated the internal values so these should change
+        check_values_different_times = (
+            np.setdiff1d(
+                np.linspace(time_axis_bounds.min().m, time_axis_bounds.max().m, 100),
+                time_axis_bounds.m,
+            )
+            * time_axis_bounds.u
+        )
+        with pytest.raises(AssertionError):
+            pint.testing.assert_equal(
+                start.interpolate(
+                    check_values_different_times
+                ).discrete.values_at_bounds.values,
+                res.interpolate(
+                    check_values_different_times
+                ).discrete.values_at_bounds.values,
+            )
+
+    else:
+        # We expect the bounds to have been updated, hence the warning.
+        with pytest.raises(AssertionError):
+            pint.testing.assert_equal(
+                start.discrete.values_at_bounds.values,
+                res.discrete.values_at_bounds.values,
+            )
 
 
 # @operations_test_cases
