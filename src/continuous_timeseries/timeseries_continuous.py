@@ -345,7 +345,7 @@ class ContinuousFunctionScipyPPoly:
         ppoly_integral = scipy.interpolate.PPoly(
             c=c_new,
             x=indefinite_integral.x,
-            extrapolate=False,
+            extrapolate=False,  # no extrapolation by default
         )
 
         return type(self)(ppoly_integral)
