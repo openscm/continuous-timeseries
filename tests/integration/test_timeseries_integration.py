@@ -24,7 +24,7 @@ from continuous_timeseries.exceptions import (
 from continuous_timeseries.time_axis import TimeAxis
 from continuous_timeseries.timeseries import Timeseries
 from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
-from continuous_timeseries.typing import PINT_NUMPY_ARRAY
+from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
 
 UR = pint.get_application_registry()
@@ -141,6 +141,15 @@ class OperationsTestCase:
     exp_derivative: PINT_NUMPY_ARRAY
     """Expected values of the derivative at `time_derivative`"""
 
+    time_integral: PINT_NUMPY_ARRAY
+    """Times to use for checking integration"""
+
+    integration_constant_integral: PINT_SCALAR
+    """Integration constant to use for checking integration"""
+
+    exp_integral: PINT_NUMPY_ARRAY
+    """Expected values of the integral at `time_integral`"""
+
     time_interp: PINT_NUMPY_ARRAY
     """Times to use for checking interpolation"""
 
@@ -205,6 +214,24 @@ operations_test_cases = pytest.mark.parametrize(
                     ],
                     "Gt / yr",
                 ),
+                time_integral=Q([2010.0, 2020.0, 2030.0, 2050.0], "yr"),
+                integration_constant_integral=Q(10.0, "Gt yr"),
+                exp_integral=(
+                    Q(10.0, "Gt yr")
+                    + Q(
+                        np.cumsum(
+                            [
+                                0.0,
+                                # y = mx + c
+                                # int y dx = mx^2 / 2 + cx + const
+                                0.1 * 10.0**2 / 2 - 1 * 10.0,
+                                2 / 30.0 * 10.0**2 / 2,
+                                2 / 30.0 * 20.0**2 / 2 + 2 / 3 * 20.0,
+                            ]
+                        ),
+                        "Gt yr",
+                    )
+                ),
                 time_interp=Q([2015.0, 2020.0, 2030.0], "yr"),
                 exp_interp=Q([-500.0, 0.0, 2000.0 / 3.0], "Mt"),
             ),
@@ -268,7 +295,36 @@ def test_differentiate(operations_test_case, name_res):
     )
 
 
-# integrate
+@operations_test_cases
+@pytest.mark.parametrize("name_res", (None, "overwritten"))
+def test_integrate(operations_test_case, name_res):
+    kwargs = {}
+    if name_res is not None:
+        kwargs["name_res"] = name_res
+
+    integral = operations_test_case.ts.integrate(
+        integration_constant=operations_test_case.integration_constant_integral,
+        **kwargs,
+    )
+
+    if name_res is None:
+        assert integral.name == f"{operations_test_case.ts.name}_integral"
+    else:
+        assert integral.name == name_res
+
+    assert isinstance(integral, Timeseries)
+
+    pint.testing.assert_equal(
+        operations_test_case.ts.time_axis.bounds, integral.time_axis.bounds
+    )
+
+    pint.testing.assert_allclose(
+        integral.interpolate(
+            time_axis=operations_test_case.time_integral
+        ).discrete.values_at_bounds.values,
+        operations_test_case.exp_integral,
+        rtol=1e-10,
+    )
 
 
 @operations_test_cases
