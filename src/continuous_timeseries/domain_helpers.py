@@ -4,15 +4,22 @@ Support for our domain handling
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Union, overload
 
 import numpy as np
 
-from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
+from continuous_timeseries.typing import (
+    NP_ARRAY_OF_FLOAT_OR_INT,
+    NP_FLOAT_OR_INT,
+    PINT_NUMPY_ARRAY,
+    PINT_SCALAR,
+)
 
 
 def validate_domain(
-    domain: tuple[PINT_SCALAR, PINT_SCALAR],
+    domain: Union[
+        tuple[PINT_SCALAR, PINT_SCALAR], tuple[NP_FLOAT_OR_INT, NP_FLOAT_OR_INT]
+    ],
 ) -> None:
     """
     Check that domain values are valid
@@ -37,9 +44,27 @@ def validate_domain(
         raise AssertionError(msg)
 
 
+@overload
 def check_no_times_outside_domain(
     times: Union[PINT_NUMPY_ARRAY, PINT_SCALAR],
     domain: tuple[PINT_SCALAR, PINT_SCALAR],
+) -> None: ...
+
+
+@overload
+def check_no_times_outside_domain(
+    times: Union[NP_ARRAY_OF_FLOAT_OR_INT, NP_FLOAT_OR_INT],
+    domain: tuple[NP_FLOAT_OR_INT, NP_FLOAT_OR_INT],
+) -> None: ...
+
+
+def check_no_times_outside_domain(
+    times: Union[
+        PINT_NUMPY_ARRAY, PINT_SCALAR, NP_ARRAY_OF_FLOAT_OR_INT, NP_FLOAT_OR_INT
+    ],
+    domain: Union[
+        tuple[PINT_SCALAR, PINT_SCALAR], tuple[NP_FLOAT_OR_INT, NP_FLOAT_OR_INT]
+    ],
 ) -> None:
     """
     Check that no times are outside the supported domain

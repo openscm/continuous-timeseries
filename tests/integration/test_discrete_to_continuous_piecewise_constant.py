@@ -85,7 +85,25 @@ piecewise_constant_test_cases = pytest.mark.parametrize(
                 exp_last_edge=Q(4.0, "W"),
                 exp_extrapolate_post=Q(4.0, "W"),
                 exp_round_trip_values_at_bounds_same=False,
-            )
+            ),
+            id="piecewise_constant_next_left_closed",
+        ),
+        pytest.param(
+            PiecewiseConstantTestCase(
+                name="piecewise_constant_next_left_open",
+                interpolation=InterpolationOption.PiecewiseConstantNextLeftOpen,
+                time_axis_bounds=Q([1750, 1850, 2000], "yr"),
+                values_at_bounds=Q([0.0, 2.0, 4.0], "W"),
+                exp_extrapolate_pre=Q(0.0, "W"),
+                exp_first_edge=Q(0.0, "W"),
+                exp_first_window=Q(2.0, "W"),
+                exp_internal_edge=Q(2.0, "W"),
+                exp_last_window=Q(4.0, "W"),
+                exp_last_edge=Q(4.0, "W"),
+                exp_extrapolate_post=Q(4.0, "W"),
+                exp_round_trip_values_at_bounds_same=True,
+            ),
+            id="piecewise_constant_next_left_open",
         ),
     ),
 )
