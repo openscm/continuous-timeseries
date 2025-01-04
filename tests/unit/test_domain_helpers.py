@@ -21,6 +21,38 @@ Q = UR.Quantity
     "times, domain, expectation",
     (
         pytest.param(
+            Q(10, "yr"),
+            (Q(1, "yr"), Q(100, "yr")),
+            does_not_raise(),
+            id="scalar_in_domain",
+        ),
+        pytest.param(
+            Q(0, "yr"),
+            (Q(1, "yr"), Q(100, "yr")),
+            pytest.raises(
+                ValueError,
+                match=re.escape(
+                    "The domain=(<Quantity(10, 'year')>, <Quantity(20, 'year')>). "
+                    "There are time values that are outside this domain: "
+                    "outside_domain=<Quantity([9.99999], 'year')>."
+                ),
+            ),
+            id="scalar_pre_domain",
+        ),
+        pytest.param(
+            Q(110, "yr"),
+            (Q(1, "yr"), Q(100, "yr")),
+            pytest.raises(
+                ValueError,
+                match=re.escape(
+                    "The domain=(<Quantity(10, 'year')>, <Quantity(20, 'year')>). "
+                    "There are time values that are outside this domain: "
+                    "outside_domain=<Quantity([9.99999], 'year')>."
+                ),
+            ),
+            id="scalar_post_domain",
+        ),
+        pytest.param(
             Q([10, 20], "yr"),
             (Q(1, "yr"), Q(100, "yr")),
             does_not_raise(),
