@@ -950,11 +950,7 @@ def get_test_update_interpolation_integral_preserving_cases() -> tuple[pytest.pa
 
 @pytest.mark.parametrize(
     "start_interp, end_interp, exp_successful, kwargs",
-    (
-        *get_test_update_interpolation_integral_preserving_cases(),
-        # TODO: add test that warn_if_values_at_bounds_change is passed
-        # (maybe as separate test)
-    ),
+    get_test_update_interpolation_integral_preserving_cases(),
 )
 @pytest.mark.parametrize("name_res", (None, "overwritten"))
 def test_update_interpolation_integral_preserving(
@@ -1014,54 +1010,44 @@ def test_update_interpolation_integral_preserving(
     )
 
 
-# @operations_test_cases
-# def test_extrapolate_not_allowed_raises(operations_test_case):
-#     with pytest.raises(ExtrapolationNotAllowedError):
-#         operations_test_case.ts.interpolate(operations_test_case.time_extrap)
-#
-#
-# @operations_test_cases
-# def test_extrapolate(operations_test_case):
-#     pint.testing.assert_allclose(
-#         operations_test_case.ts.interpolate(
-#             operations_test_case.time_extrap, allow_extrapolation=True
-#         ),
-#         operations_test_case.exp_extrap,
-#         rtol=1e-10,
-#     )
-#
-#
-# @operations_test_cases
-# @pytest.mark.parametrize(
-#     "integration_constant",
-#     (
-#         Q(0, "Gt yr"),
-#         Q(1.0, "Gt yr"),
-#     ),
-# )
-# @pytest.mark.parametrize(
-#     "integrate_kwargs", ({}, dict(name_res=None), dict(name_res="name_overwritten"))
-# )
-# def test_integration(operations_test_case, integration_constant, integrate_kwargs):
-#     integral = operations_test_case.ts.integrate(
-#         integration_constant=integration_constant, **integrate_kwargs
-#     )
-#
-#     pint.testing.assert_allclose(
-#         integral.interpolate(operations_test_case.time_integral_check),
-#         operations_test_case.exp_integral_values_excl_integration_constant
-#         + integration_constant,
-#         rtol=1e-10,
-#     )
-#
-#     if (
-#         integrate_kwargs
-#         and "name_res" in integrate_kwargs
-#         and integrate_kwargs["name_res"] is not None
-#     ):
-#         assert integral.name == integrate_kwargs["name_res"]
-#     else:
-#         assert integral.name == f"{operations_test_case.ts.name}_integral"
+@pytest.mark.parametrize(
+    "kwargs, expectation",
+    (
+        pytest.param(
+            dict(
+                check_change_func=partial(
+                    pint.testing.assert_allclose, atol=0.0, rtol=0.0
+                )
+            ),
+            pytest.warns(InterpolationUpdateChangedValuesAtBoundsWarning),
+            id="warning",
+        ),
+        pytest.param(
+            dict(
+                check_change_func=partial(
+                    pint.testing.assert_allclose, atol=0.0, rtol=0.0
+                ),
+                warn_if_values_at_bounds_change=False,
+            ),
+            does_not_raise(),
+            id="warning-suppressed",
+        ),
+    ),
+)
+def test_update_interpolation_integral_preserving_kwarg_passing(kwargs, expectation):
+    time_axis_bounds = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
+
+    start = Timeseries.from_arrays(
+        time_axis_bounds=time_axis_bounds,
+        values_at_bounds=Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt"),
+        interpolation=InterpolationOption.Linear,
+        name="start",
+    )
+
+    with expectation:
+        start.update_interpolation_integral_preserving(
+            interpolation=InterpolationOption.Cubic, **kwargs
+        )
 
 
 @pytest.mark.parametrize(
