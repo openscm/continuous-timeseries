@@ -15,7 +15,7 @@ We include straight-forward methods to convert to
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 import pint.testing
@@ -297,7 +297,11 @@ class Timeseries:
     def update_interpolation(
         self,
         interpolation: InterpolationOption,
+        name_res: str | None = None,
         warn_if_values_at_bounds_change: bool = True,
+        check_change_func: Callable[
+            [PINT_NUMPY_ARRAY, PINT_NUMPY_ARRAY], None
+        ] = pint.testing.assert_allclose,
     ) -> Timeseries:
         """
         Update the interpolation
@@ -310,9 +314,20 @@ class Timeseries:
         interpolation
             Interpolation to change to
 
+        name_res
+            Name of the result
+
+            If not supplied, we use
+            `f"{self.name}_{interpolation.name}"`.
+
         warn_if_values_at_bounds_change
             Should a warning be raised if the `interpolation`
             causes the values at the time bounds defined by `self.time_axis` to change?
+
+        check_change_func
+            Function to use to check if the values at the bounds have changed.
+
+            If the values are different, this function should raise an `AssertionError`.
 
         Returns
         -------
@@ -325,10 +340,14 @@ class Timeseries:
             If updating the interpolation could the values at the time bounds to change
             and `warn_if_values_at_bounds_change` is `True`.
         """
+        if name_res is None:
+            name_res = f"{self.name}_{interpolation.name}"
+
         continuous = discrete_to_continuous(
             discrete=self.discrete,
             interpolation=interpolation,
         )
+        continuous.name = name_res
 
         res = type(self)(
             time_axis=self.time_axis,
@@ -337,10 +356,11 @@ class Timeseries:
 
         if warn_if_values_at_bounds_change:
             try:
-                pint.testing.assert_equal(
+                check_change_func(
                     self.discrete.values_at_bounds.values,
                     res.discrete.values_at_bounds.values,
                 )
+
             except AssertionError:
                 msg = (
                     f"Updating interpolation to {interpolation.name} "
