@@ -1051,6 +1051,114 @@ def test_update_interpolation_integral_preserving_kwarg_passing(kwargs, expectat
 
 
 @pytest.mark.parametrize(
+    "start_interp, exp_values_at_bounds_same",
+    (
+        (InterpolationOption.PiecewiseConstantNextLeftClosed, True),
+        (InterpolationOption.PiecewiseConstantPreviousLeftClosed, True),
+        # Open bounds lost upon integration
+        (InterpolationOption.PiecewiseConstantNextLeftOpen, False),
+        (InterpolationOption.PiecewiseConstantPreviousLeftOpen, False),
+        (InterpolationOption.Linear, True),
+        (InterpolationOption.Quadratic, True),
+        (InterpolationOption.Cubic, True),
+        (InterpolationOption.Quartic, True),
+    ),
+)
+def test_integrate_then_differentiate(start_interp, exp_values_at_bounds_same):
+    time_axis_bounds = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
+
+    start = Timeseries.from_arrays(
+        time_axis_bounds=time_axis_bounds,
+        values_at_bounds=Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt"),
+        interpolation=start_interp,
+        name="start",
+    )
+
+    res = start.integrate(Q(23.0, "Gt yr")).differentiate()
+
+    if exp_values_at_bounds_same:
+        pint.testing.assert_allclose(
+            res.discrete.values_at_bounds.values,
+            start.discrete.values_at_bounds.values,
+            rtol=1e-10,
+        )
+
+    times_check = (
+        np.linspace(
+            (2 * time_axis_bounds[0] - time_axis_bounds[1]).m,
+            (2 * time_axis_bounds[-1] - time_axis_bounds[-2]).m,
+            1000,
+        )
+        * time_axis_bounds.u
+    )
+
+    res_check_vals = res.interpolate(
+        times_check, allow_extrapolation=True
+    ).discrete.values_at_bounds.values
+    start_check_vals = start.interpolate(
+        times_check, allow_extrapolation=True
+    ).discrete.values_at_bounds.values
+
+    pint.testing.assert_allclose(res_check_vals, start_check_vals, rtol=1e-10)
+
+
+@pytest.mark.parametrize(
+    "start_interp, exp_result",
+    (
+        # Differentiating piecewise constant just leads to zeros
+        (InterpolationOption.PiecewiseConstantNextLeftClosed, False),
+        (InterpolationOption.PiecewiseConstantPreviousLeftClosed, False),
+        (InterpolationOption.PiecewiseConstantNextLeftOpen, False),
+        (InterpolationOption.PiecewiseConstantPreviousLeftOpen, False),
+        (InterpolationOption.Linear, True),
+        (InterpolationOption.Quadratic, True),
+        (InterpolationOption.Cubic, True),
+        (InterpolationOption.Quartic, True),
+    ),
+)
+def test_differentiate_then_integrate(start_interp, exp_result):
+    time_axis_bounds = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
+    values_at_bounds = Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt")
+
+    start = Timeseries.from_arrays(
+        time_axis_bounds=time_axis_bounds,
+        values_at_bounds=values_at_bounds,
+        interpolation=start_interp,
+        name="start",
+    )
+
+    res = start.differentiate().integrate(values_at_bounds[0])
+
+    times_check = (
+        np.linspace(
+            (2 * time_axis_bounds[0] - time_axis_bounds[1]).m,
+            (2 * time_axis_bounds[-1] - time_axis_bounds[-2]).m,
+            1000,
+        )
+        * time_axis_bounds.u
+    )
+
+    res_check_vals = res.interpolate(
+        times_check, allow_extrapolation=True
+    ).discrete.values_at_bounds.values
+    start_check_vals = start.interpolate(
+        times_check, allow_extrapolation=True
+    ).discrete.values_at_bounds.values
+
+    if exp_result:
+        pint.testing.assert_allclose(
+            res.discrete.values_at_bounds.values,
+            start.discrete.values_at_bounds.values,
+            rtol=1e-10,
+        )
+
+        pint.testing.assert_allclose(res_check_vals, start_check_vals, rtol=1e-10)
+
+    else:
+        pint.testing.assert_allclose(res_check_vals, values_at_bounds[0], rtol=1e-10)
+
+
+@pytest.mark.parametrize(
     "x_units, y_units, plot_kwargs, legend",
     (
         pytest.param(None, None, {}, False, id="no-units-set"),
