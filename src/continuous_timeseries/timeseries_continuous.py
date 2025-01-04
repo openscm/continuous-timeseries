@@ -456,7 +456,7 @@ class TimeseriesContinuous:
     def to_discrete_timeseries(
         self,
         time_axis: TimeAxis,
-        allow_extrapolation: bool,
+        allow_extrapolation: bool = False,
     ) -> TimeseriesDiscrete:
         """
         Convert to [`TimeseriesDiscrete`][(p)]

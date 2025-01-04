@@ -162,7 +162,7 @@ class Timeseries:
             Initialised [`Timeseries`][(m)].
         """
         time_axis_obj = TimeAxis(time_axis_bounds)
-        # Initialise from discrete arrays
+
         discrete = TimeseriesDiscrete(
             name=name,
             time_axis=time_axis_obj,

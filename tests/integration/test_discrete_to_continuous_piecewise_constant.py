@@ -6,12 +6,20 @@ Implicitly, tests of `continuous_timeseries.discrete_to_continuous`
 
 from __future__ import annotations
 
+import numpy as np
 import pint
 import pint.testing
 import pytest
 from attrs import define, field, validators
 
-from continuous_timeseries import InterpolationOption, TimeAxis, Timeseries
+from continuous_timeseries import (
+    InterpolationOption,
+    TimeAxis,
+    Timeseries,
+    TimeseriesDiscrete,
+    ValuesAtBounds,
+)
+from continuous_timeseries.discrete_to_continuous import discrete_to_continuous
 from continuous_timeseries.exceptions import ExtrapolationNotAllowedError
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
 
@@ -40,6 +48,7 @@ class PiecewiseConstantTestCase:
     exp_last_window: PINT_SCALAR
     exp_last_edge: PINT_SCALAR
     exp_extrapolate_post: PINT_SCALAR
+    exp_round_trip_values_at_bounds_same: bool
     ts: Timeseries = field()
 
     @ts.default
@@ -68,6 +77,7 @@ piecewise_constant_test_cases = pytest.mark.parametrize(
                 exp_last_window=Q(4.0, "W"),
                 exp_last_edge=Q(4.0, "W"),
                 exp_extrapolate_post=Q(4.0, "W"),
+                exp_round_trip_values_at_bounds_same=False,
             )
         ),
     ),
@@ -182,7 +192,7 @@ def test_implicit_extrapolation_post_raises(piecewise_constant_test_case):
 
 @piecewise_constant_test_cases
 def test_extrapolation_post(piecewise_constant_test_case):
-    post_domain_time = piecewise_constant_test_case.time_axis_bounds[0] + Q(1, "yr")
+    post_domain_time = piecewise_constant_test_case.time_axis_bounds[-1] + Q(1, "yr")
 
     pint.testing.assert_equal(
         piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
@@ -193,9 +203,71 @@ def test_extrapolation_post(piecewise_constant_test_case):
     )
 
 
-def test_discrete_to_continuous_equivalence():
-    assert False
+@piecewise_constant_test_cases
+def test_discrete_to_continuous_equivalence(piecewise_constant_test_case):
+    ts_discrete = TimeseriesDiscrete(
+        name=piecewise_constant_test_case.name,
+        time_axis=TimeAxis(piecewise_constant_test_case.time_axis_bounds),
+        values_at_bounds=ValuesAtBounds(piecewise_constant_test_case.values_at_bounds),
+    )
+
+    res = discrete_to_continuous(
+        ts_discrete, interpolation=piecewise_constant_test_case.interpolation
+    )
+
+    exp = piecewise_constant_test_case.ts.timeseries_continuous
+
+    assert res.name == exp.name
+    assert res.time_units == exp.time_units
+    assert res.values_units == exp.values_units
+    for res_v, exp_v in zip(res.domain, exp.domain):
+        pint.testing.assert_equal(res_v, exp_v)
+
+    check_times = (
+        np.linspace(
+            piecewise_constant_test_case.time_axis_bounds[0].m,
+            piecewise_constant_test_case.time_axis_bounds[-1].m,
+            100,
+        )
+        * piecewise_constant_test_case.time_axis_bounds.u
+    )
+    pint.testing.assert_equal(res.function(check_times), exp.function(check_times))
 
 
-def test_round_tripping():
-    assert False
+@piecewise_constant_test_cases
+def test_round_tripping(piecewise_constant_test_case):
+    start = TimeseriesDiscrete(
+        name=piecewise_constant_test_case.name,
+        time_axis=TimeAxis(piecewise_constant_test_case.time_axis_bounds),
+        values_at_bounds=ValuesAtBounds(piecewise_constant_test_case.values_at_bounds),
+    )
+
+    continuous = start.to_continuous_timeseries(
+        piecewise_constant_test_case.interpolation
+    )
+
+    res = continuous.to_discrete_timeseries(start.time_axis)
+
+    assert res.name == start.name
+    pint.testing.assert_equal(
+        res.time_axis.bounds,
+        start.time_axis.bounds,
+    )
+    # This holds true in all cases
+    pint.testing.assert_equal(
+        res.values_at_bounds.values,
+        np.hstack(
+            [
+                piecewise_constant_test_case.exp_first_edge,
+                piecewise_constant_test_case.exp_internal_edge,
+                piecewise_constant_test_case.exp_last_edge,
+            ]
+        ),
+    )
+
+    if piecewise_constant_test_case.exp_round_trip_values_at_bounds_same:
+        # This holds true only in select cases
+        pint.testing.assert_equal(
+            res.values_at_bounds.values,
+            start.values_at_bounds.values,
+        )

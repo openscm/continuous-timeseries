@@ -73,11 +73,14 @@ def discrete_to_continuous_piecewise_constant_next_left_closed(
     )
 
     time_bounds = discrete.time_axis.bounds
-    x = time_bounds.m
+    # Start from minus infinity
+    # and effectively replace the last bound with infinity.
+    # We let domain take care of enforcing the domain,
+    # our underlying function is actually defined over all x.
+    x = np.hstack([-np.inf, time_bounds.m[:-1], np.inf])
 
     all_vals = discrete.values_at_bounds.values
-    # Next left closed, so we can ignore the first value
-    coeffs = np.atleast_2d(all_vals[1:].m)
+    coeffs = np.atleast_2d(all_vals.m)
 
     piecewise_polynomial = scipy.interpolate.PPoly(
         x=x,
