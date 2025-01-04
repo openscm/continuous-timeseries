@@ -32,11 +32,9 @@ import numpy as np
 import pint
 import scipy.interpolate
 
+import continuous_timeseries as ct
 from continuous_timeseries.exceptions import ExtrapolationNotAllowedError
-from continuous_timeseries.timeseries_continuous import (
-    ContinuousFunctionScipyPPoly,
-    TimeseriesContinuous,
-)
+from continuous_timeseries.timeseries_continuous import ContinuousFunctionScipyPPoly
 
 # %% [markdown]
 # ## Handy pint aliases
@@ -110,7 +108,7 @@ continuous_constant
 # We then create our `TimeseriesContinuous` instance.
 
 # %%
-ts = TimeseriesContinuous(
+ts = ct.TimeseriesContinuous(
     name="piecewise_constant",
     time_units=time_axis.u,
     values_units=values.u,
@@ -143,7 +141,7 @@ piecewise_polynomial_linear = scipy.interpolate.PPoly(
 )
 continuous_linear = ContinuousFunctionScipyPPoly(piecewise_polynomial_linear)
 
-ts_linear = TimeseriesContinuous(
+ts_linear = ct.TimeseriesContinuous(
     name="piecewise_linear",
     time_units=time_axis.u,
     values_units=values.u,
@@ -178,7 +176,7 @@ piecewise_polynomial_quadratic = scipy.interpolate.PPoly(
 )
 continuous_quadratic = ContinuousFunctionScipyPPoly(piecewise_polynomial_quadratic)
 
-ts_quadratic = TimeseriesContinuous(
+ts_quadratic = ct.TimeseriesContinuous(
     name="piecewise_quadratic",
     time_units=time_axis.u,
     values_units=values.u,
@@ -215,7 +213,7 @@ piecewise_polynomial_quadratic = scipy.interpolate.PPoly(
 )
 continuous_quadratic = ContinuousFunctionScipyPPoly(piecewise_polynomial_quadratic)
 
-ts_cubic = TimeseriesContinuous(
+ts_cubic = ct.TimeseriesContinuous(
     name="piecewise_cubic",
     time_units=time_axis.u,
     values_units=values.u,

@@ -365,14 +365,14 @@ fig, axes = plt.subplots(nrows=2, sharex=True, figsize=(12, 8))
 for label, updated_time_axis, updated_interpolation in (
     ("starting_point", None, None),
     (
-        "same time - piecewise constant previous",
+        "same time - piecewise constant next left-closed",
         ts_varying_step_size.time_axis,
-        ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+        ct.InterpolationOption.PiecewiseConstantNextLeftClosed,
     ),
     (
-        "decadal steps - piecewise constant previous",
+        "decadal steps - piecewise constant next left-closed",
         decadal_steps,
-        ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+        ct.InterpolationOption.PiecewiseConstantNextLeftClosed,
     ),
 ):
     if updated_time_axis is not None:

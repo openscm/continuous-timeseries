@@ -378,7 +378,7 @@ ts_linear_annual_to_show = ts_integral_preserving_demo_start.interpolate(
     integral_preserving_demo_annual_time_axis
 )
 annual_average = ts_linear_annual_to_show.update_interpolation_integral_preserving(
-    interpolation=ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+    interpolation=ct.InterpolationOption.PiecewiseConstantNextLeftClosed,
     name_res="annual_average",
 )
 
@@ -404,7 +404,7 @@ fig.tight_layout()
 decadal_average = ts_integral_preserving_demo_start.interpolate(
     Q(np.hstack([[2025, 2040], np.arange(2060, 2100 + 1, 20)]), "yr"),
 ).update_interpolation_integral_preserving(
-    interpolation=ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+    interpolation=ct.InterpolationOption.PiecewiseConstantNextLeftClosed,
     name_res="custom_average",
 )
 
@@ -523,12 +523,12 @@ ts_interp[ct.InterpolationOption.Cubic].plot(
     ),
     show_discrete=True,
     discrete_plot_kwargs=dict(
-        alpha=0.3,
+        alpha=0.7,
+        zorder=3,
         marker="x",
         s=150,
         color="tab:blue",
         label="demo_continuous_and_discrete",
-        zorder=3,
     ),
 )
 

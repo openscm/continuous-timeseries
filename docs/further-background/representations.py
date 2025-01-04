@@ -39,9 +39,7 @@ import numpy as np
 import pint
 from IPython.lib.pretty import pretty
 
-from continuous_timeseries.time_axis import TimeAxis
-from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
-from continuous_timeseries.values_at_bounds import ValuesAtBounds
+import continuous_timeseries as ct
 
 # %% [markdown]
 # ## Set up pint
@@ -54,26 +52,26 @@ Q = UR.Quantity
 # ## Set up some example objects
 
 # %%
-basic_ts = TimeseriesDiscrete(
+basic_ts = ct.TimeseriesDiscrete(
     name="basic",
-    time_axis=TimeAxis(Q([1750.0, 1850.0, 1950.0], "yr")),
-    values_at_bounds=ValuesAtBounds(Q([1.0, 2.0, 3.0], "m")),
+    time_axis=ct.TimeAxis(Q([1750.0, 1850.0, 1950.0], "yr")),
+    values_at_bounds=ct.ValuesAtBounds(Q([1.0, 2.0, 3.0], "m")),
 )
 basic_ts
 
 # %%
-long_ts = TimeseriesDiscrete(
+long_ts = ct.TimeseriesDiscrete(
     name="basic",
-    time_axis=TimeAxis(Q(np.arange(1850.0, 2300.0, 1), "yr")),
-    values_at_bounds=ValuesAtBounds(Q(np.arange(450.0), "m")),
+    time_axis=ct.TimeAxis(Q(np.arange(1850.0, 2300.0, 1), "yr")),
+    values_at_bounds=ct.ValuesAtBounds(Q(np.arange(450.0), "m")),
 )
 long_ts
 
 # %%
-really_long_ts = TimeseriesDiscrete(
+really_long_ts = ct.TimeseriesDiscrete(
     name="basic",
-    time_axis=TimeAxis(Q(np.arange(1850.0, 2300.0, 1 / 12), "yr")),
-    values_at_bounds=ValuesAtBounds(Q(np.arange(450.0 * 12), "m")),
+    time_axis=ct.TimeAxis(Q(np.arange(1850.0, 2300.0, 1 / 12), "yr")),
+    values_at_bounds=ct.ValuesAtBounds(Q(np.arange(450.0 * 12), "m")),
 )
 really_long_ts
 
