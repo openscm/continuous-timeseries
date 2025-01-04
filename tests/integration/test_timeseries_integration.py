@@ -377,50 +377,105 @@ operations_test_cases = pytest.mark.parametrize(
             ),
             id="piecewise_constant_previous_left_open",
         ),
-        # pytest.param(
-        #     OperationsTestCase(
-        #         name="linear",
-        #         interpolation=InterpolationOption.Linear,
-        #         time_axis_bounds=Q([2010, 2020, 2050], "yr"),
-        #         values_at_bounds=Q([-1.0, 0.0, 2.0], "Gt"),
-        #         time_derivative=Q(
-        #             [2000.0, 2010.0, 2015.0, 2020.0, 2030.0, 2050.0, 2060.0], "yr"
-        #         ),
-        #         exp_derivative=Q(
-        #             [
-        #                 1.0 / 10.0,
-        #                 1.0 / 10.0,
-        #                 # On boundary, get the value from the next window
-        #                 # (next closed logic).
-        #                 2.0 / 30.0,
-        #                 2.0 / 30.0,
-        #                 2.0 / 30.0,
-        #             ],
-        #             "Gt / yr",
-        #         ),
-        #         time_integral=Q([2010.0, 2020.0, 2030.0, 2050.0], "yr"),
-        #         integration_constant_integral=Q(10.0, "Gt yr"),
-        #         exp_integral=(
-        #             Q(10.0, "Gt yr")
-        #             + Q(
-        #                 np.cumsum(
-        #                     [
-        #                         0.0,
-        #                         # y = mx + c
-        #                         # int y dx = mx^2 / 2 + cx + const
-        #                         0.1 * 10.0**2 / 2 - 1 * 10.0,
-        #                         2 / 30.0 * 10.0**2 / 2,
-        #                         2 / 30.0 * 20.0**2 / 2 + 2 / 3 * 20.0,
-        #                     ]
-        #                 ),
-        #                 "Gt yr",
-        #             )
-        #         ),
-        #         time_interp=Q([2015.0, 2020.0, 2030.0], "yr"),
-        #         exp_interp=Q([-500.0, 0.0, 2000.0 / 3.0], "Mt"),
-        #     ),
-        #     id="linear",
-        # ),
+        pytest.param(
+            OperationsTestCase(
+                name="linear",
+                interpolation=InterpolationOption.Linear,
+                time_axis_bounds=Q([2010, 2020, 2050], "yr"),
+                values_at_bounds=Q([-1.0, 0.0, 2.0], "Gt"),
+                time_interp=Q([2010.0, 2015.0, 2020.0, 2030.0, 2050.0], "yr"),
+                exp_interp=Q([-1.0, -0.5, 0.0, 2.0 / 3.0, 2.0], "Gt"),
+                time_extrap=Q([2005.0, 2020.0, 2060.0], "yr"),
+                exp_extrap=Q([-1.5, 0.0, 2.0 + 2.0 / 3.0], "Gt"),
+                time_derivative=Q(
+                    [2000.0, 2010.0, 2015.0, 2020.0, 2030.0, 2050.0, 2060.0], "yr"
+                ),
+                exp_derivative=Q(
+                    [
+                        1.0 / 10.0,
+                        1.0 / 10.0,
+                        1.0 / 10.0,
+                        # On boundary, get the value from the next window
+                        # (next closed logic).
+                        2.0 / 30.0,
+                        2.0 / 30.0,
+                        2.0 / 30.0,
+                        2.0 / 30.0,
+                    ],
+                    "Gt / yr",
+                ),
+                time_integral=Q(
+                    [2005.0, 2010.0, 2015.0, 2020.0, 2030.0, 2050.0, 2060.0], "yr"
+                ),
+                integration_constant_integral=Q(10.0, "Gt yr"),
+                exp_integral=(
+                    Q(10.0, "Gt yr")
+                    + Q(
+                        np.cumsum(
+                            [
+                                0.0,
+                                # y = mx + c
+                                # int y dx = m dx^2 / 2 + c dx + const
+                                0.1 * 5.0**2 / 2 - 1.5 * 5.0,
+                                0.1 * 5.0**2 / 2 - 1.0 * 5.0,
+                                0.1 * 5.0**2 / 2 - 0.5 * 5.0,
+                                2.0 / 30.0 * 10.0**2 / 2 + 0.0 * 10.0,
+                                2.0 / 30.0 * 20.0**2 / 2 + 2.0 / 3.0 * 20.0,
+                                2.0 / 30.0 * 10.0**2 / 2 + 2.0 * 10.0,
+                            ]
+                        ),
+                        "Gt yr",
+                    )
+                ),
+            ),
+            id="linear",
+        ),
+        pytest.param(
+            OperationsTestCase(
+                name="quadratic",
+                interpolation=InterpolationOption.Quadratic,
+                time_axis_bounds=Q([2010, 2020, 2050], "yr"),
+                values_at_bounds=Q([0.0, 1.0, 16.0], "Gt"),
+                time_interp=Q([2010.0, 2015.0, 2020.0, 2030.0, 2050.0], "yr"),
+                exp_interp=Q([0.0, 0.5**2, 1.0, 2.0**2, 4.0**2], "Gt"),
+                time_extrap=Q([2005.0, 2020.0, 2060.0], "yr"),
+                exp_extrap=Q([0.5**2, 1.0, 5.0**2], "Gt"),
+                time_derivative=Q(
+                    [2000.0, 2010.0, 2015.0, 2020.0, 2030.0, 2050.0, 2060.0], "yr"
+                ),
+                exp_derivative=Q(
+                    [
+                        # y = ((x - 2010) / 10)^2
+                        # dy/dx = 2(x - 2010) / 10 * 1 / 10 = (x - 2010) / 50
+                        -10.0 / 50.0,
+                        0.0,
+                        5.0 / 50.0,
+                        10.0 / 50.0,
+                        20.0 / 50.0,
+                        40.0 / 50.0,
+                        50.0 / 50.0,
+                    ],
+                    "Gt / yr",
+                ),
+                time_integral=Q([2010.0, 2020.0, 2030.0, 2050.0], "yr"),
+                integration_constant_integral=Q(1.0, "Gt yr"),
+                exp_integral=(
+                    Q(1.0, "Gt yr")
+                    + Q(
+                        [
+                            0.0,
+                            # y = ((x - 2010) / 10)^2
+                            # int y dx = ((x - 2010) / 10)^3 / 3.0 * 10 + c
+                            0.1 * 10.0**2 / 2 - 1 * 10.0,
+                            2 / 30.0 * 10.0**2 / 2,
+                            2 / 30.0 * 20.0**2 / 2 + 2 / 3 * 20.0,
+                        ],
+                        "Gt yr",
+                    )
+                ),
+            ),
+            id="quadratic",
+        ),
     ),
 )
 

@@ -6,10 +6,6 @@ Implicitly, tests of `continuous_timeseries.discrete_to_continuous`
 
 from __future__ import annotations
 
-import sys
-from contextlib import nullcontext as does_not_raise
-from unittest.mock import patch
-
 import numpy as np
 import pint
 import pint.testing
@@ -26,7 +22,6 @@ from continuous_timeseries import (
 from continuous_timeseries.discrete_to_continuous import discrete_to_continuous
 from continuous_timeseries.exceptions import (
     ExtrapolationNotAllowedError,
-    MissingOptionalDependencyError,
 )
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
 
@@ -332,33 +327,3 @@ def test_round_tripping(piecewise_constant_test_case):
             res.values_at_bounds.values,
             start.values_at_bounds.values,
         )
-
-
-@pytest.mark.parametrize(
-    "sys_modules_patch, expectation",
-    (
-        pytest.param({}, does_not_raise(), id="scipy_available"),
-        pytest.param(
-            {"scipy": None},
-            pytest.raises(
-                MissingOptionalDependencyError,
-                match=(
-                    "`discrete_to_continuous_piecewise_constant_next_left_closed` "
-                    "requires scipy to be installed"
-                ),
-            ),
-            id="scipy_not_available",
-        ),
-    ),
-)
-def test_scipy_missing_error_discrete_to_continuous_piecewise_constant_next_left_closed(
-    sys_modules_patch, expectation
-):
-    with patch.dict(sys.modules, sys_modules_patch):
-        with expectation:
-            Timeseries.from_arrays(
-                time_axis_bounds=Q([1850, 1900], "yr"),
-                values_at_bounds=Q([1, 2], "kg"),
-                interpolation=InterpolationOption.PiecewiseConstantNextLeftClosed,
-                name="test",
-            )

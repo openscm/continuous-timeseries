@@ -337,7 +337,9 @@ class ContinuousFunctionScipyPPoly:
 
         c_new = indefinite_integral.c
         c_new[-1, :] = (
-            c_new[-1, :] + integration_constant - indefinite_integral(domain_start)  # type: ignore # scipy-stubs expects array
+            c_new[-1, :]
+            + integration_constant
+            - indefinite_integral(domain_start, extrapolate=True)  # type: ignore # scipy-stubs expects array
         )
 
         ppoly_integral = scipy.interpolate.PPoly(
