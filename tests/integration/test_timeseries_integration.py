@@ -13,11 +13,19 @@ import numpy as np
 import pint
 import pint.testing
 import pytest
+from attrs import define, field, validators
 from IPython.lib.pretty import pretty
 
 from continuous_timeseries.discrete_to_continuous import InterpolationOption
-from continuous_timeseries.exceptions import MissingOptionalDependencyError
+from continuous_timeseries.exceptions import (
+    ExtrapolationNotAllowedError,
+    MissingOptionalDependencyError,
+)
+from continuous_timeseries.time_axis import TimeAxis
 from continuous_timeseries.timeseries import Timeseries
+from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
+from continuous_timeseries.typing import PINT_NUMPY_ARRAY
+from continuous_timeseries.values_at_bounds import ValuesAtBounds
 
 UR = pint.get_application_registry()
 Q = UR.Quantity
@@ -114,19 +122,43 @@ def test_html(ts, file_regression):
     )
 
 
-# @define
-# class OperationsTestCase:
-#     """A test case for operations with `TimeseriesContinuous`"""
-#
-#     ts: TimeseriesContinuous
-#     """Timeseries to use for the tests"""
-#
-#     time_interp: UR.Quantity
-#     """Times to use for checking interpolation"""
-#
-#     exp_interp: UR.Quantity
-#     """Expected values of interpolation at `time_interp`"""
-#
+@define
+class OperationsTestCase:
+    """A test case for operations with `Timeseries`"""
+
+    name: str
+    interpolation: InterpolationOption
+    time_axis_bounds: PINT_NUMPY_ARRAY = field(
+        validator=[validators.max_len(3), validators.min_len(3)]
+    )
+    values_at_bounds: PINT_NUMPY_ARRAY = field(
+        validator=[validators.max_len(3), validators.min_len(3)]
+    )
+
+    time_derivative: PINT_NUMPY_ARRAY
+    """Times to use for checking differentiation"""
+
+    exp_derivative: PINT_NUMPY_ARRAY
+    """Expected values of the derivative at `time_derivative`"""
+
+    time_interp: PINT_NUMPY_ARRAY
+    """Times to use for checking interpolation"""
+
+    exp_interp: PINT_NUMPY_ARRAY
+    """Expected values of interpolation at `time_interp`"""
+
+    ts: Timeseries = field()
+
+    @ts.default
+    def initialise_timeseries(self):
+        return Timeseries.from_arrays(
+            time_axis_bounds=self.time_axis_bounds,
+            values_at_bounds=self.values_at_bounds,
+            interpolation=self.interpolation,
+            name=self.name,
+        )
+
+
 #     time_extrap: UR.Quantity
 #     """Times to use for checking extrapolation"""
 #
@@ -149,176 +181,129 @@ def test_html(ts, file_regression):
 #
 #     exp_derivative_values: UR.Quantity
 #     """Expected values of the derivate at `time_derivative_check`"""
-#
-#
-# operations_test_cases = pytest.mark.parametrize(
-#     "operations_test_case",
-#     (
-#         pytest.param(
-#             OperationsTestCase(
-#                 ts=TimeseriesContinuous(
-#                     name="piecewise_constant",
-#                     time_units=UR.Unit("yr"),
-#                     values_units=UR.Unit("Gt"),
-#                     function=ContinuousFunctionScipyPPoly(
-#                         scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[2.5]])
-#                     ),
-#                     domain=(Q(1.0, "yr"), Q(2.0, "yr")),
-#                 ),
-#                 time_interp=Q([1.25, 1.5, 1.75], "yr"),
-#                 exp_interp=Q([2.5, 2.5, 2.5], "Gt"),
-#                 time_extrap=Q([0.0, 1.0, 2.0, 3.0], "yr"),
-#                 exp_extrap=Q([2.5, 2.5, 2.5, 2.5], "Gt"),
-#                 time_integral_check=Q([1.0, 1.5, 2.0], "yr"),
-#                 exp_integral_values_excl_integration_constant=Q(
-#                     [
-#                         0.0,
-#                         2.5 / 2,
-#                         2.5,
-#                     ],
-#                     "Gt yr",
-#                 ),
-#                 time_derivative_check=Q([1.0, 1.5, 2.0], "yr"),
-#                 exp_derivative_values=Q([0.0, 0.0, 0.0], "Gt / yr"),
-#             ),
-#             id="basic_constant",
-#         ),
-#         pytest.param(
-#             OperationsTestCase(
-#                 ts=TimeseriesContinuous(
-#                     name="piecewise_linear",
-#                     time_units=UR.Unit("yr"),
-#                     values_units=UR.Unit("Gt"),
-#                     function=ContinuousFunctionScipyPPoly(
-#                         scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [2.5]])
-#                     ),
-#                     domain=(Q(1.0, "yr"), Q(2.0, "yr")),
-#                 ),
-#                 time_interp=Q([1.25, 1.5, 1.75], "yr"),
-#                 exp_interp=Q([2.75, 3.0, 3.25], "Gt"),
-#                 time_extrap=Q([0.0, 1.0, 2.0, 3.0], "yr"),
-#                 exp_extrap=Q([1.5, 2.5, 3.5, 4.5], "Gt"),
-#                 time_integral_check=Q([1.0, 1.5, 2.0], "yr"),
-#                 exp_integral_values_excl_integration_constant=Q(
-#                     [
-#                         0.0,
-#                         (1 / 2) ** 2 / 2 + 2.5 / 2,
-#                         1 / 2 + 2.5,
-#                     ],
-#                     "Gt yr",
-#                 ),
-#                 time_derivative_check=Q([1.0, 1.5, 2.0], "yr"),
-#                 exp_derivative_values=Q([1.0, 1.0, 1.0], "Gt / yr"),
-#             ),
-#             id="basic_linear",
-#         ),
-#         pytest.param(
-#             OperationsTestCase(
-#                 ts=TimeseriesContinuous(
-#                     name="piecewise_quadratic",
-#                     time_units=UR.Unit("yr"),
-#                     values_units=UR.Unit("Gt"),
-#                     function=ContinuousFunctionScipyPPoly(
-#                         scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [1.0], [0.0]])
-#                     ),
-#                     domain=(Q(1.0, "yr"), Q(2.0, "yr")),
-#                 ),
-#                 time_interp=Q([1.25, 1.5, 1.75], "yr"),
-#                 exp_interp=Q([1 / 16 + 1 / 4, 1 / 4 + 1 / 2, 9 / 16 + 3 / 4], "Gt"),
-#                 time_extrap=Q([0.0, 0.5, 1.0, 2.0, 3.0], "yr"),
-#                 exp_extrap=Q([0.0, 1 / 4 - 1 / 2, 0.0, 2.0, 6.0], "Gt"),
-#                 time_integral_check=Q([1.0, 1.5, 2.0], "yr"),
-#                 exp_integral_values_excl_integration_constant=Q(
-#                     [
-#                         0.0,
-#                         (1 / 2) ** 3 / 3 + (1 / 2) ** 2 / 2,
-#                         1 / 3 + 1 / 2,
-#                     ],
-#                     "Gt yr",
-#                 ),
-#                 time_derivative_check=Q([1.0, 1.5, 2.0], "yr"),
-#                 exp_derivative_values=Q([1.0, 2.0, 3.0], "Gt / yr"),
-#             ),
-#             id="basic_quadratic",
-#         ),
-#         pytest.param(
-#             OperationsTestCase(
-#                 ts=TimeseriesContinuous(
-#                     name="time_axis_is_time_axis",
-#                     time_units=UR.Unit("yr"),
-#                     values_units=UR.Unit("Gt"),
-#                     function=ContinuousFunctionScipyPPoly(
-#                         scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [2.5]])
-#                     ),
-#                     domain=(Q(1.0, "yr"), Q(2.0, "yr")),
-#                 ),
-#                 time_interp=TimeAxis(Q([1.25, 1.5, 1.75], "yr")),
-#                 exp_interp=Q([2.75, 3.0, 3.25], "Gt"),
-#                 time_extrap=TimeAxis(Q([0.0, 1.0, 2.0, 3.0], "yr")),
-#                 exp_extrap=Q([1.5, 2.5, 3.5, 4.5], "Gt"),
-#                 time_integral_check=Q([1.0, 1.5, 2.0], "yr"),
-#                 exp_integral_values_excl_integration_constant=Q(
-#                     [
-#                         0.0,
-#                         (1 / 2) ** 2 / 2 + 2.5 / 2,
-#                         1 / 2 + 2.5,
-#                     ],
-#                     "Gt yr",
-#                 ),
-#                 time_derivative_check=TimeAxis(Q([1.0, 1.5, 2.0], "yr")),
-#                 exp_derivative_values=Q([1.0, 1.0, 1.0], "Gt / yr"),
-#             ),
-#             id="time_axis_is_time_axis",
-#         ),
-#         pytest.param(
-#             OperationsTestCase(
-#                 ts=TimeseriesContinuous(
-#                     name="linear_using_unit_conversion",
-#                     time_units=UR.Unit("yr"),
-#                     values_units=UR.Unit("Gt"),
-#                     function=ContinuousFunctionScipyPPoly(
-#                         scipy.interpolate.PPoly(x=[1.0, 2.0], c=[[1.0], [2.5]])
-#                     ),
-#                     domain=(Q(1.0, "yr"), Q(2.0, "yr")),
-#                 ),
-#                 time_interp=Q([15, 18, 21], "month"),
-#                 exp_interp=Q([2750, 3000, 3250], "Mt"),
-#                 time_extrap=Q([0, 12, 24, 36], "month"),
-#                 exp_extrap=Q([1500, 2500, 3500, 4500], "Mt"),
-#                 time_integral_check=Q([12, 18, 24], "month"),
-#                 exp_integral_values_excl_integration_constant=Q(
-#                     [
-#                         0.0,
-#                         1000.0 * 12.0 * ((1 / 2) ** 2 / 2 + 2.5 / 2),
-#                         1000.0 * 12.0 * (1 / 2 + 2.5),
-#                     ],
-#                     "Mt month",
-#                 ),
-#                 time_derivative_check=Q([12, 18, 24], "month"),
-#                 exp_derivative_values=Q(
-#                     [
-#                         1000.0 / 12,
-#                         1000.0 / 12,
-#                         1000.0 / 12,
-#                     ],
-#                     "Mt / month",
-#                 ),
-#             ),
-#             id="linear_using_unit_conversion",
-#         ),
-#     ),
-# )
-#
-#
-# @operations_test_cases
-# def test_interpolate(operations_test_case):
-#     pint.testing.assert_allclose(
-#         operations_test_case.ts.interpolate(operations_test_case.time_interp),
-#         operations_test_case.exp_interp,
-#         rtol=1e-10,
-#     )
-#
-#
+
+
+operations_test_cases = pytest.mark.parametrize(
+    "operations_test_case",
+    (
+        pytest.param(
+            OperationsTestCase(
+                name="linear",
+                interpolation=InterpolationOption.Linear,
+                time_axis_bounds=Q([2010, 2020, 2050], "yr"),
+                values_at_bounds=Q([-1.0, 0.0, 2.0], "Gt"),
+                time_derivative=Q([2010.0, 2015.0, 2020.0, 2030.0, 2050.0], "yr"),
+                exp_derivative=Q(
+                    [
+                        1.0 / 10.0,
+                        1.0 / 10.0,
+                        # On boundary, get the value from the next window
+                        # (next closed logic).
+                        2.0 / 30.0,
+                        2.0 / 30.0,
+                        2.0 / 30.0,
+                    ],
+                    "Gt / yr",
+                ),
+                time_interp=Q([2015.0, 2020.0, 2030.0], "yr"),
+                exp_interp=Q([-500.0, 0.0, 2000.0 / 3.0], "Mt"),
+            ),
+            id="linear",
+        ),
+    ),
+)
+
+
+@operations_test_cases
+def test_discrete(operations_test_case):
+    exp = TimeseriesDiscrete(
+        name=operations_test_case.name,
+        time_axis=TimeAxis(operations_test_case.time_axis_bounds),
+        # Discrete is interpolated values,
+        # not what went in i.e. `operations_test_case.values_at_bounds`
+        # (they're not the same thing for piecewise constant in all cases).
+        values_at_bounds=ValuesAtBounds(
+            operations_test_case.ts.timeseries_continuous.interpolate(
+                operations_test_case.time_axis_bounds
+            )
+        ),
+    )
+
+    res = operations_test_case.ts.discrete
+
+    assert res.name == exp.name
+    pint.testing.assert_equal(res.time_axis.bounds, exp.time_axis.bounds)
+    pint.testing.assert_equal(
+        res.values_at_bounds.values,
+        exp.values_at_bounds.values,
+    )
+
+
+@operations_test_cases
+@pytest.mark.parametrize("name_res", (None, "overwritten"))
+def test_differentiate(operations_test_case, name_res):
+    kwargs = {}
+    if name_res is not None:
+        kwargs["name_res"] = name_res
+
+    derivative = operations_test_case.ts.differentiate(**kwargs)
+
+    if name_res is None:
+        assert derivative.name == f"{operations_test_case.ts.name}_derivative"
+    else:
+        assert derivative.name == name_res
+
+    assert isinstance(derivative, Timeseries)
+
+    pint.testing.assert_equal(
+        operations_test_case.ts.time_axis.bounds, derivative.time_axis.bounds
+    )
+
+    pint.testing.assert_allclose(
+        derivative.interpolate(
+            time_axis=operations_test_case.time_derivative
+        ).discrete.values_at_bounds.values,
+        operations_test_case.exp_derivative,
+        rtol=1e-10,
+    )
+
+
+# integrate
+
+
+@operations_test_cases
+@pytest.mark.parametrize("time_axis_arg_raw_pint", (True, False))
+def test_interpolate(operations_test_case, time_axis_arg_raw_pint):
+    time_interp_raw = operations_test_case.time_interp
+    if time_axis_arg_raw_pint:
+        time_interp = time_interp_raw
+    else:
+        time_interp = TimeAxis(time_interp_raw)
+
+    res = operations_test_case.ts.interpolate(time_axis=time_interp)
+
+    assert isinstance(res, Timeseries)
+
+    pint.testing.assert_allclose(
+        res.discrete.values_at_bounds.values,
+        operations_test_case.exp_interp,
+        rtol=1e-10,
+    )
+
+    # Check that domain was updated correctly
+    for res_v, exp_v in zip(
+        (time_interp_raw.min(), time_interp_raw.max()),
+        res.timeseries_continuous.domain,
+    ):
+        pint.testing.assert_equal(res_v, exp_v)
+
+    # Check that times outside time_interp now raise
+    with pytest.raises(ExtrapolationNotAllowedError):
+        res.interpolate(time_axis=np.atleast_1d(time_interp_raw[0] - Q(1 / 10, "yr")))
+    with pytest.raises(ExtrapolationNotAllowedError):
+        res.interpolate(time_axis=np.atleast_1d(time_interp_raw[-1] + Q(1 / 10, "yr")))
+
+
 # @operations_test_cases
 # def test_extrapolate_not_allowed_raises(operations_test_case):
 #     with pytest.raises(ExtrapolationNotAllowedError):
@@ -367,30 +352,6 @@ def test_html(ts, file_regression):
 #         assert integral.name == integrate_kwargs["name_res"]
 #     else:
 #         assert integral.name == f"{operations_test_case.ts.name}_integral"
-#
-#
-# @operations_test_cases
-# @pytest.mark.parametrize(
-#     "differentiate_kwargs",
-#     ({}, dict(name_res=None), dict(name_res="name_overwritten"))
-# )
-# def test_differentiate(operations_test_case, differentiate_kwargs):
-#     derivative = operations_test_case.ts.differentiate(**differentiate_kwargs)
-#
-#     pint.testing.assert_allclose(
-#         derivative.interpolate(operations_test_case.time_derivative_check),
-#         operations_test_case.exp_derivative_values,
-#         rtol=1e-10,
-#     )
-#
-#     if (
-#         differentiate_kwargs
-#         and "name_res" in differentiate_kwargs
-#         and differentiate_kwargs["name_res"] is not None
-#     ):
-#         assert derivative.name == differentiate_kwargs["name_res"]
-#     else:
-#         assert derivative.name == f"{operations_test_case.ts.name}_derivative"
 
 
 @pytest.mark.parametrize(
