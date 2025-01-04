@@ -85,7 +85,7 @@ def discrete_to_continuous(  # noqa: PLR0911
     if interpolation == InterpolationOption.Quartic:
         return discrete_to_continuous_higher_order(discrete=discrete, order=4)
 
-    raise NotImplementedError(interpolation.name)
+    raise NotImplementedError(interpolation.name)  # pragma: no cover
 
 
 __all__ = ["InterpolationOption", "discrete_to_continuous"]
