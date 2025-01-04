@@ -11,7 +11,7 @@ If helpful, we have drawn a picture of how this works below.
 Symbols:
 
 - time: y-value selected for this time-value
-- i: closed (i.e. inclusive) boundary
+- i: open (i.e. inclusive) boundary
 - o: open (i.e. exclusive) boundary
 
 ```
@@ -26,23 +26,54 @@ y(1): xxxxxxxxxxxi
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from functools import partial
+from typing import TYPE_CHECKING
 
-import attr
 import numpy as np
 import numpy.typing as npt
 from attrs import define, field
 
-from continuous_timeseries.domain_helpers import check_no_times_outside_domain
-from continuous_timeseries.exceptions import MissingOptionalDependencyError
-from continuous_timeseries.typing import NP_FLOAT_OR_INT
+from continuous_timeseries.discrete_to_continuous.piecewise_constant_common import (
+    differentiate_piecewise_constant,
+    discrete_to_continuous_piecewise_constant,
+    get_values,
+    integrate_piecewise_constant,
+    piecewise_constant_y_validator,
+)
+from continuous_timeseries.typing import NP_ARRAY_OF_FLOAT_OR_INT, NP_FLOAT_OR_INT
 
 if TYPE_CHECKING:
-    from continuous_timeseries.timeseries_continuous import (
-        ContinuousFunctionScipyPPoly,
-        TimeseriesContinuous,
+    from continuous_timeseries.timeseries_continuous import ContinuousFunctionScipyPPoly
+
+
+def get_idxs(
+    times: NP_ARRAY_OF_FLOAT_OR_INT, self_x: NP_ARRAY_OF_FLOAT_OR_INT
+) -> npt.NDArray[np.integer]:
+    """
+    Get the indexes from `self.y` to return, given the times of interest and `self.x`
+
+    This function defines the key logic of the interpolation implementation.
+
+    Parameters
+    ----------
+    times
+        Times for which to retrieve the values
+
+    self_x
+        The points which define the piecewise constant intervals
+
+    Returns
+    -------
+    :
+        The indexes from `self.y` to return
+    """
+    res_idxs: npt.NDArray[np.integer] = np.searchsorted(
+        a=self_x, v=np.atleast_1d(times), side="left"
     )
-    from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
+    # Fix up any overrun
+    res_idxs[res_idxs == self_x.size] = self_x.size - 1
+
+    return res_idxs
 
 
 @define
@@ -50,44 +81,27 @@ class PPolyPiecewiseConstantNextLeftOpen:
     """
     Piecewise polynomial that implements our 'next' constant left-open logic
 
+    For full details of the logic, see [the module's docstring][(m)].
+
     We can't use [`scipy.interpolate.PPoly`][scipy.interpolate.PPoly] directly
-    because it doesn't behave as we want at the boundaries.
+    because it doesn't behave as we want at the first boundary.
     We could subclass [`scipy.interpolate.PPoly`][scipy.interpolate.PPoly],
     but that is more trouble than its worth for such a simple implementation.
     """
 
-    x: npt.NDArray[NP_FLOAT_OR_INT]
+    x: NP_ARRAY_OF_FLOAT_OR_INT
     """
     Breakpoints between each piecewise constant interval
     """
 
-    values: npt.NDArray[NP_FLOAT_OR_INT] = field()
+    y: NP_ARRAY_OF_FLOAT_OR_INT = field(validator=[piecewise_constant_y_validator])
     """
-    Value to return in each interval.
-
-    Must have same number of elements as `x`
-    so that we know what to use for extrapolation beyond the last boundary too.
+    The y-values which help define our spline.
     """
-
-    @values.validator
-    def values_validator(
-        self,
-        attribute: attr.Attribute[Any],
-        value: npt.NDArray[NP_FLOAT_OR_INT],
-    ) -> None:
-        """
-        Validate the received values
-        """
-        if value.shape != self.x.shape:
-            msg = (
-                "`values` and `self.x` must have the same shape. "
-                f"Received: values.shape={value.shape}. {self.x.shape=}"
-            )
-            raise AssertionError(msg)
 
     def __call__(
-        self, x: npt.NDArray[NP_FLOAT_OR_INT], allow_extrapolation: bool = False
-    ) -> npt.NDArray[NP_FLOAT_OR_INT]:
+        self, x: NP_ARRAY_OF_FLOAT_OR_INT, allow_extrapolation: bool = False
+    ) -> NP_ARRAY_OF_FLOAT_OR_INT:
         """
         Evaluate the function at specific points
 
@@ -109,17 +123,26 @@ class PPolyPiecewiseConstantNextLeftOpen:
         ExtrapolationNotAllowedError
             The user attempted to extrapolate when it isn't allowed.
         """
-        if not allow_extrapolation:
-            # If need be, no cover this, should never be used anyway
-            check_no_times_outside_domain(times=x, domain=(self.x.min(), self.x.max()))
-
-        res_idxs: npt.NDArray[np.int_] = np.searchsorted(
-            a=self.x, v=np.atleast_1d(x), side="left"
+        res = get_values(
+            times=x,
+            self_x=self.x,
+            self_y=self.y,
+            get_idxs=get_idxs,
+            allow_extrapolation=allow_extrapolation,
         )
 
-        # Fix up any overrun
-        res_idxs[res_idxs == self.values.size] = self.values.size - 1
-        res = self.values[res_idxs]
+        return res
+
+    def differentiate(self) -> ContinuousFunctionScipyPPoly:
+        """
+        Differentiate
+
+        Returns
+        -------
+        :
+            Derivative of the function
+        """
+        res = differentiate_piecewise_constant(self=self)
 
         return res
 
@@ -147,127 +170,16 @@ class PPolyPiecewiseConstantNextLeftOpen:
         :
             Integral of the function
         """
-        # Late import to avoid circularity
-        from continuous_timeseries.timeseries_continuous import (
-            ContinuousFunctionScipyPPoly,
+        res = integrate_piecewise_constant(
+            self=self,
+            integration_constant=integration_constant,
+            domain_start=domain_start,
         )
 
-        try:
-            import scipy.interpolate
-        except ImportError as exc:
-            raise MissingOptionalDependencyError(
-                "PPolyPiecewiseConstantNextLeftOpen.integrate",
-                requirement="scipy",
-            ) from exc
-
-        x = self.x
-        x_steps = x[1:] - x[:-1]
-
-        values_in_window = self.values[:-1]
-        gradients = values_in_window
-        definite_integrals = np.cumsum(values_in_window * x_steps)
-
-        constant_terms = np.hstack(
-            [
-                integration_constant,
-                # Combination of gradient and starting term ensures
-                # that the last value is correct too,
-                # hence why we can/must have the [:-1] indexing here.
-                integration_constant + definite_integrals[:-1],
-            ]
-        )
-
-        c = np.vstack([gradients, constant_terms])
-
-        indefinite_integral = scipy.interpolate.PPoly(
-            x=x,
-            c=c,
-            extrapolate=False,
-        )
-
-        c_new = indefinite_integral.c
-        c_new[-1, :] = c_new[-1, :] - indefinite_integral(domain_start)  # type: ignore # scipy-stubs expects array
-
-        ppoly_integral = scipy.interpolate.PPoly(
-            c=c_new,
-            x=indefinite_integral.x,
-            extrapolate=False,
-        )
-
-        return ContinuousFunctionScipyPPoly(ppoly_integral)
-
-    def differentiate(self) -> ContinuousFunctionScipyPPoly:
-        """
-        Differentiate
-
-        Returns
-        -------
-        :
-            Derivative of the function
-        """
-        # Late import to avoid circularity
-        from continuous_timeseries.timeseries_continuous import (
-            ContinuousFunctionScipyPPoly,
-        )
-
-        try:
-            import scipy.interpolate
-        except ImportError as exc:
-            raise MissingOptionalDependencyError(
-                "PPolyPiecewiseConstantNextLeftOpen.differentiate",
-                requirement="scipy",
-            ) from exc
-
-        return ContinuousFunctionScipyPPoly(
-            scipy.interpolate.PPoly(
-                x=self.x,
-                c=np.atleast_2d(np.zeros(self.values.size - 1)),
-                extrapolate=False,  # no extrapolation by default
-            )
-        )
+        return res
 
 
-def discrete_to_continuous_piecewise_constant_next_left_open(
-    discrete: TimeseriesDiscrete,
-) -> TimeseriesContinuous:
-    """
-    Convert a discrete timeseries to piecewise constant
-
-    Here we use piecewise constant, next, left-open interpolation.
-    For details, see
-    [the module's docstring][continuous_timeseries.discrete_to_continuous.piecewise_constant_next_left_open].
-
-    Parameters
-    ----------
-    discrete
-        Discrete timeseries to convert
-
-    Returns
-    -------
-    :
-        Continuous version of `discrete`
-        based on piecewise constant, next, left-open interpolation.
-    """  # noqa: E501
-    # Late import to avoid circularity
-    from continuous_timeseries.timeseries_continuous import (
-        TimeseriesContinuous,
-    )
-
-    time_bounds = discrete.time_axis.bounds
-
-    all_vals = discrete.values_at_bounds.values
-
-    piecewise_polynomial = PPolyPiecewiseConstantNextLeftOpen(
-        x=time_bounds.m,
-        values=all_vals.m,
-    )
-
-    res = TimeseriesContinuous(
-        name=discrete.name,
-        time_units=time_bounds.u,
-        values_units=all_vals.u,
-        function=piecewise_polynomial,
-        domain=(np.min(time_bounds), np.max(time_bounds)),
-    )
-
-    return res
+discrete_to_continuous_piecewise_constant_next_left_open = partial(
+    discrete_to_continuous_piecewise_constant,
+    piecewise_constant_like=PPolyPiecewiseConstantNextLeftOpen,
+)
