@@ -185,6 +185,9 @@ ignore = [
 "docs/how-to-guides/how-to-make-a-step-forcing.py" = [
     "E501",
 ]
+"docs/tutorials/budget_compatible_pathways.py" = [
+    "E501",
+]
 "docs/tutorials/continuous_timeseries_tutorial.py" = [
     "E501",
 ]

@@ -29,6 +29,12 @@ See [higher-order interpolation](./higher_order_interpolation)
 for a tutorial on how to do higher-order interpolation with Continuous Timeseries
 and some tips on how to go beyond the default options available.
 
+## Budget-compatible emissions pathways
+
+See [budget-compatible emissions pathways](./budget_compatible_pathways)
+for a tutorial on how to calculate emissions pathways
+compatible with a given budget.
+
 ## Continuous timeseries handling
 
 See [Continuous timeseries](./continuous_timeseries_tutorial)
