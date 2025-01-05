@@ -21,6 +21,21 @@ from the examples given in that link.
 
 <!-- towncrier release notes start -->
 
+## Continuous Timeseries v0.2.1 (2025-01-05)
+
+### 🆕 Features
+
+- Added [`budget_compatible_pathways`][continuous_timeseries.budget_compatible_pathways] to support the creation of pathways compatible with a given budget. ([#18](https://github.com/openscm/continuous-timeseries/pull/18))
+
+### 📚 Improved Documentation
+
+- Added a tutorial into our support for creating emissions pathways that are compatible with a given budget (see [Budget-compatible emissions pathways](../tutorials/budget_compatible_pathways)). ([#18](https://github.com/openscm/continuous-timeseries/pull/18))
+
+### 🔧 Trivial/Internal Changes
+
+- [#17](https://github.com/openscm/continuous-timeseries/pull/17), [#18](https://github.com/openscm/continuous-timeseries/pull/18)
+
+
 ## Continuous Timeseries v0.2.0 (2025-01-04)
 
 ### 🆕 Features
