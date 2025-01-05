@@ -139,20 +139,34 @@ def derive_symmetric_quadratic_path(
     return emms_quadratic_pathway
 
 
-def convert_to_annual_steps(ts: Timeseries, name_res: str | None = None) -> Timeseries:
-    if name_res is None:
-        name_res = f"{ts.name}_annualised"
-
+def convert_to_annual_time_axis(ts: Timeseries) -> Timeseries:
     annual_time_axis = (
-        np.arange(
-            np.floor(ts.time_axis.bounds.min()).to("yr").m,
-            np.ceil(ts.time_axis.bounds.max()).to("yr").m + 1,
-            1.0,
+        np.union1d(
+            ts.time_axis.bounds.min().to("yr").m,
+            np.arange(
+                np.ceil(ts.time_axis.bounds.min()).to("yr").m,
+                np.ceil(ts.time_axis.bounds.max()).to("yr").m + 1,
+                1.0,
+            ),
         )
         * ts.time_axis.bounds[0].to("yr").u
     )
 
-    annual_interp = ts.interpolate(annual_time_axis, allow_extrapolation=True)
+    res = ts.interpolate(annual_time_axis, allow_extrapolation=True)
+
+    return res
+
+
+def convert_to_annual_constant_emissions(
+    ts: Timeseries, name_res: str | None = None
+) -> Timeseries:
+    # Helpful, as cumulative emissions are just sum of values
+    # (unless you're starting in a half year,
+    # in which case things are a bit more annoying)
+    if name_res is None:
+        name_res = f"{ts.name}_annualised"
+
+    annual_interp = convert_to_annual_time_axis(ts)
     res = annual_interp.update_interpolation_integral_preserving(
         InterpolationOption.PiecewiseConstantNextLeftClosed, name_res=name_res
     )

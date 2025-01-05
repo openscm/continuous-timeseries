@@ -513,7 +513,13 @@ def test_discrete(operations_test_case):
 
 
 @operations_test_cases
-@pytest.mark.parametrize("name_res", (None, "overwritten"))
+@pytest.mark.parametrize(
+    "name_res",
+    (
+        pytest.param(None, id="default_name_res"),
+        pytest.param("overwritten", id="name_res_supplied"),
+    ),
+)
 def test_differentiate(operations_test_case, name_res):
     kwargs = {}
     if name_res is not None:
@@ -544,7 +550,13 @@ def test_differentiate(operations_test_case, name_res):
 
 
 @operations_test_cases
-@pytest.mark.parametrize("name_res", (None, "overwritten"))
+@pytest.mark.parametrize(
+    "name_res",
+    (
+        pytest.param(None, id="default_name_res"),
+        pytest.param("overwritten", id="name_res_supplied"),
+    ),
+)
 def test_integrate(operations_test_case, name_res):
     kwargs = {}
     if name_res is not None:
@@ -840,7 +852,13 @@ def get_test_update_interpolation_piecewise_constant_to_higher_order_cases() -> 
         ),
     ),
 )
-@pytest.mark.parametrize("name_res", (None, "overwritten"))
+@pytest.mark.parametrize(
+    "name_res",
+    (
+        pytest.param(None, id="default_name_res"),
+        pytest.param("overwritten", id="name_res_supplied"),
+    ),
+)
 def test_update_interpolation(  # noqa: PLR0913
     name_res,
     start_interp,
@@ -955,7 +973,13 @@ def get_test_update_interpolation_integral_preserving_cases() -> tuple[pytest.pa
     "start_interp, end_interp, exp_successful, kwargs",
     get_test_update_interpolation_integral_preserving_cases(),
 )
-@pytest.mark.parametrize("name_res", (None, "overwritten"))
+@pytest.mark.parametrize(
+    "name_res",
+    (
+        pytest.param(None, id="default_name_res"),
+        pytest.param("overwritten", id="name_res_supplied"),
+    ),
+)
 def test_update_interpolation_integral_preserving(
     name_res, start_interp, end_interp, exp_successful, kwargs
 ):
