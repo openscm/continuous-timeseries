@@ -140,7 +140,7 @@ fig.tight_layout()
 # into something which can be directly compared with country emissions.
 
 # %%
-linear_annual_steps_in_line_with_budget = ct_bcp.convert_to_annual_steps(
+linear_annual_steps_in_line_with_budget = ct_bcp.convert_to_annual_constant_emissions(
     linear_in_line_with_budget, name_res="Annualised"
 )
 
@@ -176,8 +176,10 @@ linear_in_line_with_budget_small = ct_bcp.derive_linear_path(
     budget_start_time=budget_small_start_time,
     emissions_start=emissions_small_start,
 )
-linear_annual_steps_in_line_with_budget_small = ct_bcp.convert_to_annual_steps(
-    linear_in_line_with_budget_small, name_res="Annualised"
+linear_annual_steps_in_line_with_budget_small = (
+    ct_bcp.convert_to_annual_constant_emissions(
+        linear_in_line_with_budget_small, name_res="Annualised"
+    )
 )
 
 # %%
@@ -251,8 +253,10 @@ for ax in axes:
 fig.tight_layout()
 
 # %%
-quadratic_annual_steps_in_line_with_budget = ct_bcp.convert_to_annual_steps(
-    quadratic_in_line_with_budget, name_res="Annualised quadratic"
+quadratic_annual_steps_in_line_with_budget = (
+    ct_bcp.convert_to_annual_constant_emissions(
+        quadratic_in_line_with_budget, name_res="Annualised quadratic"
+    )
 )
 
 # %%
@@ -373,12 +377,15 @@ for emissions_gradient_start in Q([-2.0, 0.0, 5.0], "GtCO2 / yr / yr"):
         emissions_gradient_start=emissions_gradient_start,
         name_res=f"Initial gradient: {emissions_gradient_start:.2f}",
     ).interpolate(times_plot, allow_extrapolation=True)
-    annualised = ct_bcp.convert_to_annual_steps(
+
+    annualised = ct_bcp.convert_to_annual_constant_emissions(
         cubic, name_res=f"Annualised {cubic.name}"
     )
 
-    cubic.plot(ax=axes[0])
-    annualised.plot(ax=axes[0])
+    cubic.plot(ax=axes[0], continuous_plot_kwargs=dict(linewidth=2.0))
+    annualised.plot(
+        ax=axes[0], continuous_plot_kwargs=dict(label="", zorder=1.0, alpha=0.6)
+    )
     cubic.differentiate().plot(ax=axes[1])
     cubic.integrate(Q(0, "GtC")).plot(ax=axes[2])
 
