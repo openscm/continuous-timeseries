@@ -14,7 +14,7 @@ from continuous_timeseries.timeseries_continuous import (
     ContinuousFunctionScipyPPoly,
     TimeseriesContinuous,
 )
-from continuous_timeseries.typing import PINT_SCALAR
+from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
 
 
 def calculate_linear_net_zero_time(
@@ -22,7 +22,7 @@ def calculate_linear_net_zero_time(
     budget_start_time: PINT_SCALAR,
     emissions_start: PINT_SCALAR,
 ) -> PINT_SCALAR:
-    net_zero_time = budget_start_time + 2 * budget / emissions_start
+    net_zero_time: PINT_SCALAR = budget_start_time + 2 * budget / emissions_start
 
     return net_zero_time
 
@@ -48,8 +48,10 @@ def derive_linear_path(
 
     last_ts_time = np.floor(net_zero_time) + 2.0 * net_zero_time.to("yr").u
 
-    time_axis_bounds = np.hstack([budget_start_time, net_zero_time, last_ts_time])
-    values_at_bounds = np.hstack(
+    time_axis_bounds: PINT_NUMPY_ARRAY = np.hstack(  # type: ignore # mypy confused by pint
+        [budget_start_time, net_zero_time, last_ts_time]
+    )
+    values_at_bounds: PINT_NUMPY_ARRAY = np.hstack(  # type: ignore # mypy confused by pint
         [emissions_start, 0.0 * emissions_start, 0.0 * emissions_start]
     )
 
@@ -91,7 +93,7 @@ def derive_symmetric_quadratic_path(
     )
 
     last_ts_time = np.floor(net_zero_time) + 2.0 * net_zero_time.to("yr").u
-    time_axis_bounds = np.hstack(
+    time_axis_bounds: PINT_NUMPY_ARRAY = np.hstack(  # type: ignore # mypy confused by pint
         [
             budget_start_time,
             (net_zero_time + budget_start_time) / 2.0,
@@ -105,13 +107,18 @@ def derive_symmetric_quadratic_path(
     values_units = emissions_start.u
     E_0 = emissions_start
     nzd = (net_zero_time - budget_start_time) / 2.0
-    c_non_zero = np.vstack(
+
+    a_coeffs: PINT_NUMPY_ARRAY = np.hstack(  # type: ignore # mypy confused by pint
+        [-E_0 / (2.0 * nzd**2), E_0 / (2.0 * nzd**2)]
+    )
+    b_coeffs: PINT_NUMPY_ARRAY = np.hstack([0.0, -E_0 / nzd])  # type: ignore # mypy confused by pint
+    const_terms: PINT_NUMPY_ARRAY = np.hstack([E_0, E_0 / 2.0])  # type: ignore # mypy confused by pint
+
+    c_non_zero: PINT_NUMPY_ARRAY = np.vstack(  # type: ignore # mypy confused by pint
         [
-            np.hstack([-E_0 / (2.0 * nzd**2), E_0 / (2.0 * nzd**2)])
-            .to(values_units / time_units**2)
-            .m,
-            np.hstack([0.0, -E_0 / nzd]).to(values_units / time_units).m,
-            np.hstack([E_0, E_0 / 2.0]).to(values_units).m,
+            a_coeffs.to(values_units / time_units**2).m,
+            b_coeffs.to(values_units / time_units).m,
+            const_terms.to(values_units).m,
         ]
     )
     c = np.hstack([c_non_zero, np.zeros((c_non_zero.shape[0], 1))])
