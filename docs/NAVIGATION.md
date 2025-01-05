@@ -10,6 +10,7 @@ See https://oprypin.github.io/mkdocs-literate-nav/
 - [Tutorials](tutorials/index.md)
     - [Timeseries tutorial](tutorials/timeseries_tutorial.py)
     - [Higher-order interpolation](tutorials/higher_order_interpolation.py)
+    - [Budget-compatible emissions pathways](tutorials/budget_compatible_pathways.py)
     - [Continuous timeseries tutorial](tutorials/continuous_timeseries_tutorial.py)
     - [Discrete timeseries tutorial](tutorials/discrete_timeseries_tutorial.py)
 - [Further background](further-background/index.md)

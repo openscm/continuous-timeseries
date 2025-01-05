@@ -68,6 +68,7 @@ docs = [
 tests = [
     "pytest>=8.3.3",
     "coverage>=7.6.0",
+    "openscm-units>=0.6.3",
     "pytest-cov>=5.0.0",
     "pytest-regressions>=2.6.0",
     "ipython>=8.18.1",
@@ -183,6 +184,9 @@ ignore = [
     "E501",
 ]
 "docs/how-to-guides/how-to-make-a-step-forcing.py" = [
+    "E501",
+]
+"docs/tutorials/budget_compatible_pathways.py" = [
     "E501",
 ]
 "docs/tutorials/continuous_timeseries_tutorial.py" = [

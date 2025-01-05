@@ -336,7 +336,7 @@ wheels = [
 
 [[package]]
 name = "continuous-timeseries"
-version = "0.2.0"
+version = "0.2.1a1"
 source = { editable = "." }
 dependencies = [
     { name = "attrs" },
@@ -427,6 +427,7 @@ docs = [
 tests = [
     { name = "coverage" },
     { name = "ipython" },
+    { name = "openscm-units" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-regressions" },
@@ -511,6 +512,7 @@ docs = [
 tests = [
     { name = "coverage", specifier = ">=7.6.0" },
     { name = "ipython", specifier = ">=8.18.1" },
+    { name = "openscm-units", specifier = ">=0.6.3" },
     { name = "pytest", specifier = ">=8.3.3" },
     { name = "pytest-cov", specifier = ">=5.0.0" },
     { name = "pytest-regressions", specifier = ">=2.6.0" },
