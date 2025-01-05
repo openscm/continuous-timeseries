@@ -310,10 +310,24 @@ def test_convert_to_annual_constant_emissions(
     )
 
     # Check integral preserved
+    exp_integral = start.integrate(Q(0.0, "MtCO2")).discrete.values_at_bounds.values[-1]
     pint.testing.assert_allclose(
-        start.integrate(Q(0.0, "MtCO2")).discrete.values_at_bounds.values[-1],
+        exp_integral,
         res.integrate(Q(0.0, "MtCO2")).discrete.values_at_bounds.values[-1],
     )
+    if res.time_axis.bounds.m[0] == int(res.time_axis.bounds.m[0]):
+        # Make sure that simply adding up values gives back our budget
+        np.testing.assert_allclose(
+            exp_integral,
+            np.cumsum(res.discrete.values_at_bounds.values)
+            .to(exp_integral.u / res.time_axis.bounds.u)
+            .m[-1],
+            rtol=1e-3,
+        )
+
+    # else:
+    #     # In this case, the awkward half year means that simple addition doesn't work.
+    #     # There is nothing we can do about that.
 
 
 @pytest.mark.parametrize(

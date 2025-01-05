@@ -22,6 +22,28 @@ def calculate_linear_net_zero_time(
     budget_start_time: PINT_SCALAR,
     emissions_start: PINT_SCALAR,
 ) -> PINT_SCALAR:
+    """
+    Calculate the net-zero time, assuming a linear path to net-zero
+
+    Parameters
+    ----------
+    budget
+        Budget to match
+
+    budget_start_time
+        Time from which the budget is available.
+
+        E.g., if the budget is available from 1 Jan 2025,
+        supply `Q(2025.0, "yr")` (assuming you're working with pint quantities).
+
+    emissions_start
+        Emissions from which the linear path should start
+
+    Returns
+    -------
+    :
+        Net-zero time
+    """
     net_zero_time: PINT_SCALAR = budget_start_time + 2 * budget / emissions_start
 
     return net_zero_time
@@ -33,6 +55,37 @@ def derive_linear_path(
     emissions_start: PINT_SCALAR,
     name_res: str | None = None,
 ) -> Timeseries:
+    """
+    Derive a linear pathway that stays within a given budget
+
+    Parameters
+    ----------
+    budget
+        Budget to match
+
+    budget_start_time
+        Time from which the budget is available.
+
+        E.g., if the budget is available from 1 Jan 2025,
+        supply `Q(2025.0, "yr")` (assuming you're working with pint quantities).
+
+    emissions_start
+        Emissions from which the linear path should start
+
+    name_res
+        Name to use for the result.
+
+        If not supplied, we use a verbose but clear default.
+
+    Returns
+    -------
+    :
+        Linear pathway to net-zero in line with the budget
+
+    Notes
+    -----
+    TODO: write out the maths/derivation
+    """
     if name_res is None:
         name_res = (
             "Linear emissions\n"
@@ -71,6 +124,40 @@ def derive_symmetric_quadratic_path(
     emissions_start: PINT_SCALAR,
     name_res: str | None = None,
 ) -> Timeseries:
+    """
+    Derive a quadratic pathway that stays within a given budget
+
+    The major downside of this approach is
+    that the gradient of the output path is zero at `budget_start_time`.
+
+    Parameters
+    ----------
+    budget
+        Budget to match
+
+    budget_start_time
+        Time from which the budget is available.
+
+        E.g., if the budget is available from 1 Jan 2025,
+        supply `Q(2025.0, "yr")` (assuming you're working with pint quantities).
+
+    emissions_start
+        Emissions from which the quadratic path should start.
+
+    name_res
+        Name to use for the result.
+
+        If not supplied, we use a verbose but clear default.
+
+    Returns
+    -------
+    :
+        Symmetric quadratic pathway to net-zero in line with the budget
+
+    Notes
+    -----
+    TODO: write out the maths/derivation
+    """
     # Use symmetry argument for derivation
     try:
         import scipy.interpolate
@@ -140,6 +227,27 @@ def derive_symmetric_quadratic_path(
 
 
 def convert_to_annual_time_axis(ts: Timeseries) -> Timeseries:
+    """
+    Convert a timeseries to an annual time axis
+
+    This is just a convenience method.
+    It has minimal checks, so may not always produce sensible results.
+
+    Parameters
+    ----------
+    ts
+        Timeseries to convert to an annual time axis.
+
+
+    Returns
+    -------
+    :
+        `ts`, with its time axis updated so that it has annual steps.
+
+        If `ts`'s first time point is not an integer,
+        it is also included in the output time axis
+        to ensure that `ts`'s cumulative emissions are conserved.
+    """
     annual_time_axis = (
         np.union1d(
             ts.time_axis.bounds.min().to("yr").m,
@@ -160,9 +268,36 @@ def convert_to_annual_time_axis(ts: Timeseries) -> Timeseries:
 def convert_to_annual_constant_emissions(
     ts: Timeseries, name_res: str | None = None
 ) -> Timeseries:
-    # Helpful, as cumulative emissions are just sum of values
-    # (unless you're starting in a half year,
-    # in which case things are a bit more annoying)
+    """
+    Convert a timeseries to annual constant emissions
+
+    In other words, to annual-average emissions
+    (or annual-total, depending on how you think about emissions),
+    like what countries report.
+
+    If the time axis of `ts` starts with an integer year,
+    then you can simply sum the output emissions and you will get
+    the same cumulative emissions as `ts`.
+    If the time axis of `ts` does not start with an integer year,
+    then it is more complicated because your first time step
+    will not be a full year.
+
+    Parameters
+    ----------
+    ts
+        Timeseries to convert to an annual time axis.
+
+    name_res
+        Name to use for the result.
+
+        If not supplied, we use `f"{ts.name}_annualised"`.
+
+    Returns
+    -------
+    :
+        `ts`, with its time axis updated so that it has annual steps
+        and is piecewise constant.
+    """
     if name_res is None:
         name_res = f"{ts.name}_annualised"
 
