@@ -6,6 +6,10 @@ Implicitly, tests of `continuous_timeseries.discrete_to_continuous`
 
 from __future__ import annotations
 
+import re
+from contextlib import nullcontext as does_not_raise
+from typing import Union
+
 import numpy as np
 import pint
 import pint.testing
@@ -24,6 +28,9 @@ from continuous_timeseries.exceptions import (
     ExtrapolationNotAllowedError,
 )
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
+from continuous_timeseries.warnings import (
+    InterpolationUpdateChangedValuesAtBoundsWarning,
+)
 
 UR = pint.get_application_registry()
 Q = UR.Quantity
@@ -51,7 +58,33 @@ class PiecewiseConstantTestCase:
     exp_last_edge: PINT_SCALAR
     exp_extrapolate_post: PINT_SCALAR
     exp_round_trip_values_at_bounds_same: bool
+    expectation_to_continuous_timeseries: Union[
+        does_not_raise, pytest.RaisesContext
+    ] = field()
     ts: Timeseries = field()
+
+    @expectation_to_continuous_timeseries.default
+    def initialise_expectation_to_continuous_timeseries(self):
+        if self.exp_round_trip_values_at_bounds_same:
+            return does_not_raise()
+        else:
+            return pytest.warns(
+                InterpolationUpdateChangedValuesAtBoundsWarning,
+                match=re.escape(
+                    f"Using the interpolation {self.interpolation.name} means "
+                    "that the y-values do not line up exactly with the x-values. "
+                    "In other words, in the output, "
+                    "y(x(1)) is not equal to the input y(1), "
+                    "y(x(2)) is not equal to the input y(2), "
+                    "y(x(n)) is not equal to the input y(n) etc. "
+                    "This may cause confusion. "
+                    "Either ignore this warning, "
+                    "suppress it "
+                    "(by passing `warn_if_values_at_bounds_could_confuse=True` "
+                    "or via Python's `warnings` module settings) "
+                    "or choose a different interpolation option."
+                ),
+            )
 
     @ts.default
     def initialise_timeseries(self):
@@ -113,7 +146,7 @@ piecewise_constant_test_cases = pytest.mark.parametrize(
                 exp_last_window=Q(2.0, "W"),
                 exp_last_edge=Q(4.0, "W"),
                 exp_extrapolate_post=Q(4.0, "W"),
-                exp_round_trip_values_at_bounds_same=False,
+                exp_round_trip_values_at_bounds_same=True,
             ),
             id="piecewise_constant_previous_left_closed",
         ),
@@ -293,9 +326,10 @@ def test_round_tripping(piecewise_constant_test_case):
         values_at_bounds=ValuesAtBounds(piecewise_constant_test_case.y),
     )
 
-    continuous = start.to_continuous_timeseries(
-        piecewise_constant_test_case.interpolation
-    )
+    with piecewise_constant_test_case.expectation_to_continuous_timeseries:
+        continuous = start.to_continuous_timeseries(
+            piecewise_constant_test_case.interpolation
+        )
 
     res = continuous.to_discrete_timeseries(start.time_axis)
 

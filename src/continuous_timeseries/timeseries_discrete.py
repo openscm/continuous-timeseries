@@ -14,9 +14,11 @@ for converting to continuous views i.e. [`TimeseriesContinuous`][(p)].
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+import warnings
+from typing import TYPE_CHECKING, Any, Callable
 
 import attr
+import pint.testing
 from attrs import define, field
 
 import continuous_timeseries.formatting
@@ -24,7 +26,11 @@ from continuous_timeseries.discrete_to_continuous import discrete_to_continuous
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
 from continuous_timeseries.plotting_helpers import get_plot_vals
 from continuous_timeseries.time_axis import TimeAxis
+from continuous_timeseries.typing import PINT_NUMPY_ARRAY
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
+from continuous_timeseries.warnings import (
+    InterpolationUpdateChangedValuesAtBoundsWarning,
+)
 
 if TYPE_CHECKING:
     import IPython.lib.pretty
@@ -129,6 +135,10 @@ class TimeseriesDiscrete:
     def to_continuous_timeseries(
         self,
         interpolation: InterpolationOption,
+        warn_if_output_values_at_bounds_could_confuse: bool = True,
+        check_change_func: Callable[
+            [PINT_NUMPY_ARRAY, PINT_NUMPY_ARRAY], None
+        ] = pint.testing.assert_allclose,
     ) -> TimeseriesContinuous:
         """
         Convert to [`TimeseriesContinuous`][(p)]
@@ -138,19 +148,54 @@ class TimeseriesDiscrete:
         interpolation
             Interpolation to use for the conversion
 
+        warn_if_output_values_at_bounds_could_confuse
+            Should a warning be raised if the `interpolation` choice
+            means that the value of the output timeseries at
+            point `x(n)` is not equal to `y(n)`?
+
+        check_change_func
+            Function to use to check
+            if the value of the output at `x(n)` is equal to `y(n)`.
+
+            If the values are different, this function should raise an `AssertionError`.
+
         Returns
         -------
         :
             Continuous representation of `self` for the interpolation
             specified by `interpolation`
         """
-        # TODO warning here for interpolation types which change values at bounds
-        return discrete_to_continuous(
-            x=self.time_axis.bounds,
-            y=self.values_at_bounds.values,
+        x = self.time_axis.bounds
+        y = self.values_at_bounds.values
+        res = discrete_to_continuous(
+            x=x,
+            y=y,
             name=self.name,
             interpolation=interpolation,
         )
+
+        if warn_if_output_values_at_bounds_could_confuse:
+            try:
+                check_change_func(y, res.interpolate(x))
+
+            except AssertionError:
+                msg = (
+                    f"Using the interpolation {interpolation.name} "
+                    "means that the y-values do not line up exactly with the x-values. "
+                    "In other words, in the output, "
+                    "y(x(1)) is not equal to the input y(1), "
+                    "y(x(2)) is not equal to the input y(2), "
+                    "y(x(n)) is not equal to the input y(n) etc. "
+                    "This may cause confusion. "
+                    "Either ignore this warning, "
+                    "suppress it "
+                    "(by passing `warn_if_values_at_bounds_could_confuse=True` "
+                    "or via Python's `warnings` module settings) "
+                    "or choose a different interpolation option."
+                )
+                warnings.warn(msg, InterpolationUpdateChangedValuesAtBoundsWarning)
+
+        return res
 
     def plot(
         self,
