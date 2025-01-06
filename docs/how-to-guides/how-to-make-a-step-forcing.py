@@ -99,8 +99,8 @@ fig.tight_layout()
 
 # %%
 ts = ct.Timeseries.from_arrays(
-    time_axis_bounds=Q([1750, 1850, 3000], "yr"),
-    values_at_bounds=Q([0.0, 2.0, 2.0], "W / m^2"),
+    y=Q([0.0, 2.0, 2.0], "W / m^2"),
+    x=Q([1750, 1850, 3000], "yr"),
     interpolation=ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed,
     name="step_forcing",
 )
@@ -141,8 +141,8 @@ ts.interpolate(Q([1850 - 1e-9, 1850.0, 1850 + 1e-9], "yr")).discrete
 
 # %%
 ts_open = ct.Timeseries.from_arrays(
-    time_axis_bounds=Q([1750, 1850, 3000], "yr"),
-    values_at_bounds=Q([0.0, 2.0, 2.0], "W / m^2"),
+    x=Q([1750, 1850, 3000], "yr"),
+    y=Q([0.0, 2.0, 2.0], "W / m^2"),
     interpolation=ct.InterpolationOption.PiecewiseConstantPreviousLeftOpen,
     name="step_forcing",
 )
@@ -165,8 +165,8 @@ ts_open.discrete
 
 # %%
 ts_next_left_closed = ct.Timeseries.from_arrays(
-    time_axis_bounds=Q([1750, 1850, 3000], "yr"),
-    values_at_bounds=Q([0.0, 0.0, 2.0], "W / m^2"),
+    x=Q([1750, 1850, 3000], "yr"),
+    y=Q([0.0, 0.0, 2.0], "W / m^2"),
     interpolation=ct.InterpolationOption.PiecewiseConstantNextLeftClosed,
     name="next_left_closed",
 )
@@ -177,8 +177,8 @@ ts_next_left_closed.discrete
 
 # %%
 ts_next_left_open = ct.Timeseries.from_arrays(
-    time_axis_bounds=Q([1750, 1850, 3000], "yr"),
-    values_at_bounds=Q([0.0, 0.0, 2.0], "W / m^2"),
+    x=Q([1750, 1850, 3000], "yr"),
+    y=Q([0.0, 0.0, 2.0], "W / m^2"),
     interpolation=ct.InterpolationOption.PiecewiseConstantNextLeftOpen,
     name="next_left_open",
 )
