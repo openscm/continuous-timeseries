@@ -21,6 +21,37 @@ from the examples given in that link.
 
 <!-- towncrier release notes start -->
 
+## Continuous Timeseries v0.3.0 (2025-01-06)
+
+### ⚠️ Breaking Changes
+
+- - Changed the input arguments of [`discrete_to_continuous`][continuous_timeseries.discrete_to_continuous.discrete_to_continuous].
+    We have updated so that, rather than taking in a `discrete` argument,
+    we take in an `x` and a `y` array and a `name`.
+    This API better represents the separation between
+    discrete representations, continuous representations
+    and the conversion in between them (which is a different thing again).
+    All other discrete to continuous conversion functions were updated to match this change in API.
+  - Changed the input arguments of [`Timeseries.from_arrays`][continuous_timeseries.Timeseries.from_arrays].
+    We have updated so that `time_axis_bounds` is now `x` and `values_at_bounds` is now `y`.
+    This update reflects the fact that, depending on the interpolation choice,
+    the passed in values will not always end up being the values at the bounds.
+
+  ([#19](https://github.com/openscm/continuous-timeseries/pull/19))
+
+### 🎉 Improvements
+
+- Added a check to [`TimeseriesDiscrete.to_continuous_timeseries`][continuous_timeseries.TimeseriesDiscrete.to_continuous_timeseries]
+  so that the user is aware if the chosen interpolation choice means that the instance's
+  values at bounds are not actually respected.
+  The warning can be controlled with the new `warn_if_output_values_at_bounds_could_confuse` and `check_change_func` arguments
+  to [`TimeseriesDiscrete.to_continuous_timeseries`][continuous_timeseries.TimeseriesDiscrete.to_continuous_timeseries]. ([#19](https://github.com/openscm/continuous-timeseries/pull/19))
+
+### 📚 Improved Documentation
+
+- Added further background into our discrete to continuous conversion (see [Discrete to continuous conversions](../further-background/discrete_to_continuous_conversions)). ([#19](https://github.com/openscm/continuous-timeseries/pull/19))
+
+
 ## Continuous Timeseries v0.2.1 (2025-01-05)
 
 ### 🆕 Features
