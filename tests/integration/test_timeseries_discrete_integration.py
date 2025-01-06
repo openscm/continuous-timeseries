@@ -5,6 +5,7 @@ Integration tests of `continuous_timeseries.timeseries_discrete`
 from __future__ import annotations
 
 import sys
+import warnings
 from contextlib import nullcontext as does_not_raise
 from unittest.mock import patch
 
@@ -14,6 +15,7 @@ import pint.testing
 import pytest
 from IPython.lib.pretty import pretty
 
+from continuous_timeseries.discrete_to_continuous import InterpolationOption
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
 from continuous_timeseries.time_axis import TimeAxis
 from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
@@ -104,6 +106,23 @@ def test_html(ts, file_regression):
         f"{ts._repr_html_()}\n",
         extension=".html",
     )
+
+
+def test_to_continuous_timeseries_warning_suppression():
+    start = TimeseriesDiscrete(
+        name="name",
+        time_axis=TimeAxis(Q([1, 2, 3], "yr")),
+        values_at_bounds=ValuesAtBounds(Q([10, 20, 30], "kg")),
+    )
+
+    # Make sure no warning is raised.
+    # See https://docs.pytest.org/en/7.0.x/how-to/capture-warnings.html#additional-use-cases-of-warnings-in-tests
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        start.to_continuous_timeseries(
+            InterpolationOption.PiecewiseConstantPreviousLeftOpen,
+            warn_if_output_values_at_bounds_could_confuse=False,
+        )
 
 
 @pytest.mark.parametrize(

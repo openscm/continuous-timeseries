@@ -44,8 +44,8 @@ formatting_check_cases = pytest.mark.parametrize(
     (
         pytest.param(
             Timeseries.from_arrays(
-                time_axis_bounds=Q([1.0, 10.0, 20.0], "yr"),
-                values_at_bounds=Q([10.0, 12.0, 32.0], "Mt / yr"),
+                x=Q([1.0, 10.0, 20.0], "yr"),
+                y=Q([10.0, 12.0, 32.0], "Mt / yr"),
                 interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
                 name="piecewise_constant",
             ),
@@ -53,8 +53,8 @@ formatting_check_cases = pytest.mark.parametrize(
         ),
         pytest.param(
             Timeseries.from_arrays(
-                time_axis_bounds=Q([1.0, 10.0, 20.0], "yr"),
-                values_at_bounds=Q([10.0, 12.0, 32.0], "Mt / yr"),
+                x=Q([1.0, 10.0, 20.0], "yr"),
+                y=Q([10.0, 12.0, 32.0], "Mt / yr"),
                 interpolation=InterpolationOption.Linear,
                 name="piecewise_linear",
             ),
@@ -62,8 +62,8 @@ formatting_check_cases = pytest.mark.parametrize(
         ),
         pytest.param(
             Timeseries.from_arrays(
-                time_axis_bounds=Q(np.arange(1750.0, 3000.0 + 1), "yr"),
-                values_at_bounds=Q(10.0 + np.arange(1251.0), "Mt / yr"),
+                x=Q(np.arange(1750.0, 3000.0 + 1), "yr"),
+                y=Q(10.0 + np.arange(1251.0), "Mt / yr"),
                 interpolation=InterpolationOption.Linear,
                 name="piecewise_linear_heaps_of_windows",
             ),
@@ -136,10 +136,10 @@ class OperationsTestCase:
 
     name: str
     interpolation: InterpolationOption
-    time_axis_bounds: PINT_NUMPY_ARRAY = field(
+    x: PINT_NUMPY_ARRAY = field(
         validator=[validators.max_len(3), validators.min_len(3)]
     )
-    values_at_bounds: PINT_NUMPY_ARRAY = field(
+    y: PINT_NUMPY_ARRAY = field(
         validator=[validators.max_len(3), validators.min_len(3)]
     )
 
@@ -175,35 +175,11 @@ class OperationsTestCase:
     @ts.default
     def initialise_timeseries(self):
         return Timeseries.from_arrays(
-            time_axis_bounds=self.time_axis_bounds,
-            values_at_bounds=self.values_at_bounds,
+            x=self.x,
+            y=self.y,
             interpolation=self.interpolation,
             name=self.name,
         )
-
-
-#     time_extrap: UR.Quantity
-#     """Times to use for checking extrapolation"""
-#
-#     exp_extrap: UR.Quantity
-#     """Expected values of extrapolation at `time_extrap`"""
-#
-#     time_integral_check: UR.Quantity
-#     """Times to use for checking the values of the integral"""
-#
-#     exp_integral_values_excl_integration_constant: UR.Quantity
-#     """
-#     Expected values of the derivate at `time_integral_check`
-#
-#     This excludes the integration constant
-#     (i.e. assumes the integration constant is zero).
-#     """
-#
-#     time_derivative_check: UR.Quantity
-#     """Times to use for checking the values of the derivative"""
-#
-#     exp_derivative_values: UR.Quantity
-#     """Expected values of the derivate at `time_derivative_check`"""
 
 
 operations_test_cases = pytest.mark.parametrize(
@@ -213,8 +189,8 @@ operations_test_cases = pytest.mark.parametrize(
             OperationsTestCase(
                 name="piecewise_constant_next_left_closed",
                 interpolation=InterpolationOption.PiecewiseConstantNextLeftClosed,
-                time_axis_bounds=Q([2010, 2020, 2050], "yr"),
-                values_at_bounds=Q([-1.0, 0.0, 2.0], "Gt"),
+                x=Q([2010, 2020, 2050], "yr"),
+                y=Q([-1.0, 0.0, 2.0], "Gt"),
                 time_interp=Q([2010.0, 2015.0, 2020.0, 2030.0, 2050.0], "yr"),
                 exp_interp=Q([0.0, 0.0, 2.0, 2.0, 2.0], "Gt"),
                 time_extrap=Q([2005.0, 2020.0, 2060.0], "yr"),
@@ -255,8 +231,8 @@ operations_test_cases = pytest.mark.parametrize(
             OperationsTestCase(
                 name="piecewise_constant_next_left_open",
                 interpolation=InterpolationOption.PiecewiseConstantNextLeftOpen,
-                time_axis_bounds=Q([2010, 2020, 2050], "yr"),
-                values_at_bounds=Q([-1.0, 0.0, 2.0], "Gt"),
+                x=Q([2010, 2020, 2050], "yr"),
+                y=Q([-1.0, 0.0, 2.0], "Gt"),
                 time_interp=Q([2010.0, 2015.0, 2020.0, 2030.0, 2050.0], "yr"),
                 exp_interp=Q([-1.0, 0.0, 0.0, 2.0, 2.0], "Gt"),
                 time_extrap=Q([2005.0, 2020.0, 2060.0], "yr"),
@@ -297,8 +273,8 @@ operations_test_cases = pytest.mark.parametrize(
             OperationsTestCase(
                 name="piecewise_constant_previous_left_closed",
                 interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
-                time_axis_bounds=Q([2010, 2020, 2050], "yr"),
-                values_at_bounds=Q([-1.0, 0.0, 2.0], "Gt"),
+                x=Q([2010, 2020, 2050], "yr"),
+                y=Q([-1.0, 0.0, 2.0], "Gt"),
                 time_interp=Q([2010.0, 2015.0, 2020.0, 2030.0, 2050.0], "yr"),
                 exp_interp=Q([-1.0, -1.0, 0.0, 0.0, 2.0], "Gt"),
                 time_extrap=Q([2005.0, 2020.0, 2060.0], "yr"),
@@ -339,8 +315,8 @@ operations_test_cases = pytest.mark.parametrize(
             OperationsTestCase(
                 name="piecewise_constant_previous_left_open",
                 interpolation=InterpolationOption.PiecewiseConstantPreviousLeftOpen,
-                time_axis_bounds=Q([2010, 2020, 2050], "yr"),
-                values_at_bounds=Q([-1.0, 0.0, 2.0], "Gt"),
+                x=Q([2010, 2020, 2050], "yr"),
+                y=Q([-1.0, 0.0, 2.0], "Gt"),
                 time_interp=Q([2010.0, 2015.0, 2020.0, 2030.0, 2050.0], "yr"),
                 exp_interp=Q([-1.0, -1.0, -1.0, 0.0, 0.0], "Gt"),
                 time_extrap=Q([2005.0, 2020.0, 2060.0], "yr"),
@@ -381,8 +357,8 @@ operations_test_cases = pytest.mark.parametrize(
             OperationsTestCase(
                 name="linear",
                 interpolation=InterpolationOption.Linear,
-                time_axis_bounds=Q([2010, 2020, 2050], "yr"),
-                values_at_bounds=Q([-1.0, 0.0, 2.0], "Gt"),
+                x=Q([2010, 2020, 2050], "yr"),
+                y=Q([-1.0, 0.0, 2.0], "Gt"),
                 time_interp=Q([2010.0, 2015.0, 2020.0, 2030.0, 2050.0], "yr"),
                 exp_interp=Q([-1.0, -0.5, 0.0, 2.0 / 3.0, 2.0], "Gt"),
                 time_extrap=Q([2005.0, 2020.0, 2060.0], "yr"),
@@ -434,8 +410,8 @@ operations_test_cases = pytest.mark.parametrize(
             OperationsTestCase(
                 name="quadratic",
                 interpolation=InterpolationOption.Quadratic,
-                time_axis_bounds=Q([2010, 2020, 2050], "yr"),
-                values_at_bounds=Q([0.0, 1.0, 16.0], "Gt"),
+                x=Q([2010, 2020, 2050], "yr"),
+                y=Q([0.0, 1.0, 16.0], "Gt"),
                 time_interp=Q([2010.0, 2015.0, 2020.0, 2030.0, 2050.0], "yr"),
                 exp_interp=Q([0.0, 0.5**2, 1.0, 2.0**2, 4.0**2], "Gt"),
                 time_extrap=Q([2005.0, 2020.0, 2060.0], "yr"),
@@ -491,13 +467,12 @@ operations_test_cases = pytest.mark.parametrize(
 def test_discrete(operations_test_case):
     exp = TimeseriesDiscrete(
         name=operations_test_case.name,
-        time_axis=TimeAxis(operations_test_case.time_axis_bounds),
+        time_axis=TimeAxis(operations_test_case.x),
         # Discrete is interpolated values,
-        # not what went in i.e. `operations_test_case.values_at_bounds`
-        # (they're not the same thing for piecewise constant in all cases).
+        # which is not always what went in i.e. `operations_test_case.y`.
         values_at_bounds=ValuesAtBounds(
             operations_test_case.ts.timeseries_continuous.interpolate(
-                operations_test_case.time_axis_bounds
+                operations_test_case.x
             )
         ),
     )
@@ -871,11 +846,11 @@ def test_update_interpolation(  # noqa: PLR0913
     if name_res is not None:
         kwargs["name_res"] = name_res
 
-    time_axis_bounds = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
+    x = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
 
     ts_start = Timeseries.from_arrays(
-        time_axis_bounds=time_axis_bounds,
-        values_at_bounds=Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt"),
+        x=x,
+        y=Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt"),
         interpolation=start_interp,
         name="start",
     )
@@ -901,15 +876,8 @@ def test_update_interpolation(  # noqa: PLR0913
         if exp_values_changed:
             # We've updated the interpolation so these should change
             check_values_different_times = (
-                np.setdiff1d(
-                    np.linspace(
-                        time_axis_bounds.min().m - 10,
-                        time_axis_bounds.max().m + 10,
-                        100,
-                    ),
-                    time_axis_bounds.m,
-                )
-                * time_axis_bounds.u
+                np.setdiff1d(np.linspace(x.min().m - 10, x.max().m + 10, 100), x.m)
+                * x.u
             )
             with pytest.raises(AssertionError):
                 start_vals = ts_start.interpolate(
@@ -986,11 +954,11 @@ def test_update_interpolation_integral_preserving(
     if name_res is not None:
         kwargs["name_res"] = name_res
 
-    time_axis_bounds = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
+    x = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
 
     start = Timeseries.from_arrays(
-        time_axis_bounds=time_axis_bounds,
-        values_at_bounds=Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt"),
+        x=x,
+        y=Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt"),
         interpolation=start_interp,
         name="start",
     )
@@ -1062,11 +1030,11 @@ def test_update_interpolation_integral_preserving(
     ),
 )
 def test_update_interpolation_integral_preserving_kwarg_passing(kwargs, expectation):
-    time_axis_bounds = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
+    x = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
 
     start = Timeseries.from_arrays(
-        time_axis_bounds=time_axis_bounds,
-        values_at_bounds=Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt"),
+        x=x,
+        y=Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt"),
         interpolation=InterpolationOption.Linear,
         name="start",
     )
@@ -1092,11 +1060,11 @@ def test_update_interpolation_integral_preserving_kwarg_passing(kwargs, expectat
     ),
 )
 def test_integrate_then_differentiate(start_interp, exp_values_at_bounds_same):
-    time_axis_bounds = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
+    x = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
 
     start = Timeseries.from_arrays(
-        time_axis_bounds=time_axis_bounds,
-        values_at_bounds=Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt"),
+        x=x,
+        y=Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt"),
         interpolation=start_interp,
         name="start",
     )
@@ -1110,14 +1078,7 @@ def test_integrate_then_differentiate(start_interp, exp_values_at_bounds_same):
             rtol=1e-10,
         )
 
-    times_check = (
-        np.linspace(
-            (2 * time_axis_bounds[0] - time_axis_bounds[1]).m,
-            (2 * time_axis_bounds[-1] - time_axis_bounds[-2]).m,
-            1000,
-        )
-        * time_axis_bounds.u
-    )
+    times_check = np.linspace((2 * x[0] - x[1]).m, (2 * x[-1] - x[-2]).m, 1000) * x.u
 
     res_check_vals = res.interpolate(
         times_check, allow_extrapolation=True
@@ -1144,26 +1105,19 @@ def test_integrate_then_differentiate(start_interp, exp_values_at_bounds_same):
     ),
 )
 def test_differentiate_then_integrate(start_interp, exp_result):
-    time_axis_bounds = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
-    values_at_bounds = Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt")
+    x = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
+    y = Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt")
 
     start = Timeseries.from_arrays(
-        time_axis_bounds=time_axis_bounds,
-        values_at_bounds=values_at_bounds,
+        x=x,
+        y=y,
         interpolation=start_interp,
         name="start",
     )
 
-    res = start.differentiate().integrate(values_at_bounds[0])
+    res = start.differentiate().integrate(y[0])
 
-    times_check = (
-        np.linspace(
-            (2 * time_axis_bounds[0] - time_axis_bounds[1]).m,
-            (2 * time_axis_bounds[-1] - time_axis_bounds[-2]).m,
-            1000,
-        )
-        * time_axis_bounds.u
-    )
+    times_check = np.linspace((2 * x[0] - x[1]).m, (2 * x[-1] - x[-2]).m, 1000) * x.u
 
     res_check_vals = res.interpolate(
         times_check, allow_extrapolation=True
@@ -1182,7 +1136,7 @@ def test_differentiate_then_integrate(start_interp, exp_result):
         pint.testing.assert_allclose(res_check_vals, start_check_vals, rtol=1e-10)
 
     else:
-        pint.testing.assert_allclose(res_check_vals, values_at_bounds[0], rtol=1e-10)
+        pint.testing.assert_allclose(res_check_vals, y[0], rtol=1e-10)
 
 
 @pytest.mark.parametrize(
@@ -1275,22 +1229,22 @@ def test_plot(  # noqa: PLR0913
     fig, ax = plt.subplots()
 
     gt = Timeseries.from_arrays(
-        time_axis_bounds=Q([1.0, 10.0, 20.0], "yr"),
-        values_at_bounds=Q([10.0, 12.0, 32.0], "Gt"),
+        x=Q([1.0, 10.0, 20.0], "yr"),
+        y=Q([10.0, 12.0, 32.0], "Gt"),
         interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
         name="gt_piecewise_constant",
     )
 
     mt = Timeseries.from_arrays(
-        time_axis_bounds=Q([0.0, 10.0, 32.0], "yr"),
-        values_at_bounds=Q([150.0, 1500.0, 2232.0], "Mt"),
+        x=Q([0.0, 10.0, 32.0], "yr"),
+        y=Q([150.0, 1500.0, 2232.0], "Mt"),
         interpolation=InterpolationOption.Linear,
         name="mt_piecewise_linear",
     )
 
     gt_per_year = Timeseries.from_arrays(
-        time_axis_bounds=Q([0.0, 10.0, 32.0], "yr"),
-        values_at_bounds=Q([150.0, 1500.0, 2232.0], "Gt / yr"),
+        x=Q([0.0, 10.0, 32.0], "yr"),
+        y=Q([150.0, 1500.0, 2232.0], "Gt / yr"),
         interpolation=InterpolationOption.Linear,
         name="gt_per_year_piecewise_linear",
     )
@@ -1372,8 +1326,8 @@ def test_plot_matplotlib_units_not_registered(
     fig, ax = plt.subplots()
 
     ts = Timeseries.from_arrays(
-        time_axis_bounds=Q([1.0, 10.0, 20.0], "yr"),
-        values_at_bounds=Q([10.0, 12.0, 32.0], "Mt / yr"),
+        x=Q([1.0, 10.0, 20.0], "yr"),
+        y=Q([10.0, 12.0, 32.0], "Mt / yr"),
         interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
         name="piecewise_constant",
     )
@@ -1405,8 +1359,8 @@ def test_plot_matplotlib_units_not_registered(
 )
 def test_plot_ax_creation(sys_modules_patch, expectation):
     ts = Timeseries.from_arrays(
-        time_axis_bounds=Q([1.0, 10.0, 20.0], "yr"),
-        values_at_bounds=Q([10.0, 12.0, 32.0], "Mt / yr"),
+        x=Q([1.0, 10.0, 20.0], "yr"),
+        y=Q([10.0, 12.0, 32.0], "Mt / yr"),
         interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
         name="piecewise_constant",
     )

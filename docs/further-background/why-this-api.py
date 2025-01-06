@@ -309,8 +309,8 @@ fig.tight_layout()
 
 # %%
 ts = ct.Timeseries.from_arrays(
-    values_at_bounds=emissions_covid,
-    time_axis_bounds=years_covid,
+    x=years_covid,
+    y=emissions_covid,
     interpolation=ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed,
     name="covid_emissions",
 )
@@ -331,8 +331,8 @@ ts.integrate(Q(100, "GtC")).plot()
 
 # %%
 ts_varying_step_size = ct.Timeseries.from_arrays(
-    values_at_bounds=Q([0.0, 0.2, 0.3, 1.2, 10.3], "GtCO2 / yr"),
-    time_axis_bounds=Q([1750, 1800, 1825, 1900, 2000], "yr"),
+    x=Q([1750, 1800, 1825, 1900, 2000], "yr"),
+    y=Q([0.0, 0.2, 0.3, 1.2, 10.3], "GtCO2 / yr"),
     interpolation=ct.InterpolationOption.Linear,
     name="varying_step_size",
 )

@@ -9,14 +9,16 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
+from continuous_timeseries.typing import PINT_NUMPY_ARRAY
 
 if TYPE_CHECKING:
     from continuous_timeseries.timeseries_continuous import TimeseriesContinuous
-    from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
 
 
 def discrete_to_continuous_linear(
-    discrete: TimeseriesDiscrete,
+    x: PINT_NUMPY_ARRAY,
+    y: PINT_NUMPY_ARRAY,
+    name: str,
 ) -> TimeseriesContinuous:
     """
     Convert a discrete timeseries to a piecewise linear
@@ -26,8 +28,14 @@ def discrete_to_continuous_linear(
 
     Parameters
     ----------
-    discrete
-        Discrete timeseries to convert
+    x
+        The discrete x-values from which to convert
+
+    y
+        The discrete y-values from which to convert
+
+    name
+        The value to use to set the result's name attribute
 
     Returns
     -------
@@ -48,31 +56,28 @@ def discrete_to_continuous_linear(
         TimeseriesContinuous,
     )
 
-    time_bounds = discrete.time_axis.bounds
-    x = time_bounds.m
-    time_steps = time_bounds[1:] - time_bounds[:-1]
+    x_m = x.m
+    time_steps = x[1:] - x[:-1]
 
-    coeffs = np.zeros((2, discrete.values_at_bounds.values.size - 1))
+    coeffs = np.zeros((2, y.size - 1))
 
-    all_vals = discrete.values_at_bounds.values
-
-    rises = all_vals[1:] - all_vals[:-1]
+    rises = y[1:] - y[:-1]
 
     coeffs[0, :] = (rises / time_steps).m
-    coeffs[1, :] = all_vals.m[:-1]
+    coeffs[1, :] = y.m[:-1]
 
     piecewise_polynomial = scipy.interpolate.PPoly(
-        x=x,
+        x=x_m,
         c=coeffs,
         extrapolate=False,  # Avoid extrapolation by default
     )
 
     res = TimeseriesContinuous(
-        name=discrete.name,
-        time_units=time_bounds.u,
-        values_units=all_vals.u,
+        name=name,
+        time_units=x.u,
+        values_units=y.u,
         function=ContinuousFunctionScipyPPoly(piecewise_polynomial),
-        domain=(np.min(time_bounds), np.max(time_bounds)),
+        domain=(np.min(x), np.max(x)),
     )
 
     return res

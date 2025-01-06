@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from continuous_timeseries.typing import PINT_NUMPY_ARRAY
+
 from .higher_order import discrete_to_continuous_higher_order
 from .interpolation_option import (
     InterpolationOption,
@@ -29,22 +31,30 @@ from .piecewise_constant_previous_left_open import (
 
 if TYPE_CHECKING:
     from continuous_timeseries.timeseries_continuous import TimeseriesContinuous
-    from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
 
 
 def discrete_to_continuous(  # noqa: PLR0911
-    discrete: TimeseriesDiscrete, interpolation: InterpolationOption
+    x: PINT_NUMPY_ARRAY,
+    y: PINT_NUMPY_ARRAY,
+    interpolation: InterpolationOption,
+    name: str,
 ) -> TimeseriesContinuous:
     """
     Convert a discrete timeseries to continuous
 
     Parameters
     ----------
-    discrete
-        Discrete timeseries to convert
+    x
+        The discrete x-values from which to convert
+
+    y
+        The discrete y-values from which to convert
 
     interpolation
         Interpolation type to use for converting from discrete to continuous.
+
+    name
+        The value to use to set the result's name attribute
 
     Returns
     -------
@@ -53,37 +63,47 @@ def discrete_to_continuous(  # noqa: PLR0911
     """
     if interpolation == InterpolationOption.PiecewiseConstantNextLeftClosed:
         return discrete_to_continuous_piecewise_constant_next_left_closed(
-            discrete=discrete,
+            x=x,
+            y=y,
+            name=name,
         )
 
     if interpolation == InterpolationOption.PiecewiseConstantNextLeftOpen:
         return discrete_to_continuous_piecewise_constant_next_left_open(
-            discrete=discrete,
+            x=x,
+            y=y,
+            name=name,
         )
 
     if interpolation == InterpolationOption.PiecewiseConstantPreviousLeftClosed:
         return discrete_to_continuous_piecewise_constant_previous_left_closed(
-            discrete=discrete,
+            x=x,
+            y=y,
+            name=name,
         )
 
     if interpolation == InterpolationOption.PiecewiseConstantPreviousLeftOpen:
         return discrete_to_continuous_piecewise_constant_previous_left_open(
-            discrete=discrete,
+            x=x,
+            y=y,
+            name=name,
         )
 
     if interpolation == InterpolationOption.Linear:
         return discrete_to_continuous_linear(
-            discrete=discrete,
+            x=x,
+            y=y,
+            name=name,
         )
 
     if interpolation == InterpolationOption.Quadratic:
-        return discrete_to_continuous_higher_order(discrete=discrete, order=2)
+        return discrete_to_continuous_higher_order(x=x, y=y, name=name, order=2)
 
     if interpolation == InterpolationOption.Cubic:
-        return discrete_to_continuous_higher_order(discrete=discrete, order=3)
+        return discrete_to_continuous_higher_order(x=x, y=y, name=name, order=3)
 
     if interpolation == InterpolationOption.Quartic:
-        return discrete_to_continuous_higher_order(discrete=discrete, order=4)
+        return discrete_to_continuous_higher_order(x=x, y=y, name=name, order=4)
 
     raise NotImplementedError(interpolation.name)  # pragma: no cover
 

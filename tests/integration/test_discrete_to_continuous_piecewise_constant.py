@@ -6,6 +6,10 @@ Implicitly, tests of `continuous_timeseries.discrete_to_continuous`
 
 from __future__ import annotations
 
+import re
+from contextlib import nullcontext as does_not_raise
+from typing import Union
+
 import numpy as np
 import pint
 import pint.testing
@@ -24,6 +28,9 @@ from continuous_timeseries.exceptions import (
     ExtrapolationNotAllowedError,
 )
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
+from continuous_timeseries.warnings import (
+    InterpolationUpdateChangedValuesAtBoundsWarning,
+)
 
 UR = pint.get_application_registry()
 Q = UR.Quantity
@@ -37,10 +44,10 @@ class PiecewiseConstantTestCase:
 
     name: str
     interpolation: InterpolationOption
-    time_axis_bounds: PINT_NUMPY_ARRAY = field(
+    x: PINT_NUMPY_ARRAY = field(
         validator=[validators.max_len(3), validators.min_len(3)]
     )
-    values_at_bounds: PINT_NUMPY_ARRAY = field(
+    y: PINT_NUMPY_ARRAY = field(
         validator=[validators.max_len(3), validators.min_len(3)]
     )
     exp_extrapolate_pre: PINT_SCALAR
@@ -51,13 +58,39 @@ class PiecewiseConstantTestCase:
     exp_last_edge: PINT_SCALAR
     exp_extrapolate_post: PINT_SCALAR
     exp_round_trip_values_at_bounds_same: bool
+    expectation_to_continuous_timeseries: Union[
+        does_not_raise, pytest.RaisesContext
+    ] = field()
     ts: Timeseries = field()
+
+    @expectation_to_continuous_timeseries.default
+    def initialise_expectation_to_continuous_timeseries(self):
+        if self.exp_round_trip_values_at_bounds_same:
+            return does_not_raise()
+        else:
+            return pytest.warns(
+                InterpolationUpdateChangedValuesAtBoundsWarning,
+                match=re.escape(
+                    f"Using the interpolation {self.interpolation.name} means "
+                    "that the y-values do not line up exactly with the x-values. "
+                    "In other words, in the output, "
+                    "y(x(1)) is not equal to the input y(1), "
+                    "y(x(2)) is not equal to the input y(2), "
+                    "y(x(n)) is not equal to the input y(n) etc. "
+                    "This may cause confusion. "
+                    "Either ignore this warning, "
+                    "suppress it "
+                    "(by passing `warn_if_values_at_bounds_could_confuse=False` "
+                    "or via Python's `warnings` module settings) "
+                    "or choose a different interpolation option."
+                ),
+            )
 
     @ts.default
     def initialise_timeseries(self):
         return Timeseries.from_arrays(
-            time_axis_bounds=self.time_axis_bounds,
-            values_at_bounds=self.values_at_bounds,
+            x=self.x,
+            y=self.y,
             interpolation=self.interpolation,
             name=self.name,
         )
@@ -70,8 +103,8 @@ piecewise_constant_test_cases = pytest.mark.parametrize(
             PiecewiseConstantTestCase(
                 name="piecewise_constant_next_left_closed",
                 interpolation=InterpolationOption.PiecewiseConstantNextLeftClosed,
-                time_axis_bounds=Q([1750, 1850, 2000], "yr"),
-                values_at_bounds=Q([0.0, 2.0, 4.0], "W"),
+                x=Q([1750, 1850, 2000], "yr"),
+                y=Q([0.0, 2.0, 4.0], "W"),
                 exp_extrapolate_pre=Q(0.0, "W"),
                 exp_first_edge=Q(2.0, "W"),
                 exp_first_window=Q(2.0, "W"),
@@ -87,8 +120,8 @@ piecewise_constant_test_cases = pytest.mark.parametrize(
             PiecewiseConstantTestCase(
                 name="piecewise_constant_next_left_open",
                 interpolation=InterpolationOption.PiecewiseConstantNextLeftOpen,
-                time_axis_bounds=Q([1750, 1850, 2000], "yr"),
-                values_at_bounds=Q([0.0, 2.0, 4.0], "W"),
+                x=Q([1750, 1850, 2000], "yr"),
+                y=Q([0.0, 2.0, 4.0], "W"),
                 exp_extrapolate_pre=Q(0.0, "W"),
                 exp_first_edge=Q(0.0, "W"),
                 exp_first_window=Q(2.0, "W"),
@@ -104,8 +137,8 @@ piecewise_constant_test_cases = pytest.mark.parametrize(
             PiecewiseConstantTestCase(
                 name="piecewise_constant_previous_left_closed",
                 interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
-                time_axis_bounds=Q([1750, 1850, 2000], "yr"),
-                values_at_bounds=Q([0.0, 2.0, 4.0], "W"),
+                x=Q([1750, 1850, 2000], "yr"),
+                y=Q([0.0, 2.0, 4.0], "W"),
                 exp_extrapolate_pre=Q(0.0, "W"),
                 exp_first_edge=Q(0.0, "W"),
                 exp_first_window=Q(0.0, "W"),
@@ -113,7 +146,7 @@ piecewise_constant_test_cases = pytest.mark.parametrize(
                 exp_last_window=Q(2.0, "W"),
                 exp_last_edge=Q(4.0, "W"),
                 exp_extrapolate_post=Q(4.0, "W"),
-                exp_round_trip_values_at_bounds_same=False,
+                exp_round_trip_values_at_bounds_same=True,
             ),
             id="piecewise_constant_previous_left_closed",
         ),
@@ -121,8 +154,8 @@ piecewise_constant_test_cases = pytest.mark.parametrize(
             PiecewiseConstantTestCase(
                 name="piecewise_constant_previous_left_open",
                 interpolation=InterpolationOption.PiecewiseConstantPreviousLeftOpen,
-                time_axis_bounds=Q([1750, 1850, 2000], "yr"),
-                values_at_bounds=Q([0.0, 2.0, 4.0], "W"),
+                x=Q([1750, 1850, 2000], "yr"),
+                y=Q([0.0, 2.0, 4.0], "W"),
                 exp_extrapolate_pre=Q(0.0, "W"),
                 exp_first_edge=Q(0.0, "W"),
                 exp_first_window=Q(0.0, "W"),
@@ -149,13 +182,13 @@ def test_time_axis_set_correctly(piecewise_constant_test_case):
 
     pint.testing.assert_equal(
         piecewise_constant_test_case.ts.time_axis.bounds,
-        piecewise_constant_test_case.time_axis_bounds,
+        piecewise_constant_test_case.x,
     )
 
 
 @piecewise_constant_test_cases
 def test_implicit_extrapolation_pre_raises(piecewise_constant_test_case):
-    pre_domain_time = piecewise_constant_test_case.time_axis_bounds[0] - Q(1, "yr")
+    pre_domain_time = piecewise_constant_test_case.x[0] - Q(1, "yr")
 
     with pytest.raises(ExtrapolationNotAllowedError):
         piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
@@ -165,7 +198,7 @@ def test_implicit_extrapolation_pre_raises(piecewise_constant_test_case):
 
 @piecewise_constant_test_cases
 def test_extrapolation_pre(piecewise_constant_test_case):
-    pre_domain_time = piecewise_constant_test_case.time_axis_bounds[0] - Q(1, "yr")
+    pre_domain_time = piecewise_constant_test_case.x[0] - Q(1, "yr")
 
     pint.testing.assert_equal(
         piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
@@ -180,7 +213,7 @@ def test_extrapolation_pre(piecewise_constant_test_case):
 def test_first_edge_value(piecewise_constant_test_case):
     pint.testing.assert_equal(
         piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
-            piecewise_constant_test_case.time_axis_bounds[0],
+            piecewise_constant_test_case.x[0],
         ),
         piecewise_constant_test_case.exp_first_edge,
     )
@@ -189,8 +222,7 @@ def test_first_edge_value(piecewise_constant_test_case):
 @piecewise_constant_test_cases
 def test_first_window_value(piecewise_constant_test_case):
     first_window_time = (
-        piecewise_constant_test_case.time_axis_bounds[0]
-        + piecewise_constant_test_case.time_axis_bounds[1]
+        piecewise_constant_test_case.x[0] + piecewise_constant_test_case.x[1]
     ) / 2.0
     pint.testing.assert_equal(
         piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
@@ -204,7 +236,7 @@ def test_first_window_value(piecewise_constant_test_case):
 def test_internal_edge_value(piecewise_constant_test_case):
     pint.testing.assert_equal(
         piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
-            piecewise_constant_test_case.time_axis_bounds[1],
+            piecewise_constant_test_case.x[1],
         ),
         piecewise_constant_test_case.exp_internal_edge,
     )
@@ -213,8 +245,7 @@ def test_internal_edge_value(piecewise_constant_test_case):
 @piecewise_constant_test_cases
 def test_last_window_value(piecewise_constant_test_case):
     last_window_time = (
-        piecewise_constant_test_case.time_axis_bounds[-1]
-        + piecewise_constant_test_case.time_axis_bounds[-2]
+        piecewise_constant_test_case.x[-1] + piecewise_constant_test_case.x[-2]
     ) / 2.0
     pint.testing.assert_equal(
         piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
@@ -228,7 +259,7 @@ def test_last_window_value(piecewise_constant_test_case):
 def test_last_edge_value(piecewise_constant_test_case):
     pint.testing.assert_equal(
         piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
-            piecewise_constant_test_case.time_axis_bounds[-1],
+            piecewise_constant_test_case.x[-1],
         ),
         piecewise_constant_test_case.exp_last_edge,
     )
@@ -236,7 +267,7 @@ def test_last_edge_value(piecewise_constant_test_case):
 
 @piecewise_constant_test_cases
 def test_implicit_extrapolation_post_raises(piecewise_constant_test_case):
-    post_domain_time = piecewise_constant_test_case.time_axis_bounds[-1] + Q(1, "yr")
+    post_domain_time = piecewise_constant_test_case.x[-1] + Q(1, "yr")
 
     with pytest.raises(ExtrapolationNotAllowedError):
         piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
@@ -246,7 +277,7 @@ def test_implicit_extrapolation_post_raises(piecewise_constant_test_case):
 
 @piecewise_constant_test_cases
 def test_extrapolation_post(piecewise_constant_test_case):
-    post_domain_time = piecewise_constant_test_case.time_axis_bounds[-1] + Q(1, "yr")
+    post_domain_time = piecewise_constant_test_case.x[-1] + Q(1, "yr")
 
     pint.testing.assert_equal(
         piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
@@ -259,14 +290,11 @@ def test_extrapolation_post(piecewise_constant_test_case):
 
 @piecewise_constant_test_cases
 def test_discrete_to_continuous_equivalence(piecewise_constant_test_case):
-    ts_discrete = TimeseriesDiscrete(
-        name=piecewise_constant_test_case.name,
-        time_axis=TimeAxis(piecewise_constant_test_case.time_axis_bounds),
-        values_at_bounds=ValuesAtBounds(piecewise_constant_test_case.values_at_bounds),
-    )
-
     res = discrete_to_continuous(
-        ts_discrete, interpolation=piecewise_constant_test_case.interpolation
+        x=piecewise_constant_test_case.x,
+        y=piecewise_constant_test_case.y,
+        name=piecewise_constant_test_case.name,
+        interpolation=piecewise_constant_test_case.interpolation,
     )
 
     exp = piecewise_constant_test_case.ts.timeseries_continuous
@@ -279,11 +307,11 @@ def test_discrete_to_continuous_equivalence(piecewise_constant_test_case):
 
     check_times = (
         np.linspace(
-            piecewise_constant_test_case.time_axis_bounds[0].m,
-            piecewise_constant_test_case.time_axis_bounds[-1].m,
+            piecewise_constant_test_case.x[0].m,
+            piecewise_constant_test_case.x[-1].m,
             100,
         )
-        * piecewise_constant_test_case.time_axis_bounds.u
+        * piecewise_constant_test_case.x.u
     )
     pint.testing.assert_equal(
         res.interpolate(check_times), exp.interpolate(check_times)
@@ -294,13 +322,14 @@ def test_discrete_to_continuous_equivalence(piecewise_constant_test_case):
 def test_round_tripping(piecewise_constant_test_case):
     start = TimeseriesDiscrete(
         name=piecewise_constant_test_case.name,
-        time_axis=TimeAxis(piecewise_constant_test_case.time_axis_bounds),
-        values_at_bounds=ValuesAtBounds(piecewise_constant_test_case.values_at_bounds),
+        time_axis=TimeAxis(piecewise_constant_test_case.x),
+        values_at_bounds=ValuesAtBounds(piecewise_constant_test_case.y),
     )
 
-    continuous = start.to_continuous_timeseries(
-        piecewise_constant_test_case.interpolation
-    )
+    with piecewise_constant_test_case.expectation_to_continuous_timeseries:
+        continuous = start.to_continuous_timeseries(
+            piecewise_constant_test_case.interpolation
+        )
 
     res = continuous.to_discrete_timeseries(start.time_axis)
 

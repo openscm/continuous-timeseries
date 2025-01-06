@@ -274,6 +274,9 @@ try:
 except ExtrapolationNotAllowedError:
     traceback.print_exc(limit=0)
 
+# %%
+ts_quadratic.interpolate(Q([2000, 2025, 2055], "yr"), allow_extrapolation=True)
+
 # %% [markdown]
 # ### Integration and differentiation
 #

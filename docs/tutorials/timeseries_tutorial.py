@@ -80,6 +80,8 @@ UR.setup_matplotlib(enable=True)
 # The interpolation option is key,
 # because it allows us to take all the guesswork out of
 # interpolation, extrapolation, integration and differentiateion.
+# For more details on how this conversion is done, see
+# [our docs on discrete to continuous conversions](../further-background/discrete_to_continuous_conversions).
 #
 # Let's assume that our arrays are the following.
 
@@ -96,8 +98,8 @@ values = Q([0.0, 10.0, 20.0, 50.0, 100.0, 100.0, 80.0, 60.0], "MtC / yr")
 
 # %%
 ts_linear = ct.Timeseries.from_arrays(
-    time_axis_bounds=time_axis,
-    values_at_bounds=values,
+    x=time_axis,
+    y=values,
     interpolation=ct.InterpolationOption.Linear,
     name="linear",
 )
@@ -152,7 +154,9 @@ ts_linear.timeseries_continuous.function
 # Linear interpolation is, of course, not the only choice.
 # Here we show our other inbuilt interpolation options
 # (as discussed previously,
-# you can also supply your own continuous representations).
+# you can also supply your own continuous representations
+# and there is more detail in
+# [our docs on discrete to continuous conversions](../further-background/discrete_to_continuous_conversions)).
 
 # %%
 # Create a dictionary of `Timeseries` for easier re-use.
@@ -166,8 +170,8 @@ for interp_option in (
     (ct.InterpolationOption.Cubic),
 ):
     ts_interp[interp_option] = ct.Timeseries.from_arrays(
-        time_axis_bounds=time_axis,
-        values_at_bounds=values,
+        x=time_axis,
+        y=values,
         interpolation=interp_option,
         name=interp_option.name,
     )
@@ -283,13 +287,35 @@ except ExtrapolationNotAllowedError:
 # %%
 extrap_times = Q(np.arange(2035, 2070 + 1, 10), "yr")
 
+interp_colours = {
+    ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed: "tab:blue",
+    ct.InterpolationOption.PiecewiseConstantPreviousLeftOpen: "tab:orange",
+    ct.InterpolationOption.PiecewiseConstantNextLeftClosed: "tab:red",
+    ct.InterpolationOption.PiecewiseConstantNextLeftOpen: "tab:green",
+    ct.InterpolationOption.Linear: "tab:purple",
+    ct.InterpolationOption.Cubic: "tab:olive",
+}
+
 fig, axes = plt.subplots(ncols=2, sharey=True, figsize=(12, 4))
 
 for interp_option, ts in ts_interp.items():
-    ts.plot(ax=axes[0], continuous_plot_kwargs=dict(alpha=0.7, linestyle="--"))
+    ts.plot(
+        ax=axes[0],
+        continuous_plot_kwargs=dict(
+            alpha=0.5, color=interp_colours[interp_option], linewidth=3
+        ),
+    )
+    ts.plot(
+        ax=axes[1],
+        continuous_plot_kwargs=dict(
+            color=interp_colours[interp_option], label="", zorder=3, linewidth=3
+        ),
+    )
     ts.interpolate(extrap_times, allow_extrapolation=True).plot(
         ax=axes[1],
-        continuous_plot_kwargs=dict(alpha=0.7, linestyle="--"),
+        continuous_plot_kwargs=dict(
+            alpha=0.7, linestyle="--", color=interp_colours[interp_option]
+        ),
     )
 
 for ax in axes:
@@ -356,8 +382,8 @@ fig.tight_layout()
 
 # %%
 ts_integral_preserving_demo_start = ct.Timeseries.from_arrays(
-    time_axis_bounds=Q([2025, 2030, 2040, 2050, 2060, 2100], "yr"),
-    values_at_bounds=Q([10.0, 10.0, 5.0, 0.0, -2.0, 0.0], "GtC / yr"),
+    x=Q([2025, 2030, 2040, 2050, 2060, 2100], "yr"),
+    y=Q([10.0, 10.0, 5.0, 0.0, -2.0, 0.0], "GtC / yr"),
     interpolation=ct.InterpolationOption.Linear,
     name="integral_preserving_demo_start",
 )

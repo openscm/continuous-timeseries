@@ -16,6 +16,8 @@
 # # Higher-order interpolation
 #
 # Here we discuss some of the perils of higher-order interpolation.
+# Here, when we say 'higher-order interpolation',
+# we mean interpolating with functions that are second-order and higher.
 # We also show some of our tips for navigating higher-order interpolation.
 
 # %% [markdown]
@@ -106,8 +108,8 @@ for interp_option, ax in (
         already_plotted_discrete.append(ax)
 
     ts = ct.Timeseries.from_arrays(
-        time_axis_bounds=time_points,
-        values_at_bounds=emissions,
+        x=time_points,
+        y=emissions,
         interpolation=interp_option,
         name="co2_emissions",
     )
@@ -201,8 +203,8 @@ for i, (ax, xlim, ylim) in enumerate(
     continuous_plot_kwargs = dict(alpha=0.6, linewidth=2)
 
     ct.Timeseries.from_arrays(
-        time_axis_bounds=time_points,
-        values_at_bounds=emissions,
+        x=time_points,
+        y=emissions,
         interpolation=ct.InterpolationOption.Cubic,
         name="naive_cubic",
     ).plot(ax=ax, continuous_plot_kwargs=continuous_plot_kwargs)

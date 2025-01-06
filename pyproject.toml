@@ -180,6 +180,9 @@ ignore = [
 # ruff doesn't recognise the markdown hyperlinks.
 # Figuring out how to make this work nice with jupytext
 # is a problem for another day.
+"docs/further-background/discrete_to_continuous_conversions.py" = [
+    "E501",
+]
 "docs/further-background/why-this-api.py" = [
     "E501",
 ]

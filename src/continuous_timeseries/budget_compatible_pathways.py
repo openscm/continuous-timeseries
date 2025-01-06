@@ -146,16 +146,16 @@ def derive_linear_path(
 
     last_ts_time = np.floor(net_zero_time) + 2.0 * net_zero_time.to("yr").u
 
-    time_axis_bounds: PINT_NUMPY_ARRAY = np.hstack(  # type: ignore # mypy confused by pint
+    x_res: PINT_NUMPY_ARRAY = np.hstack(  # type: ignore # mypy confused by pint
         [budget_start_time, net_zero_time, last_ts_time]
     )
-    values_at_bounds: PINT_NUMPY_ARRAY = np.hstack(  # type: ignore # mypy confused by pint
+    y_res: PINT_NUMPY_ARRAY = np.hstack(  # type: ignore # mypy confused by pint
         [emissions_start, 0.0 * emissions_start, 0.0 * emissions_start]
     )
 
     emms_linear_pathway = Timeseries.from_arrays(
-        time_axis_bounds=time_axis_bounds,
-        values_at_bounds=values_at_bounds,
+        x=x_res,
+        y=y_res,
         interpolation=InterpolationOption.Linear,
         name=name_res,
     )
