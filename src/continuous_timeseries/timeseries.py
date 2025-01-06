@@ -174,8 +174,8 @@ class Timeseries:
     @classmethod
     def from_arrays(
         cls,
-        time_axis_bounds: PINT_NUMPY_ARRAY,
-        values_at_bounds: PINT_NUMPY_ARRAY,
+        x: PINT_NUMPY_ARRAY,
+        y: PINT_NUMPY_ARRAY,
         interpolation: InterpolationOption,
         name: str,
     ) -> Timeseries:
@@ -184,39 +184,33 @@ class Timeseries:
 
         Parameters
         ----------
-        time_axis_bounds
-            The bounds that define the time series' time axis
+        x
+            The x-values from which to initialise
 
-        values_at_bounds
-            Values that apply at the bounds
-            of each time point in `time_axis_bounds`
+        y
+            The y-values from which to initialise
 
         interpolation
             Interpolation to apply when converting
             the discrete values to a continuous representation
 
         name
-            Name of the time series
+            The value to use to set the result's name attribute
 
         Returns
         -------
         :
             Initialised [`Timeseries`][(m)].
         """
-        time_axis_obj = TimeAxis(time_axis_bounds)
-
-        discrete = TimeseriesDiscrete(
-            name=name,
-            time_axis=time_axis_obj,
-            values_at_bounds=ValuesAtBounds(values_at_bounds),
-        )
         continuous = discrete_to_continuous(
-            discrete=discrete,
+            x=x,
+            y=y,
             interpolation=interpolation,
+            name=name,
         )
 
         return cls(
-            time_axis=time_axis_obj,
+            time_axis=TimeAxis(x),
             timeseries_continuous=continuous,
         )
 

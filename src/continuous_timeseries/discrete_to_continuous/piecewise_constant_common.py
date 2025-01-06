@@ -12,14 +12,17 @@ import numpy.typing as npt
 
 from continuous_timeseries.domain_helpers import check_no_times_outside_domain
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
-from continuous_timeseries.typing import NP_ARRAY_OF_FLOAT_OR_INT, NP_FLOAT_OR_INT
+from continuous_timeseries.typing import (
+    NP_ARRAY_OF_FLOAT_OR_INT,
+    NP_FLOAT_OR_INT,
+    PINT_NUMPY_ARRAY,
+)
 
 if TYPE_CHECKING:
     from continuous_timeseries.timeseries_continuous import (
         ContinuousFunctionScipyPPoly,
         TimeseriesContinuous,
     )
-    from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
 
 
 class PiecewiseConstantLike(Protocol):
@@ -332,7 +335,9 @@ def integrate_piecewise_constant(
 
 
 def discrete_to_continuous_piecewise_constant(
-    discrete: TimeseriesDiscrete,
+    x: PINT_NUMPY_ARRAY,
+    y: PINT_NUMPY_ARRAY,
+    name: str,
     piecewise_constant_like: type[PiecewiseConstantLike],
 ) -> TimeseriesContinuous:
     """
@@ -340,8 +345,14 @@ def discrete_to_continuous_piecewise_constant(
 
     Parameters
     ----------
-    discrete
-        Discrete timeseries to convert
+    x
+        The discrete x-values from which to convert
+
+    y
+        The discrete y-values from which to convert
+
+    name
+        The value to use to set the result's name attribute
 
     piecewise_constant_like
         Piecewise-constant class to convert to
@@ -354,21 +365,17 @@ def discrete_to_continuous_piecewise_constant(
     # Late import to avoid circularity
     from continuous_timeseries.timeseries_continuous import TimeseriesContinuous
 
-    time_bounds = discrete.time_axis.bounds
-
-    all_vals = discrete.values_at_bounds.values
-
     continuous_representation = piecewise_constant_like(
-        x=time_bounds.m,
-        y=all_vals.m,
+        x=x.m,
+        y=y.m,
     )
 
     res = TimeseriesContinuous(
-        name=discrete.name,
-        time_units=time_bounds.u,
-        values_units=all_vals.u,
+        name=name,
+        time_units=x.u,
+        values_units=y.u,
         function=continuous_representation,
-        domain=(np.min(time_bounds), np.max(time_bounds)),
+        domain=(np.min(x), np.max(x)),
     )
 
     return res

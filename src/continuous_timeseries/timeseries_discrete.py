@@ -144,8 +144,11 @@ class TimeseriesDiscrete:
             Continuous representation of `self` for the interpolation
             specified by `interpolation`
         """
+        # TODO warning here for interpolation types which change values at bounds
         return discrete_to_continuous(
-            discrete=self,
+            x=self.time_axis.bounds,
+            y=self.values_at_bounds.values,
+            name=self.name,
             interpolation=interpolation,
         )
 
