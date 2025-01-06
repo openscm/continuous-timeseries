@@ -54,6 +54,23 @@ jobs:
           # Just in case, undo the staged changes
           git restore --staged . && git restore .
 
+  urls:
+    if: ${{ !github.event.pull_request.draft }}
+    strategy:
+      matrix:
+        os: [ "ubuntu-latest" ]
+        python-version: [ "3.11" ]
+    runs-on: "${{ matrix.os }}"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: check-urls-are-valid
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # Exclude local links
+          # and the template link in pyproject.toml
+          args: --exclude "file://" --exclude "^https://github\.com/openscm/continuous-timeseries/pull/\{issue\}$
+
   tests:
     strategy:
       fail-fast: false
