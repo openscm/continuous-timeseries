@@ -80,7 +80,7 @@ class PiecewiseConstantTestCase:
                     "This may cause confusion. "
                     "Either ignore this warning, "
                     "suppress it "
-                    "(by passing `warn_if_values_at_bounds_could_confuse=True` "
+                    "(by passing `warn_if_values_at_bounds_could_confuse=False` "
                     "or via Python's `warnings` module settings) "
                     "or choose a different interpolation option."
                 ),
