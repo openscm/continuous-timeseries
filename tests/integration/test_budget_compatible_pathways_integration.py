@@ -289,8 +289,8 @@ def test_convert_to_annual_constant_emissions(
         kwargs["name_res"] = name_res
 
     start = Timeseries.from_arrays(
-        time_axis_bounds=start_time_axis,
-        values_at_bounds=Q([1.0, 0.0, 0.0], "MtCO2 / yr"),
+        x=start_time_axis,
+        y=Q([1.0, 0.0, 0.0], "MtCO2 / yr"),
         interpolation=InterpolationOption.Linear,
         name=name_start,
     )

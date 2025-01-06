@@ -360,7 +360,7 @@ def discrete_to_continuous_piecewise_constant(
     Returns
     -------
     :
-        Continuous version of `discrete` based on `piecewise_constant_like`.
+        Continuous version of `x` and `y` based on `piecewise_constant_like`.
     """
     # Late import to avoid circularity
     from continuous_timeseries.timeseries_continuous import TimeseriesContinuous

@@ -42,10 +42,10 @@ class LinearAndHigherOrderTestCase:
 
     name: str
     interpolation: InterpolationOption
-    time_axis_bounds: PINT_NUMPY_ARRAY = field(
+    x: PINT_NUMPY_ARRAY = field(
         validator=[validators.max_len(3), validators.min_len(3)]
     )
-    values_at_bounds: PINT_NUMPY_ARRAY = field(
+    y: PINT_NUMPY_ARRAY = field(
         validator=[validators.max_len(3), validators.min_len(3)]
     )
     exp_extrapolate_one_year_pre: PINT_SCALAR
@@ -57,22 +57,22 @@ class LinearAndHigherOrderTestCase:
     @ts.default
     def initialise_timeseries(self):
         return Timeseries.from_arrays(
-            time_axis_bounds=self.time_axis_bounds,
-            values_at_bounds=self.values_at_bounds,
+            x=self.x,
+            y=self.y,
             interpolation=self.interpolation,
             name=self.name,
         )
 
 
-piecewise_constant_test_cases = pytest.mark.parametrize(
-    "piecewise_constant_test_case",
+linear_and_higher_order_test_cases = pytest.mark.parametrize(
+    "linear_and_higher_order_test_case",
     (
         pytest.param(
             LinearAndHigherOrderTestCase(
                 name="linear",
                 interpolation=InterpolationOption.Linear,
-                time_axis_bounds=Q([1750, 1850, 2000], "yr"),
-                values_at_bounds=Q([0.0, 2.0, 3.0], "W"),
+                x=Q([1750, 1850, 2000], "yr"),
+                y=Q([0.0, 2.0, 3.0], "W"),
                 exp_extrapolate_one_year_pre=Q(-1 / 50.0, "W"),
                 exp_middle_first_window=Q(1.0, "W"),
                 exp_middle_last_window=Q(2.5, "W"),
@@ -80,142 +80,154 @@ piecewise_constant_test_cases = pytest.mark.parametrize(
             ),
             id="linear",
         ),
+        pytest.param(
+            LinearAndHigherOrderTestCase(
+                name="quadratic",
+                interpolation=InterpolationOption.Quadratic,
+                x=Q([1750, 1850, 2000], "yr"),
+                y=Q([1.0, 0.0, (150.0 / 100.0) ** 2], "W"),
+                exp_extrapolate_one_year_pre=Q((101.0 / 100.0) ** 2, "W"),
+                exp_middle_first_window=Q((-50.0 / 100.0) ** 2, "W"),
+                exp_middle_last_window=Q((75.0 / 100.0) ** 2, "W"),
+                exp_extrapolate_one_year_post=Q((151.0 / 100.0) ** 2, "W"),
+            ),
+            id="quadratic",
+        ),
     ),
 )
 
 
-@piecewise_constant_test_cases
-def test_name_set_correctly(piecewise_constant_test_case):
-    assert piecewise_constant_test_case.ts.name == piecewise_constant_test_case.name
-
-
-@piecewise_constant_test_cases
-def test_time_axis_set_correctly(piecewise_constant_test_case):
-    assert isinstance(piecewise_constant_test_case.ts.time_axis, TimeAxis)
-
-    pint.testing.assert_equal(
-        piecewise_constant_test_case.ts.time_axis.bounds,
-        piecewise_constant_test_case.time_axis_bounds,
+@linear_and_higher_order_test_cases
+def test_name_set_correctly(linear_and_higher_order_test_case):
+    assert (
+        linear_and_higher_order_test_case.ts.name
+        == linear_and_higher_order_test_case.name
     )
 
 
-@piecewise_constant_test_cases
-def test_implicit_extrapolation_pre_raises(piecewise_constant_test_case):
-    pre_domain_time = piecewise_constant_test_case.time_axis_bounds[0] - Q(1, "yr")
+@linear_and_higher_order_test_cases
+def test_time_axis_set_correctly(linear_and_higher_order_test_case):
+    assert isinstance(linear_and_higher_order_test_case.ts.time_axis, TimeAxis)
+
+    pint.testing.assert_equal(
+        linear_and_higher_order_test_case.ts.time_axis.bounds,
+        linear_and_higher_order_test_case.x,
+    )
+
+
+@linear_and_higher_order_test_cases
+def test_implicit_extrapolation_pre_raises(linear_and_higher_order_test_case):
+    pre_domain_time = linear_and_higher_order_test_case.x[0] - Q(1, "yr")
 
     with pytest.raises(ExtrapolationNotAllowedError):
-        piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
+        linear_and_higher_order_test_case.ts.timeseries_continuous.interpolate(
             pre_domain_time
         )
 
 
-@piecewise_constant_test_cases
-def test_extrapolation_pre(piecewise_constant_test_case):
-    pre_domain_time = piecewise_constant_test_case.time_axis_bounds[0] - Q(1, "yr")
+@linear_and_higher_order_test_cases
+def test_extrapolation_pre(linear_and_higher_order_test_case):
+    pre_domain_time = linear_and_higher_order_test_case.x[0] - Q(1, "yr")
 
     pint.testing.assert_equal(
-        piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
+        linear_and_higher_order_test_case.ts.timeseries_continuous.interpolate(
             pre_domain_time,
             allow_extrapolation=True,
         ),
-        piecewise_constant_test_case.exp_extrapolate_one_year_pre,
+        linear_and_higher_order_test_case.exp_extrapolate_one_year_pre,
     )
 
 
-@piecewise_constant_test_cases
-def test_first_edge_value(piecewise_constant_test_case):
+@linear_and_higher_order_test_cases
+def test_first_edge_value(linear_and_higher_order_test_case):
     pint.testing.assert_equal(
-        piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
-            piecewise_constant_test_case.time_axis_bounds[0],
+        linear_and_higher_order_test_case.ts.timeseries_continuous.interpolate(
+            linear_and_higher_order_test_case.x[0],
         ),
-        piecewise_constant_test_case.values_at_bounds[0],
+        linear_and_higher_order_test_case.y[0],
     )
 
 
-@piecewise_constant_test_cases
-def test_first_window_value(piecewise_constant_test_case):
+@linear_and_higher_order_test_cases
+def test_first_window_value(linear_and_higher_order_test_case):
     first_window_time = (
-        piecewise_constant_test_case.time_axis_bounds[0]
-        + piecewise_constant_test_case.time_axis_bounds[1]
+        linear_and_higher_order_test_case.x[0] + linear_and_higher_order_test_case.x[1]
     ) / 2.0
     pint.testing.assert_equal(
-        piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
+        linear_and_higher_order_test_case.ts.timeseries_continuous.interpolate(
             first_window_time,
         ),
-        piecewise_constant_test_case.exp_middle_first_window,
+        linear_and_higher_order_test_case.exp_middle_first_window,
     )
 
 
-@piecewise_constant_test_cases
-def test_internal_edge_value(piecewise_constant_test_case):
+@linear_and_higher_order_test_cases
+def test_internal_edge_value(linear_and_higher_order_test_case):
     pint.testing.assert_equal(
-        piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
-            piecewise_constant_test_case.time_axis_bounds[1],
+        linear_and_higher_order_test_case.ts.timeseries_continuous.interpolate(
+            linear_and_higher_order_test_case.x[1],
         ),
-        piecewise_constant_test_case.values_at_bounds[1],
+        linear_and_higher_order_test_case.y[1],
     )
 
 
-@piecewise_constant_test_cases
-def test_last_window_value(piecewise_constant_test_case):
+@linear_and_higher_order_test_cases
+def test_last_window_value(linear_and_higher_order_test_case):
     last_window_time = (
-        piecewise_constant_test_case.time_axis_bounds[-1]
-        + piecewise_constant_test_case.time_axis_bounds[-2]
+        linear_and_higher_order_test_case.x[-1]
+        + linear_and_higher_order_test_case.x[-2]
     ) / 2.0
     pint.testing.assert_equal(
-        piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
+        linear_and_higher_order_test_case.ts.timeseries_continuous.interpolate(
             last_window_time,
         ),
-        piecewise_constant_test_case.exp_middle_last_window,
+        linear_and_higher_order_test_case.exp_middle_last_window,
     )
 
 
-@piecewise_constant_test_cases
-def test_last_edge_value(piecewise_constant_test_case):
+@linear_and_higher_order_test_cases
+def test_last_edge_value(linear_and_higher_order_test_case):
     pint.testing.assert_equal(
-        piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
-            piecewise_constant_test_case.time_axis_bounds[-1],
+        linear_and_higher_order_test_case.ts.timeseries_continuous.interpolate(
+            linear_and_higher_order_test_case.x[-1],
         ),
-        piecewise_constant_test_case.values_at_bounds[-1],
+        linear_and_higher_order_test_case.y[-1],
     )
 
 
-@piecewise_constant_test_cases
-def test_implicit_extrapolation_post_raises(piecewise_constant_test_case):
-    post_domain_time = piecewise_constant_test_case.time_axis_bounds[-1] + Q(1, "yr")
+@linear_and_higher_order_test_cases
+def test_implicit_extrapolation_post_raises(linear_and_higher_order_test_case):
+    post_domain_time = linear_and_higher_order_test_case.x[-1] + Q(1, "yr")
 
     with pytest.raises(ExtrapolationNotAllowedError):
-        piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
+        linear_and_higher_order_test_case.ts.timeseries_continuous.interpolate(
             post_domain_time
         )
 
 
-@piecewise_constant_test_cases
-def test_extrapolation_post(piecewise_constant_test_case):
-    post_domain_time = piecewise_constant_test_case.time_axis_bounds[-1] + Q(1, "yr")
+@linear_and_higher_order_test_cases
+def test_extrapolation_post(linear_and_higher_order_test_case):
+    post_domain_time = linear_and_higher_order_test_case.x[-1] + Q(1, "yr")
 
     pint.testing.assert_equal(
-        piecewise_constant_test_case.ts.timeseries_continuous.interpolate(
+        linear_and_higher_order_test_case.ts.timeseries_continuous.interpolate(
             post_domain_time,
             allow_extrapolation=True,
         ),
-        piecewise_constant_test_case.exp_extrapolate_one_year_post,
+        linear_and_higher_order_test_case.exp_extrapolate_one_year_post,
     )
 
 
-@piecewise_constant_test_cases
-def test_discrete_to_continuous_equivalence(piecewise_constant_test_case):
-    ts_discrete = TimeseriesDiscrete(
-        name=piecewise_constant_test_case.name,
-        time_axis=TimeAxis(piecewise_constant_test_case.time_axis_bounds),
-        values_at_bounds=ValuesAtBounds(piecewise_constant_test_case.values_at_bounds),
-    )
-
+@linear_and_higher_order_test_cases
+def test_discrete_to_continuous_equivalence(linear_and_higher_order_test_case):
     res = discrete_to_continuous(
-        ts_discrete, interpolation=piecewise_constant_test_case.interpolation
+        x=linear_and_higher_order_test_case.x,
+        y=linear_and_higher_order_test_case.y,
+        name=linear_and_higher_order_test_case.name,
+        interpolation=linear_and_higher_order_test_case.interpolation,
     )
 
-    exp = piecewise_constant_test_case.ts.timeseries_continuous
+    exp = linear_and_higher_order_test_case.ts.timeseries_continuous
 
     assert res.name == exp.name
     assert res.time_units == exp.time_units
@@ -225,27 +237,27 @@ def test_discrete_to_continuous_equivalence(piecewise_constant_test_case):
 
     check_times = (
         np.linspace(
-            piecewise_constant_test_case.time_axis_bounds[0].m,
-            piecewise_constant_test_case.time_axis_bounds[-1].m,
+            linear_and_higher_order_test_case.x[0].m,
+            linear_and_higher_order_test_case.x[-1].m,
             100,
         )
-        * piecewise_constant_test_case.time_axis_bounds.u
+        * linear_and_higher_order_test_case.x.u
     )
     pint.testing.assert_equal(
         res.interpolate(check_times), exp.interpolate(check_times)
     )
 
 
-@piecewise_constant_test_cases
-def test_round_tripping(piecewise_constant_test_case):
+@linear_and_higher_order_test_cases
+def test_round_tripping(linear_and_higher_order_test_case):
     start = TimeseriesDiscrete(
-        name=piecewise_constant_test_case.name,
-        time_axis=TimeAxis(piecewise_constant_test_case.time_axis_bounds),
-        values_at_bounds=ValuesAtBounds(piecewise_constant_test_case.values_at_bounds),
+        name=linear_and_higher_order_test_case.name,
+        time_axis=TimeAxis(linear_and_higher_order_test_case.x),
+        values_at_bounds=ValuesAtBounds(linear_and_higher_order_test_case.y),
     )
 
     continuous = start.to_continuous_timeseries(
-        piecewise_constant_test_case.interpolation
+        linear_and_higher_order_test_case.interpolation
     )
 
     res = continuous.to_discrete_timeseries(start.time_axis)
@@ -285,8 +297,8 @@ def test_scipy_missing_error_discrete_to_continuous_linear(
     with patch.dict(sys.modules, sys_modules_patch):
         with expectation:
             Timeseries.from_arrays(
-                time_axis_bounds=Q([1850, 1900], "yr"),
-                values_at_bounds=Q([1, 2], "kg"),
+                x=Q([1850, 1900], "yr"),
+                y=Q([1, 2], "kg"),
                 interpolation=InterpolationOption.Linear,
                 name="test",
             )
@@ -323,8 +335,8 @@ def test_scipy_missing_error_discrete_to_continuous_higher_order(
     with patch.dict(sys.modules, sys_modules_patch):
         with expectation:
             Timeseries.from_arrays(
-                time_axis_bounds=Q(np.arange(100), "yr"),
-                values_at_bounds=Q(np.arange(100), "kg"),
+                x=Q(np.arange(100), "yr"),
+                y=Q(np.arange(100), "kg"),
                 interpolation=interpolation,
                 name="test",
             )

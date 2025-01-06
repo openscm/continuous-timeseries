@@ -16,14 +16,14 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
+from continuous_timeseries.typing import PINT_NUMPY_ARRAY
 
 if TYPE_CHECKING:
     from continuous_timeseries.timeseries_continuous import TimeseriesContinuous
-    from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
 
 
 def discrete_to_continuous_higher_order(
-    discrete: TimeseriesDiscrete, order: int
+    x: PINT_NUMPY_ARRAY, y: PINT_NUMPY_ARRAY, name: str, order: int
 ) -> TimeseriesContinuous:
     """
     Convert a discrete timeseries to piecewise higher-order polynomial.
@@ -34,17 +34,23 @@ def discrete_to_continuous_higher_order(
 
     Parameters
     ----------
-    discrete
-        Discrete timeseries to convert
+    x
+        The discrete x-values from which to convert
+
+    y
+        The discrete y-values from which to convert
+
+    name
+        The value to use to set the result's name attribute
 
     order
-        Order of the polynomial to return.
+        Order of the polynomial to fit and return.
 
     Returns
     -------
     :
         Continuous version of `discrete`
-        based on piecewise a `order` interpolation.
+        based on piecewise interpolation of order `order`.
     """
     try:
         import scipy.interpolate
@@ -59,23 +65,17 @@ def discrete_to_continuous_higher_order(
         TimeseriesContinuous,
     )
 
-    time_bounds = discrete.time_axis.bounds
-    all_vals = discrete.values_at_bounds.values
-
-    x = time_bounds.m
-    y = all_vals.m
-
     # This is the bit that can go very wrong if done blindly.
     # Hence why this function is only a convenience.
-    tck = scipy.interpolate.splrep(x=x, y=y, k=order)
+    tck = scipy.interpolate.splrep(x=x.m, y=y.m, k=order)
     piecewise_polynomial = scipy.interpolate.PPoly.from_spline(tck)
 
     res = TimeseriesContinuous(
-        name=discrete.name,
-        time_units=time_bounds.u,
-        values_units=all_vals.u,
+        name=name,
+        time_units=x.u,
+        values_units=y.u,
         function=ContinuousFunctionScipyPPoly(piecewise_polynomial),
-        domain=(np.min(time_bounds), np.max(time_bounds)),
+        domain=(np.min(x), np.max(x)),
     )
 
     return res

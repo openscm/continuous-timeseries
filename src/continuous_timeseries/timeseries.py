@@ -375,7 +375,9 @@ class Timeseries:
             name_res = f"{self.name}_{interpolation.name}"
 
         continuous = discrete_to_continuous(
-            discrete=self.discrete,
+            x=self.time_axis.bounds,
+            y=self.timeseries_continuous.interpolate(self.time_axis),
+            name=self.name,
             interpolation=interpolation,
         )
         continuous.name = name_res
@@ -466,12 +468,6 @@ class Timeseries:
                 f"{self.name}_integral-preserving-interpolation-{interpolation.name}"
             )
 
-        # Value doesn't matter as the value will be lost when we differentiate.
-        integration_constant = 0.0 * (
-            self.timeseries_continuous.values_units
-            * self.timeseries_continuous.time_units
-        )
-
         if interpolation in (
             InterpolationOption.PiecewiseConstantPreviousLeftClosed,
             InterpolationOption.PiecewiseConstantPreviousLeftOpen,
@@ -491,6 +487,12 @@ class Timeseries:
 
         else:  # pragma: no cover
             raise NotImplementedError(interpolation)
+
+        # Value doesn't matter as the value will be lost when we differentiate.
+        integration_constant = 0.0 * (
+            self.timeseries_continuous.values_units
+            * self.timeseries_continuous.time_units
+        )
 
         res = (
             self.integrate(integration_constant)
