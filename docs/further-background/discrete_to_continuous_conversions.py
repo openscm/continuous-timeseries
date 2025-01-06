@@ -237,8 +237,7 @@ ct.TimeseriesDiscrete(
 y
 
 # %%
-# Compare the above to the values_at_bounds below
-# (look closely at the last value)
+# Compare the above to the values_at_bounds below.
 ct.Timeseries.from_arrays(
     x=x, y=y, name="demo", interpolation=ct.InterpolationOption.Linear
 ).update_interpolation(
