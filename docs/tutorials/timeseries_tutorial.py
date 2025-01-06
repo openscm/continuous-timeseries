@@ -81,7 +81,7 @@ UR.setup_matplotlib(enable=True)
 # because it allows us to take all the guesswork out of
 # interpolation, extrapolation, integration and differentiateion.
 # For more details on how this conversion is done, see
-# [our docs on discrete to continuous conversions](../further-background/discrete_to_continuous_translations).
+# [our docs on discrete to continuous conversions](../further-background/discrete_to_continuous_conversions).
 #
 # Let's assume that our arrays are the following.
 
@@ -156,7 +156,7 @@ ts_linear.timeseries_continuous.function
 # (as discussed previously,
 # you can also supply your own continuous representations
 # and there is more detail in
-# [our docs on discrete to continuous conversions](../further-background/discrete_to_continuous_translations)).
+# [our docs on discrete to continuous conversions](../further-background/discrete_to_continuous_conversions)).
 
 # %%
 # Create a dictionary of `Timeseries` for easier re-use.

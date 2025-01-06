@@ -10,9 +10,9 @@ they belong elsewhere.
 
 Points we aim to cover:
 
-- Context and background on the library
-- Why it was created
+- Context and background on the library, including why it was created
 - Connections within this library and between this library and others
+- Deeper (than what is in [the tutorials][tutorials]) exploration into some of the concepts in this library
 
 ## Why did we build this API?
 
@@ -20,6 +20,14 @@ Points we aim to cover:
 In particular, the problems that this API solves.
 This is a good starting point if you're wondering,
 "Why yet another timeseries representation?".
+
+## Converting from discrete to continuous data
+
+[Discrete to continuous conversions][converting-from-discrete-to-continuous-time-series]
+dives deeper into how the discrete to continuous conversion works
+and why it is built like this.
+This is a good resource if you want to get a better sense
+of how this conversion works and some of its edge cases.
 
 ## Representations of objects
 

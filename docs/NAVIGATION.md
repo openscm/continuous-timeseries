@@ -15,6 +15,7 @@ See https://oprypin.github.io/mkdocs-literate-nav/
     - [Discrete timeseries tutorial](tutorials/discrete_timeseries_tutorial.py)
 - [Further background](further-background/index.md)
     - [Why this API?](further-background/why-this-api.py)
+    - [Discrete to continuous conversions](further-background/discrete_to_continuous_conversions.py)
     - [Representations](further-background/representations.py)
 - [Development](development.md)
 - [API reference](api/continuous_timeseries/)
