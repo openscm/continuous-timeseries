@@ -62,7 +62,7 @@ The locked version of Continuous Timeseries can be installed with
 
 === "pip"
     ```sh
-    pip install continuous-timeseries[locked]
+    pip install 'continuous-timeseries[locked]'
     ```
 
 ### As a library
@@ -94,13 +94,13 @@ Additional dependencies can be installed using
 === "pip"
     ```sh
     # To add plotting dependencies
-    pip install continuous-timeseries[plots]
+    pip install 'continuous-timeseries[plots]'
 
     # To add scipy-related dependencies
-    pip install continuous-timeseries[scipy]
+    pip install 'continuous-timeseries[scipy]'
 
     # To add all optional dependencies
-    pip install continuous-timeseries[full]
+    pip install 'continuous-timeseries[full]'
     ```
 
 ### For developers

@@ -64,6 +64,7 @@ plugins:
           - remove_input
   # Docstring generation
   - mkdocstrings:
+      # See https://analog-garage.github.io/mkdocstrings-python-xref/1.6.0/
       default_handler: python_xref
       enable_inventory: true
       handlers:
@@ -76,8 +77,8 @@ plugins:
             - https://ipython.readthedocs.io/en/stable/objects.inv
             - https://loguru.readthedocs.io/en/latest/objects.inv
             - https://matplotlib.org/stable/objects.inv
-            - https://numpy.org/doc/stable/objects.inv
             - https://ncdata.readthedocs.io/en/stable/objects.inv
+            - https://numpy.org/doc/stable/objects.inv
             - https://openscm-units.readthedocs.io/en/stable/objects.inv
             - https://pandas.pydata.org/docs/objects.inv
             - https://pint.readthedocs.io/en/stable/objects.inv

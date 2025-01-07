@@ -4,10 +4,12 @@ Generate virtual doc files for the mkdocs site.
 This script can also be run directly to actually write out those files,
 as a preview.
 
-All credit to the creators of:
+Credit to the creators of:
 https://oprypin.github.io/mkdocs-gen-files/
 and the docs at:
 https://mkdocstrings.github.io/crystal/quickstart/migrate.html
+and the mainters of:
+https://github.com/mkdocstrings/python
 """
 
 from __future__ import annotations
@@ -30,7 +32,7 @@ class PackageInfo:
     Package information used to help us auto-generate the docs
 
     Not stricly needed anymore now that mkdocstrings-python has a summary option,
-    but being kept just in case.
+    but being kept in case we need something like this pattern again.
     """
 
     full_name: str
