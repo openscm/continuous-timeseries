@@ -56,11 +56,7 @@ jobs:
 
   urls:
     if: ${{ !github.event.pull_request.draft }}
-    strategy:
-      matrix:
-        os: [ "ubuntu-latest" ]
-        python-version: [ "3.11" ]
-    runs-on: "${{ matrix.os }}"
+    runs-on: "ubuntu-latest"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -76,6 +72,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ "ubuntu-latest" ]
+        # Test against all security and bugfix versions: https://devguide.python.org/versions/
         python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
     runs-on: "${{ matrix.os }}"
     defaults:
@@ -112,6 +109,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ "ubuntu-latest" ]
+        # Test against all security and bugfix versions: https://devguide.python.org/versions/
         python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
     runs-on: "${{ matrix.os }}"
     steps:
