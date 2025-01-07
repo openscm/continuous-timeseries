@@ -27,6 +27,7 @@ import numpy as np
 import openscm_units
 import pint
 import scipy.interpolate
+import scipy.optimize
 
 import continuous_timeseries as ct
 import continuous_timeseries.budget_compatible_pathways as ct_bcp
@@ -303,48 +304,73 @@ def get_cubic_pathway(  # noqa: D103, PLR0913
     E_0 = emissions_start
     m_0 = emissions_gradient_start
 
-    # A first guess, doesn't really matter what it is.
-    # (Would probably break in some cases, but not the concern here).
-    nz_yr = budget_start_time + Q(1.0, "yr")
-    time_bounds = np.hstack([budget_start_time, nz_yr])
-    # Figure out scale factor to match the budget
-    for _ in range(max_iter):
-        # Handy constant
-        nzd = nz_yr - budget_start_time
+    # Use linear net-zero as our initial guess
+    linear_nz_year = ct_bcp.calculate_linear_net_zero_time(
+        budget,
+        budget_start_time,
+        emissions_start,
+    )
+    # Non-linear equations, beyond my pay grade.
+    # Time to bring out the big guns
+    budget_start_time_m = budget_start_time.to(time_units).m
+    budget_m = budget.m
 
-        b = -(2 * m_0 * nzd + 3 * E_0) / (nzd**2)
-        a = (m_0 * nzd + 2 * E_0) / (nzd**3)
+    m_0_m = m_0.to(values_units / time_units).m
+    E_0_m = E_0.to(values_units).m
 
-        c_non_zero = np.array(
-            [
-                [a.to(values_units / time_units**3).m],
-                [b.to(values_units / time_units**2).m],
-                [m_0.to(values_units / time_units).m],
-                [E_0.to(values_units).m],
-            ]
-        )
+    def get_a(nzd, m_0, E_0):
+        return (m_0 * nzd + 2 * E_0) / (nzd**3)
 
-        ppoly_raw = scipy.interpolate.PPoly(x=time_bounds.m, c=c_non_zero)
-        budget_raw = ppoly_raw.integrate(
-            budget_start_time.to(time_units).m, nz_yr.to(time_units).m
-        )
-        scale_factor = budget.to(values_units * time_units).m / budget_raw
-        if np.isclose(scale_factor, 1.0, rtol=1e-4):
-            break
+    def get_b(nzd, m_0, E_0):
+        return -(2 * m_0 * nzd + 3 * E_0) / (nzd**2)
 
-        nz_yr = budget_start_time + nzd * scale_factor
-        time_bounds = np.hstack([budget_start_time, nz_yr])
+    def get_budget_diff(x):
+        nzd = x - budget_start_time_m
+        time_bounds_m = np.hstack([budget_start_time_m, x])
 
-    else:
-        msg = "Did not converge"
-        raise AssertionError(msg)
+        a_m = get_a(nzd=nzd, m_0=m_0_m, E_0=E_0_m)
+        b_m = get_b(nzd=nzd, m_0=m_0_m, E_0=E_0_m)
+
+        c_non_zero_m = np.array([[a_m], [b_m], [m_0_m], [E_0_m]])
+
+        ppoly_raw = scipy.interpolate.PPoly(x=time_bounds_m, c=c_non_zero_m)
+        budget_raw = ppoly_raw.integrate(budget_start_time_m, x)
+
+        budget_diff = budget_raw - budget_m
+
+        return budget_diff
+
+    nz_yr_m, res_scipy = scipy.optimize.newton(
+        func=get_budget_diff,
+        x0=linear_nz_year.m,
+        full_output=True,
+        maxiter=500,
+    )
+    if not res_scipy.converged:
+        raise AssertionError
+
+    nz_yr = nz_yr_m * linear_nz_year.u
+
+    nzd = nz_yr - budget_start_time
+    a = get_a(nzd=nzd, m_0=m_0, E_0=E_0)
+    b = get_b(nzd=nzd, m_0=m_0, E_0=E_0)
+
+    c_non_zero = np.array(
+        [
+            [a.to(values_units / time_units**3).m],
+            [b.to(values_units / time_units**2).m],
+            [m_0.to(values_units / time_units).m],
+            [E_0.to(values_units).m],
+        ]
+    )
 
     # Add on the zero component
     c = np.hstack([c_non_zero, np.zeros((c_non_zero.shape[0], 1))])
+
     last_ts_time = np.floor(nz_yr) + 2.0 * nz_yr.to("yr").u
     x_bounds = np.hstack([budget_start_time, nz_yr, last_ts_time])
-    x = x_bounds.to(time_units).m
 
+    x = x_bounds.to(time_units).m
     ppoly = scipy.interpolate.PPoly(x=x, c=c)
 
     tsc = ct.TimeseriesContinuous(
@@ -369,7 +395,7 @@ times_plot = (
 )
 
 fig, axes = plt.subplots(nrows=3, sharex=True, figsize=(10, 6))
-for emissions_gradient_start in Q([-2.0, 0.0, 5.0], "GtCO2 / yr / yr"):
+for emissions_gradient_start in Q([-2.0, 0.0, 5.0, 7.5], "GtCO2 / yr / yr"):
     cubic = get_cubic_pathway(
         budget=budget,
         budget_start_time=budget_start_time,
@@ -390,6 +416,7 @@ for emissions_gradient_start in Q([-2.0, 0.0, 5.0], "GtCO2 / yr / yr"):
     cubic.integrate(Q(0, "GtC")).plot(ax=axes[2])
 
 axes[0].legend()
+axes[2].legend()
 for ax in axes:
     ax.grid()
 
