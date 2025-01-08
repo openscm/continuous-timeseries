@@ -316,7 +316,7 @@ def test_plot_matplotlib_units_not_registered(
     ),
 )
 def test_plot_ax_creation(sys_modules_patch, expectation):
-    (pytest.importorskip("matplotlib"),)
+    pytest.importorskip("matplotlib")
 
     ts = TimeseriesDiscrete(
         name="basic",
