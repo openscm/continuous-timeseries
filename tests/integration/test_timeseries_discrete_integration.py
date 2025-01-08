@@ -151,7 +151,7 @@ def test_to_continuous_timeseries_warning_suppression():
 def test_plot(  # noqa: PLR0913
     x_units, y_units, plot_kwargs, legend, image_regression, tmp_path
 ):
-    import matplotlib
+    matplotlib = pytest.importorskip("matplotlib")
 
     # ensure matplotlib does not use a GUI backend (such as Tk)
     matplotlib.use("Agg")
@@ -249,7 +249,7 @@ def test_plot(  # noqa: PLR0913
 def test_plot_matplotlib_units_not_registered(
     plot_kwargs, expectation, image_regression, tmp_path
 ):
-    import matplotlib
+    matplotlib = pytest.importorskip("matplotlib")
 
     # ensure matplotlib does not use a GUI backend (such as Tk)
     matplotlib.use("Agg")
