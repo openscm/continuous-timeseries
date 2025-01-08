@@ -13,7 +13,6 @@ import numpy as np
 import pint
 import pint.testing
 import pytest
-from IPython.lib.pretty import pretty
 
 from continuous_timeseries.discrete_to_continuous import InterpolationOption
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
@@ -94,6 +93,10 @@ def test_str(ts, file_regression):
 
 @formatting_check_cases
 def test_pretty(ts, file_regression):
+    pytest.importorskip("IPython")
+
+    from IPython.lib.pretty import pretty
+
     file_regression.check(
         f"{pretty(ts)}\n",
         extension=".txt",
@@ -148,7 +151,7 @@ def test_to_continuous_timeseries_warning_suppression():
 def test_plot(  # noqa: PLR0913
     x_units, y_units, plot_kwargs, legend, image_regression, tmp_path
 ):
-    import matplotlib
+    matplotlib = pytest.importorskip("matplotlib")
 
     # ensure matplotlib does not use a GUI backend (such as Tk)
     matplotlib.use("Agg")
@@ -246,7 +249,7 @@ def test_plot(  # noqa: PLR0913
 def test_plot_matplotlib_units_not_registered(
     plot_kwargs, expectation, image_regression, tmp_path
 ):
-    import matplotlib
+    matplotlib = pytest.importorskip("matplotlib")
 
     # ensure matplotlib does not use a GUI backend (such as Tk)
     matplotlib.use("Agg")
@@ -297,7 +300,11 @@ def test_plot_matplotlib_units_not_registered(
 @pytest.mark.parametrize(
     "sys_modules_patch, expectation",
     (
-        pytest.param({}, does_not_raise(), id="matplotlib_available"),
+        pytest.param(
+            {},
+            does_not_raise(),
+            id="matplotlib_available",
+        ),
         pytest.param(
             {"matplotlib": None},
             pytest.raises(
@@ -309,6 +316,8 @@ def test_plot_matplotlib_units_not_registered(
     ),
 )
 def test_plot_ax_creation(sys_modules_patch, expectation):
+    (pytest.importorskip("matplotlib"),)
+
     ts = TimeseriesDiscrete(
         name="basic",
         time_axis=TimeAxis(Q([1.0, 2.0, 3.0], "yr")),

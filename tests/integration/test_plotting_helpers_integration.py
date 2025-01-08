@@ -14,6 +14,8 @@ import pytest
 
 from continuous_timeseries.plotting_helpers import get_plot_vals
 
+pytest.importorskip("matplotlib")
+
 UR = pint.get_application_registry()
 Q = UR.Quantity
 

@@ -30,6 +30,8 @@ from continuous_timeseries.exceptions import (
 )
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
 
+pytest.importorskip("scipy.interpolate")
+
 UR = pint.get_application_registry()
 Q = UR.Quantity
 
