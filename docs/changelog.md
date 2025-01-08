@@ -21,6 +21,17 @@ from the examples given in that link.
 
 <!-- towncrier release notes start -->
 
+## Continuous Timeseries v0.3.1 (2025-01-08)
+
+### 📚 Improved Documentation
+
+- Updated docs demonstrating how to use a cubic fit to find a budget-compatible pathway. ([#22](https://github.com/openscm/continuous-timeseries/pull/22))
+
+### 🔧 Trivial/Internal Changes
+
+- [#20](https://github.com/openscm/continuous-timeseries/pull/20), [#21](https://github.com/openscm/continuous-timeseries/pull/21)
+
+
 ## Continuous Timeseries v0.3.0 (2025-01-06)
 
 ### ⚠️ Breaking Changes
