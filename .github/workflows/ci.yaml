@@ -104,6 +104,42 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  tests-without-extras:
+    # Run the tests without installing extras.
+    # This is just a test to make sure to avoid
+    # breaking our test PyPI install workflow.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ "ubuntu-latest" ]
+        # Just test against one Python version, this is just a helper.
+        # The real work happens in the test PyPI install
+        python-version: [ "3.11" ]
+    runs-on: "${{ matrix.os }}"
+    defaults:
+      run:
+        # This might be needed for Windows
+        # and doesn't seem to affect unix-based systems so we include it.
+        # If you have better proof of whether this is needed or not,
+        # feel free to update.
+        shell: bash
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python "${{ matrix.python-version }}"
+        id: setup-python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "${{ matrix.python-version }}"
+      - name: Install
+        run: |
+          pip install --upgrade pip wheel
+          pip install .
+          pip install -r requirements-only-tests-locked.txt
+      - name: Run tests
+        run: |
+          pytest tests -r a -vv tests
+
   imports-without-extras:
     strategy:
       fail-fast: false
