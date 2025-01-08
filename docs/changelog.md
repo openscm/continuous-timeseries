@@ -21,6 +21,13 @@ from the examples given in that link.
 
 <!-- towncrier release notes start -->
 
+## Continuous Timeseries v0.3.2 (2025-01-08)
+
+### 🔧 Trivial/Internal Changes
+
+- [#23](https://github.com/openscm/continuous-timeseries/pull/23)
+
+
 ## Continuous Timeseries v0.3.1 (2025-01-08)
 
 ### 📚 Improved Documentation
