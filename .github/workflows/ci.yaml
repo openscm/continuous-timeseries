@@ -134,7 +134,7 @@ jobs:
       - name: Install
         run: |
           pip install --upgrade pip wheel
-          pip install . pytest pytest-regressions
+          pip install -r requirements-only-tests-locked.txt
       - name: Run tests
         run: |
           pytest tests -r a -vv tests
