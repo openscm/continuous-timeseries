@@ -159,7 +159,6 @@ def test_differentiate_scipy_availability(
             {},
             does_not_raise(),
             id="scipy_available",
-            marks=pytest.importorskip("scipy"),
         ),
         pytest.param(
             {"scipy": None},
@@ -175,6 +174,7 @@ def test_differentiate_scipy_availability(
 def test_integrate_scipy_availability(
     piecewise_constant_class, sys_modules_patch, expectation
 ):
+    pytest.importorskip("scipy")
     with patch.dict(sys.modules, sys_modules_patch):
         with expectation:
             piecewise_constant_class(np.arange(10), np.arange(10)).integrate(1.0, 5.0)

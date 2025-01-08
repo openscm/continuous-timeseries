@@ -65,10 +65,26 @@ jobs:
       run: |
         which python
         python scripts/test-install.py
-    - name: Install pytest
+    - name: Install min test dependencies
       run: |
         pip install pytest pytest-regressions
     - name: Run tests
       run: |
-        # Can't run doctests here because the paths are different
+        # Can't run doctests here because the paths are different.
+        # This also only runs with minimum test dependencies.
+        # So this is really just a smoke test,
+        # rather than a super thorough integration test.
         pytest tests -r a -vv tests
+    # # This is a sketch of how you would do more thorough tests.
+    # # I don't like this solution because it is out of line with the lock file.
+    # # Probably the simplest way to do this is to use uv somehow,
+    # # install the package from pypi and the test dependencies
+    # # based on the lock file.
+    # - name: Install extra test dependencies
+    #   run: |
+    #     # A bit annoying to maintain this by hand, but ok for now.
+    #     pip install ipython matplotlib openscm-units scipy
+    # - name: Run tests with extra test dependencies installed
+    #   run: |
+    #     # Can't run doctests here because the paths are different.
+    #     pytest tests -r a -vv tests

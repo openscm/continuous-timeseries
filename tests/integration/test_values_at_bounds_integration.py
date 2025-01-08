@@ -4,6 +4,8 @@ Integration tests of `continuous_timeseries.values_at_bounds`
 
 from __future__ import annotations
 
+import textwrap
+
 import numpy as np
 import pint
 import pytest
@@ -95,7 +97,13 @@ def test_pretty(values):
 
     from IPython.lib.pretty import pretty
 
-    exp = f"ValuesAtBounds(\nvalues={pretty(values)})"
+    formatted = f"values={pretty(values)}"
+
+    if len(formatted) > 60:
+        indented = textwrap.indent(formatted, "    ")
+        exp = f"ValuesAtBounds(\n{indented})"
+    else:
+        exp = f"ValuesAtBounds({formatted})"
 
     instance = ValuesAtBounds(values)
 

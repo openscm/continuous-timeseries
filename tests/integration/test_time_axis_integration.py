@@ -4,6 +4,8 @@ Integration tests of `continuous_timeseries.time_axis`
 
 from __future__ import annotations
 
+import textwrap
+
 import numpy as np
 import pint
 import pint.testing
@@ -96,7 +98,13 @@ def test_pretty(bounds):
 
     from IPython.lib.pretty import pretty
 
-    exp = f"TimeAxis(\nbounds={pretty(bounds)})"
+    formatted = f"bounds={pretty(bounds)}"
+
+    if len(formatted) > 60:
+        indented = textwrap.indent(formatted, "    ")
+        exp = f"TimeAxis(\n{indented})"
+    else:
+        exp = f"TimeAxis({formatted})"
 
     instance = TimeAxis(bounds)
 

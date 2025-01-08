@@ -304,7 +304,6 @@ def test_plot_matplotlib_units_not_registered(
             {},
             does_not_raise(),
             id="matplotlib_available",
-            marks=pytest.importorskip("matplotlib"),
         ),
         pytest.param(
             {"matplotlib": None},
@@ -317,6 +316,8 @@ def test_plot_matplotlib_units_not_registered(
     ),
 )
 def test_plot_ax_creation(sys_modules_patch, expectation):
+    (pytest.importorskip("matplotlib"),)
+
     ts = TimeseriesDiscrete(
         name="basic",
         time_axis=TimeAxis(Q([1.0, 2.0, 3.0], "yr")),
