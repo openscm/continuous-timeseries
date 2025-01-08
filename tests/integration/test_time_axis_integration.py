@@ -84,7 +84,6 @@ def test_str(bounds, exp_str):
         ),
         pytest.param(
             Q(np.linspace(1750, 2000 + 1, 1000), "yr"),
-            # marks=pytest.mark.skip(reason="Too hard to predict indenting and slow"),
             id="big_array",
         ),
         pytest.param(
