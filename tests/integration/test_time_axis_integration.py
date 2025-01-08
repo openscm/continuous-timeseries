@@ -8,7 +8,6 @@ import numpy as np
 import pint
 import pint.testing
 import pytest
-from IPython.lib.pretty import pretty
 
 from continuous_timeseries.time_axis import TimeAxis
 
@@ -75,37 +74,33 @@ def test_str(bounds, exp_str):
 
 
 @pytest.mark.parametrize(
-    "bounds, exp_pretty",
+    "bounds ",
     (
         pytest.param(
             Q([1.0, 2.0, 3.0], "yr"),
-            "TimeAxis(bounds=<Quantity([1. 2. 3.], 'year')>)",
             id="basic",
         ),
         pytest.param(
             Q(np.linspace(1750, 2000 + 1, 1000), "yr"),
-            (
-                "TimeAxis(\n"
-                f"bounds={pretty(Q(np.linspace(1750, 2000 + 1, 1000), 'yr'))})"
-            ),
-            marks=pytest.mark.skip(reason="Too hard to predict indenting and slow"),
+            # marks=pytest.mark.skip(reason="Too hard to predict indenting and slow"),
             id="big_array",
         ),
         pytest.param(
             Q(np.linspace(1750, 2000 + 1, int(1e5)), "yr"),
-            (
-                "TimeAxis(\n"
-                "    bounds=<Quantity([1750.         1750.00251003 1750.00502005 ... 2000.99497995 2000.99748997\n"  # noqa: E501
-                "     2001.        ], 'year')>)"
-            ),
             id="really_big_array",
         ),
     ),
 )
-def test_pretty(bounds, exp_pretty):
+def test_pretty(bounds):
+    pytest.importorskip("IPython")
+
+    from IPython.lib.pretty import pretty
+
+    exp = f"TimeAxis(\nbounds={pretty(bounds)})"
+
     instance = TimeAxis(bounds)
 
-    assert pretty(instance) == exp_pretty
+    assert pretty(instance) == exp
 
 
 @pytest.mark.parametrize(

@@ -9,13 +9,14 @@ from contextlib import nullcontext as does_not_raise
 from unittest.mock import patch
 
 import numpy as np
-import openscm_units
 import pint.testing
 import pytest
 
 from continuous_timeseries import InterpolationOption, Timeseries
 from continuous_timeseries import budget_compatible_pathways as ct_bcp
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
+
+openscm_units = pytest.importorskip("openscm_units")
 
 UR = openscm_units.unit_registry
 Q = UR.Quantity

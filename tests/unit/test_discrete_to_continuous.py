@@ -155,7 +155,12 @@ def test_differentiate_scipy_availability(
 @pytest.mark.parametrize(
     "sys_modules_patch, expectation",
     (
-        pytest.param({}, does_not_raise(), id="scipy_available"),
+        pytest.param(
+            {},
+            does_not_raise(),
+            id="scipy_available",
+            marks=pytest.importorskip("scipy"),
+        ),
         pytest.param(
             {"scipy": None},
             pytest.raises(

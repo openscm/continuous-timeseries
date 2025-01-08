@@ -13,7 +13,6 @@ import numpy as np
 import pint
 import pint.testing
 import pytest
-from IPython.lib.pretty import pretty
 
 from continuous_timeseries.discrete_to_continuous import InterpolationOption
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
@@ -94,6 +93,10 @@ def test_str(ts, file_regression):
 
 @formatting_check_cases
 def test_pretty(ts, file_regression):
+    pytest.importorskip("IPython")
+
+    from IPython.lib.pretty import pretty
+
     file_regression.check(
         f"{pretty(ts)}\n",
         extension=".txt",
@@ -297,7 +300,12 @@ def test_plot_matplotlib_units_not_registered(
 @pytest.mark.parametrize(
     "sys_modules_patch, expectation",
     (
-        pytest.param({}, does_not_raise(), id="matplotlib_available"),
+        pytest.param(
+            {},
+            does_not_raise(),
+            id="matplotlib_available",
+            marks=pytest.importorskip("matplotlib"),
+        ),
         pytest.param(
             {"matplotlib": None},
             pytest.raises(

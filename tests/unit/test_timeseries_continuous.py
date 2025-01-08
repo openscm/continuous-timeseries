@@ -12,7 +12,6 @@ import numpy as np
 import pint
 import pint.testing
 import pytest
-import scipy.interpolate
 
 from continuous_timeseries.exceptions import (
     MissingOptionalDependencyError,
@@ -81,8 +80,10 @@ def test_validation_time_axis_values_same_shape(domain, expectation):
     ),
 )
 def test_integrate_no_scipy(sys_modules_patch, expectation):
+    scipy_interpolate = pytest.importorskip("scipy.interpolate")
+
     continuous_function_scipy_ppoly = ContinuousFunctionScipyPPoly(
-        scipy.interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
+        scipy_interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
     )
     with patch.dict(sys.modules, sys_modules_patch):
         with expectation:

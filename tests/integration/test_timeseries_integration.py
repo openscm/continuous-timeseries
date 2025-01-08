@@ -16,7 +16,6 @@ import pint
 import pint.testing
 import pytest
 from attrs import define, field, validators
-from IPython.lib.pretty import pretty
 
 from continuous_timeseries.discrete_to_continuous import InterpolationOption
 from continuous_timeseries.exceptions import (
@@ -34,6 +33,9 @@ from continuous_timeseries.values_at_bounds import ValuesAtBounds
 from continuous_timeseries.warnings import (
     InterpolationUpdateChangedValuesAtBoundsWarning,
 )
+
+# Tests don't make sense without scipy
+pytest.importorskip("scipy")
 
 UR = pint.get_application_registry()
 Q = UR.Quantity
@@ -116,6 +118,10 @@ def test_str(ts, file_regression):
 )
 @formatting_check_cases
 def test_pretty(ts, file_regression):
+    pytest.importorskip("IPython")
+
+    from IPython.lib.pretty import pretty
+
     file_regression.check(
         f"{pretty(ts)}\n",
         extension=".txt",
