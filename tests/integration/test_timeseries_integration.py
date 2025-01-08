@@ -1364,6 +1364,8 @@ def test_plot_matplotlib_units_not_registered(
     ),
 )
 def test_plot_ax_creation(sys_modules_patch, expectation):
+    pytest.importorskip("matplotlib")
+
     ts = Timeseries.from_arrays(
         x=Q([1.0, 10.0, 20.0], "yr"),
         y=Q([10.0, 12.0, 32.0], "Mt / yr"),
