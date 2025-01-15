@@ -1,0 +1,19 @@
+# Changes here will be overwritten by Copier
+_commit: 1.2.3
+_src_path: gh:mkdocstrings/handler-template
+author_email: zebedee.nicholls@climate-resource.com
+author_fullname: Zebedee Nicholls
+author_username: znichollscr
+copyright_date: '2025'
+copyright_holder: Climate Resource
+copyright_holder_email: zebedee.nicholls@climate-resource.com
+copyright_license: BSD 3-Clause "New" or "Revised" License
+insiders: false
+language: Python
+project_description: A Python accessor handler for mkdocstrings.
+project_name: mkdocstrings-python-accessors
+python_package_distribution_name: mkdocstrings-python-accessors
+python_package_import_name: python_accessors
+repository_name: mkdocstrings-python-accessors
+repository_namespace: climate-resource
+repository_provider: github.com

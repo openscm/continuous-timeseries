@@ -52,9 +52,9 @@ plugins:
       # Use filenames for titles
       ignore_h1_titles: True
       include: ["*.py"]
-      execute: true
+      # execute: true
       # Toggle off for faster builds
-      # execute: false
+      execute: false
       allow_errors: false
       # theme: dark
       include_source: True
@@ -102,6 +102,8 @@ plugins:
               classes: true
               functions: true
               modules: true
+            extensions:
+            - docs/griffe_ext.py:MyExtension
   # https://squidfunk.github.io/mkdocs-material/plugins/search/
   - search
   # Add clickable sections to the sidebar
