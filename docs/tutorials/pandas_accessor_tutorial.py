@@ -13,6 +13,8 @@
 # ---
 
 # %%
+import multiprocessing
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import pint
@@ -27,42 +29,6 @@ Q = UR.Quantity
 
 # %%
 UR.setup_matplotlib(enable=True)
-
-
-# %%
-class SeriesCTAccessor:
-    """
-    [`pd.Series`][pandas.Series] accessors
-
-    For details, see
-    [pandas' docs](https://pandas.pydata.org/docs/development/extending.html#registering-custom-accessors).
-    """
-
-    def __init__(self, pandas_obj: pd.Series):
-        """
-        Initialise
-
-        Parameters
-        ----------
-        pandas_obj
-            Pandas object to use via the accessors
-        """
-        # TODO: add validation
-        # validate(pandas_obj)
-        self._series = pandas_obj
-
-    @property
-    def metadata(self) -> pd.DataFrame:
-        """
-        Get the metadata
-        """
-        return self._series.index.to_frame(index=False)
-
-
-# %%
-import pandas
-namespace = "ct"
-pandas.api.extensions.register_series_accessor(namespace)(SeriesCTAccessor)
 
 # %%
 continuous_timeseries.pandas_accessors.register_pandas_accessor()
@@ -99,6 +65,15 @@ series
 
 # %%
 series.ct.metadata
+
+# %%
+plot_points = get_plot_points(series.iloc[0].time_axis.bounds, res_increase=100)
+
+# %%
+series.ct.interpolate(plot_points, progress=False)
+
+# %%
+series.ct.interpolate(plot_points, progress=True)
 
 # %%
 # Would want to be able to do this in parallel too.
@@ -203,6 +178,11 @@ n_yrs = 550
 n_runs = 600
 n_scenarios = 100
 
+# n_variables = 1
+# n_yrs = 125
+# n_runs = 600
+# n_scenarios = 1000
+
 # # Too big, not really possible to do in memory
 # n_variables = 10
 # n_yrs = 550
@@ -239,176 +219,42 @@ df = pd.DataFrame(
 df
 
 # %%
-import concurrent.futures
-import multiprocessing
-
-
-# %%
-def get_executor_and_futures(
-    in_iter,
-    func_to_call,
-    n_processes: int,
-    mp_context = None,
-    progress: bool = False,
-    *args,
-    **kwargs,
-):
-    if progress:
-        try:
-            from tqdm.auto import tqdm
-        except ImportError as exc:
-            raise MissingOptionalDependencyError(
-                "to_timeseries", requirement="pandas"
-            ) from exc
-
-        iterator = tqdm(in_iter, desc="submitting to parallel executor")
-            
-    else:
-        iterator = in_iter
-        
-    executor = concurrent.futures.ProcessPoolExecutor(
-        max_workers=n_processes, mp_context=mp_context
-    )
-
-    futures = tuple(
-        executor.submit(
-            func_to_call,
-            inv,
-            *args,
-            **kwargs,
-        )
-        for inv in iterator
-    )
-
-    return executor, futures
-
+# TODO: drop nans when converting
+# TODO: test with a dataframe that has history and scenario, but no overlap
 
 # %%
-from continuous_timeseries import Timeseries
-
-def get_ts(inv, *args, **kwargs):
-    return inv[0], Timeseries.from_pandas_iterrows_value(inv, *args, **kwargs)
-    
-
-
-def to_timeseries(
-    self,
-    time_units, #: str | pint.facets.plain.PlainUnit,
-    interpolation, #: InterpolationOption,
-    units_col: str = "units",
-    ur: None = None,
-    idx_separator: str = "__",
-    progress: bool = False,
-    n_processes: int = 1,
-    mp_context = None,
-):
-    """
-    Convert to [`Timeseries`][(p)]
-
-    TODO: add parameters here
-
-    Returns
-    -------
-    :
-        Timeseries representation of the [`pd.DataFrame`][pandas.DataFrame]
-    """
-    # Late import to avoid hard dependency on pandas
-    try:
-        import pandas as pd
-    except ImportError as exc:
-        raise MissingOptionalDependencyError(
-            "to_timeseries", requirement="pandas"
-        ) from exc
-
-    if isinstance(time_units, str):
-        raise NotImplementedError
-
-    if ur is None:
-        ur = pint.get_application_registry()
-
-    # TODO: parallelise this
-    # df = self._df
-    df = self
-    x = df.columns.values * time_units
-    # TODO: move to validation
-    try:
-        units_idx = df.index.names.index(units_col)
-    except ValueError as exc:
-        msg = f"{units_col} not available. {df.index.names=}"
-
-        raise KeyError(msg) from exc
-
-    if n_processes == 1:
-        iterator = df.iterrows()
-            
-    else:
-        units_idx = df.index.names.index(units_col)
-        executor, futures = get_executor_and_futures(
-            tuple(v for v in df.iterrows()),
-            get_ts,
-            n_processes=n_processes,
-            mp_context=mp_context,
-            progress=progress,   
-            interpolation=InterpolationOption.Linear,
-            units_idx=units_idx,
-            time_units="yr",
-        )
-        iterator = concurrent.futures.as_completed(futures)
-
-    if progress:
-        try:
-            from tqdm.auto import tqdm
-        except ImportError as exc:
-            raise MissingOptionalDependencyError(
-                "to_timeseries", requirement="pandas"
-            ) from exc
-
-        iterator = tqdm(iterator, desc="rows", total=df.shape[0])
-
-    if n_processes == 1:
-        res = tuple(
-            get_ts(
-                v,
-                interpolation=InterpolationOption.Linear,
-                units_idx=units_idx,
-                time_units="yr",
-            )
-            for v in iterator
-            )
-
-    else:
-        try:
-            res = tuple(future.result() for future in iterator)
-        finally:
-            executor.shutdown()
-        
-    res = pd.Series(
-        (v[1] for v in res),
-        pd.MultiIndex.from_tuples((v[0] for v in res), names=df.index.names),
-        name="ts",
-    )
-
-    return res
-
+# Must be something smarter that can be done with chunking to make this faster, anyway
+series_h = df.ct.to_timeseries(time_units=x.units, interpolation=InterpolationOption.Linear, progress=True, n_processes=multiprocessing.cpu_count(), mp_context=multiprocessing.get_context("fork"))
 
 # %%
-from tqdm.auto import tqdm
-for _ in tqdm(df.iterrows()):
-    pass
+interp_points = get_plot_points(series_h.iloc[0].time_axis.bounds, res_increase=100)
 
 # %%
-to_timeseries(df, time_units=x.units, interpolation=InterpolationOption.Linear, progress=True, n_processes=16, mp_context=multiprocessing.get_context("spawn"))
+# It could also be something to do with pint that makes the parallel processing slow...
+# Some links to think about re parallelisation:
+# - https://medium.com/@codewithnazam/pandas-in-a-parallel-universe-speeding-up-your-data-adventures-7696aa00eab8
+# - https://pypi.org/project/parallel-pandas/
+# - https://towardsdatascience.com/easily-parallelize-your-calculations-in-pandas-with-parallel-pandas-dc194b82d82f
+# - https://github.com/nalepae/pandarallel
+series_h.ct.interpolate(interp_points, progress=True, n_processes=multiprocessing.cpu_count())
 
 # %%
-to_timeseries(df, time_units=x.units, interpolation=InterpolationOption.Linear, progress=True, n_processes=16, mp_context=multiprocessing.get_context("fork"))
+series_h.ct.interpolate(interp_points, progress=True, n_processes=1)
 
 # %%
-to_timeseries(df, time_units=x.units, interpolation=InterpolationOption.Linear, progress=True, n_processes=1)
+series_h.ct.interpolate(interp_points, progress=False, n_processes=multiprocessing.cpu_count())
 
 # %%
-to_timeseries(df, time_units=x.units, interpolation=InterpolationOption.Linear, n_processes=4)
+series_h.ct.interpolate(interp_points, progress=False)
 
 # %%
-to_timeseries(df, time_units=x.units, interpolation=InterpolationOption.Linear, n_processes=1)
+# df.ct.to_timeseries(time_units=x.units, interpolation=InterpolationOption.Linear, progress=True, n_processes=multiprocessing.cpu_count(), mp_context=multiprocessing.get_context("spawn"))
 
 # %%
+df.ct.to_timeseries(time_units=x.units, interpolation=InterpolationOption.Linear, progress=True, n_processes=1)
+
+# %%
+df.ct.to_timeseries(time_units=x.units, interpolation=InterpolationOption.Linear, n_processes=multiprocessing.cpu_count())
+
+# %%
+df.ct.to_timeseries(time_units=x.units, interpolation=InterpolationOption.Linear, n_processes=1)
