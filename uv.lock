@@ -357,8 +357,12 @@ dependencies = [
 [package.optional-dependencies]
 full = [
     { name = "matplotlib" },
+    { name = "pandas" },
     { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "scipy", version = "1.14.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+]
+pandas = [
+    { name = "pandas" },
 ]
 plots = [
     { name = "matplotlib" },
@@ -443,10 +447,12 @@ tests = [
 [package.metadata]
 requires-dist = [
     { name = "attrs", specifier = ">=24.3.0" },
+    { name = "continuous-timeseries", extras = ["pandas"], marker = "extra == 'full'" },
     { name = "continuous-timeseries", extras = ["plots"], marker = "extra == 'full'" },
     { name = "continuous-timeseries", extras = ["scipy"], marker = "extra == 'full'" },
     { name = "matplotlib", marker = "extra == 'plots'", specifier = ">=3.7.1" },
     { name = "numpy", specifier = ">=2.0.0" },
+    { name = "pandas", marker = "extra == 'pandas'", specifier = ">=2.0.0" },
     { name = "pint", specifier = ">=0.24.4" },
     { name = "scipy", marker = "extra == 'scipy'", specifier = ">=1.13.1" },
 ]

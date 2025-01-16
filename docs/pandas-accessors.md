@@ -1,4 +1,4 @@
 # Pandas accessors
 
-::: continuous_timeseries.ct.DataFrameCTAccessor
+::: continuous_timeseries.pandas_accessors.DataFrameCTAccessor
     handler: python_accessors

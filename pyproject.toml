@@ -18,6 +18,9 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+pandas = [
+    "pandas>=2.0.0",
+]
 plots = [
     "matplotlib>=3.7.1",
 ]
@@ -25,6 +28,7 @@ scipy = [
     "scipy>=1.13.1",
 ]
 full = [
+    "continuous-timeseries[pandas]",
     "continuous-timeseries[plots]",
     "continuous-timeseries[scipy]",
 ]
