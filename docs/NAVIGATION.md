@@ -18,5 +18,6 @@ See https://oprypin.github.io/mkdocs-literate-nav/
     - [Discrete to continuous conversions](further-background/discrete_to_continuous_conversions.py)
     - [Representations](further-background/representations.py)
 - [Development](development.md)
+- [Pandas accessors](pandas-accessors.md)
 - [API reference](api/continuous_timeseries/)
 - [Changelog](changelog.md)

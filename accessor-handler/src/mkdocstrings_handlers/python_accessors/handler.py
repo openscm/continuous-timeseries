@@ -1,158 +1,5 @@
-# """This module implements a handler for the Python language."""
-#
-# from __future__ import annotations
-#
-# from typing import TYPE_CHECKING, Any, ClassVar
-#
-# from mkdocs.exceptions import PluginError
-# from mkdocstrings.handlers.base import BaseHandler, CollectionError, CollectorItem
-# from mkdocstrings.loggers import get_logger
-#
-# if TYPE_CHECKING:
-#     from collections.abc import Mapping, MutableMapping
-#
-#     from markdown import Markdown
-#
-#
-# logger = get_logger(__name__)
-#
-#
-# class PythonHandler(BaseHandler):
-#     """The Python handler class."""
-#
-#     name: str = "python"
-#     """The handler's name."""
-#
-#     domain: str = "python"
-#     """The cross-documentation domain/language for this handler."""
-#
-#     enable_inventory: bool = False
-#     """Whether this handler is interested in enabling the creation of the `objects.inv` Sphinx inventory file."""
-#
-#     fallback_theme = "material"
-#     """The theme to fallback to."""
-#
-#     fallback_config: ClassVar[dict] = {"fallback": True}
-#     """The configuration used to collect item during autorefs fallback."""
-#
-#     default_config: ClassVar[dict] = {
-#         "show_root_heading": False,
-#         "show_root_toc_entry": True,
-#         "heading_level": 2,
-#     }
-#     """The default configuration options.
-#
-#     Option | Type | Description | Default
-#     ------ | ---- | ----------- | -------
-#     **`show_root_heading`** | `bool` | Show the heading of the object at the root of the documentation tree. | `False`
-#     **`show_root_toc_entry`** | `bool` | If the root heading is not shown, at least add a ToC entry for it. | `True`
-#     **`heading_level`** | `int` | The initial heading level to use. | `2`
-#     """
-#
-#     def collect(
-#         self, identifier: str, config: MutableMapping[str, Any]
-#     ) -> CollectorItem:
-#         """Collect data given an identifier and selection configuration.
-#
-#         In the implementation, you typically call a subprocess that returns JSON, and load that JSON again into
-#         a Python dictionary for example, though the implementation is completely free.
-#
-#         Parameters
-#         ----------
-#             identifier: An identifier that was found in a markdown document for which to collect data. For example,
-#                 in Python, it would be 'mkdocstrings.handlers' to collect documentation about the handlers module.
-#                 It can be anything that you can feed to the tool of your choice.
-#             config: All configuration options for this handler either defined globally in `mkdocs.yml` or
-#                 locally overridden in an identifier block by the user.
-#
-#         Returns
-#         -------
-#             Anything you want, as long as you can feed it to the `render` method.
-#         """
-#         breakpoint()
-#         raise CollectionError("Implement me!")
-#
-#     def render(self, data: CollectorItem, config: Mapping[str, Any]) -> str:
-#         """Render a template using provided data and configuration options.
-#
-#         Parameters
-#         ----------
-#             data: The data to render that was collected above in `collect()`.
-#             config: All configuration options for this handler either defined globally in `mkdocs.yml` or
-#                 locally overridden in an identifier block by the user.
-#
-#         Returns
-#         -------
-#             The rendered template as HTML.
-#         """
-#         breakpoint()
-#         # final_config = {**self.default_config, **config}
-#         # heading_level = final_config["heading_level"]
-#         # template = self.env.get_template(f"{data...}.html.jinja")
-#         # return template.render(
-#         #     **{"config": final_config, data...: data, "heading_level": heading_level, "root": True},
-#         # )
-#         raise PluginError("Implement me!")
-#
-#     def update_env(self, md: Markdown, config: dict) -> None:
-#         """Update the Jinja environment with any custom settings/filters/options for this handler.
-#
-#         Parameters
-#         ----------
-#             md: The Markdown instance. Useful to add functions able to convert Markdown into the environment filters.
-#             config: Configuration options for `mkdocs` and `mkdocstrings`, read from `mkdocs.yml`. See the source code
-#                 of [mkdocstrings.plugin.MkdocstringsPlugin.on_config][] to see what's in this dictionary.
-#         """
-#         super().update_env(
-#             md, config
-#         )  # Add some mkdocstrings default filters such as highlight and convert_markdown
-#         self.env.trim_blocks = True
-#         self.env.lstrip_blocks = True
-#         self.env.keep_trailing_newline = False
-#
-#
-# def get_handler(
-#     theme: str,
-#     custom_templates: str | None = None,
-#     config_file_path: str | None = None,
-#     **config: Any,
-# ) -> PythonHandler:
-#     """Simply return an instance of `PythonHandler`.
-#
-#     Parameters
-#     ----------
-#         theme: The theme to use when rendering contents.
-#         custom_templates: Directory containing custom templates.
-#         config_file_path: The MkDocs configuration file path.
-#         **config: Configuration passed to the handler.
-#
-#     Returns
-#     -------
-#         An instance of the handler.
-#     """
-#     return PythonHandler(
-#         handler="python",
-#         theme=theme,
-#         custom_templates=custom_templates,
-#         # To pass the following argument,
-#         # you'll need to override the handler's __init__ method.
-#         # config_file_path=config_file_path,
-#     )
-#  Copyright (c) 2022=2023.   Analog Devices Inc.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
 """
-Implementation of python_xref handler
+Implementation of python_accessors handler
 """
 
 from __future__ import annotations
@@ -160,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from griffe import Object
+import griffe
 from mkdocstrings.loggers import get_logger
 from mkdocstrings_handlers.python_xref.handler import PythonRelXRefHandler
 
@@ -170,14 +17,35 @@ logger = get_logger(__name__)
 
 
 class PythonAccessorHandler(PythonRelXRefHandler):
-    """Extended version of mkdocstrings Python handler
+    """
+    Extended version of mkdocstrings Python handler
 
-    * Converts relative cross-references into full references
-    * Checks cross-references early in order to produce errors with source location
+    * Converts references so that they appear in their accessor namespace
     """
 
-    def render(self, data: Object, config: Mapping[str, Any]) -> str:
-        data.name = "zn-custom"
+    def render(self, data: griffe.Object, config: Mapping[str, Any]) -> str:
+        if not isinstance(data, griffe.Class):
+            raise NotImplementedError(data)
+
+        if len(data.decorators) != 1:
+            raise NotImplementedError(data.decorators)
+
+        decorator_act = data.decorators[0].callable_path
+        decorator_exp = "pandas.api.extensions.register_dataframe_accessor"
+        class_being_accessed = "pd.DataFrame"
+        if decorator_act != decorator_exp:
+            raise NotImplementedError(decorator_act)
+
+        accessor_key = (
+            data.decorators[0].value.arguments[0].replace("'", "").replace('"', "")
+        )
+        for name, member in data.members.items():
+            if name.startswith("_"):
+                continue
+
+            member.name = f"{class_being_accessed}.{accessor_key}.{name}"
+
+        data.name = f"{class_being_accessed}.{accessor_key}"
 
         try:
             return super().render(data, config)

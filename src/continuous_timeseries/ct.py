@@ -16,7 +16,10 @@ def validate(df: pd.DataFrame) -> None:
 @pd.api.extensions.register_dataframe_accessor("ct")
 class DataFrameCTAccessor:
     """
-    Accessor
+    [`pd.DataFrame`][pandas.DataFrame] accessors
+
+    For details, see
+    [pandas' docs](https://pandas.pydata.org/docs/development/extending.html#registering-custom-accessors).
     """
 
     def __init__(self, pandas_obj: pd.DataFrame):

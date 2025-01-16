@@ -1782,7 +1782,7 @@ wheels = [
 
 [[package]]
 name = "mkdocstrings-python-accessors"
-version = "0.3.4.dev1+g4908a02.d20250115"
+version = "0.3.4.dev2+gb47eeae"
 source = { editable = "accessor-handler" }
 dependencies = [
     { name = "mkdocstrings" },

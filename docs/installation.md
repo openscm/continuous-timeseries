@@ -1,8 +1,5 @@
 # Installation
 
-::: continuous_timeseries.ct
-    handler: python_accessors
-
 There are a few different ways to install Continuous Timeseries.
 We provide these by use case below.
 As a short summary, if you:
