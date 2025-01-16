@@ -401,6 +401,7 @@ all-dev = [
     { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "scipy", version = "1.14.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "scipy-stubs", marker = "python_full_version >= '3.10'" },
+    { name = "seaborn" },
     { name = "setuptools" },
     { name = "towncrier" },
 ]
@@ -433,6 +434,7 @@ docs = [
     { name = "ruff" },
     { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "scipy", version = "1.14.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "seaborn" },
 ]
 tests = [
     { name = "ipython" },
@@ -485,6 +487,7 @@ all-dev = [
     { name = "ruff", specifier = "==0.8.6" },
     { name = "scipy", specifier = ">=1.13.1" },
     { name = "scipy-stubs", marker = "python_full_version >= '3.10'", specifier = ">=1.14.1.6" },
+    { name = "seaborn", specifier = ">=0.13.2" },
     { name = "setuptools", specifier = "==75.6.0" },
     { name = "towncrier", specifier = "==24.8.0" },
 ]
@@ -516,6 +519,7 @@ docs = [
     { name = "pymdown-extensions", specifier = "==10.13" },
     { name = "ruff", specifier = "==0.8.6" },
     { name = "scipy", specifier = ">=1.13.1" },
+    { name = "seaborn", specifier = ">=0.13.2" },
 ]
 tests = [
     { name = "ipython", specifier = ">=8.18.1" },
@@ -3131,6 +3135,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/83/8e/50f376e681745b58c2973e7073d3b90134d8c0ea83220ad47fbac548050a/scipy_stubs-1.15.0.0.tar.gz", hash = "sha256:f0be6b369dc478e96be84088b1ba1a74378865d3bf2ecd0d89ff242991315a31", size = 270985 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/da/29/d336808517bbd1ab6a2523d07cb5927166ffb8eaca9b8ed94790e06f4287/scipy_stubs-1.15.0.0-py3-none-any.whl", hash = "sha256:ddfbacdd15a0996084aee21620a29d474bb3c0dc375e5fe3cd78fe5aae50910d", size = 454570 },
+]
+
+[[package]]
+name = "seaborn"
+version = "0.13.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "matplotlib" },
+    { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "numpy", version = "2.2.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "pandas" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/86/59/a451d7420a77ab0b98f7affa3a1d78a313d2f7281a57afb1a34bae8ab412/seaborn-0.13.2.tar.gz", hash = "sha256:93e60a40988f4d65e9f4885df477e2fdaff6b73a9ded434c1ab356dd57eefff7", size = 1457696 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/83/11/00d3c3dfc25ad54e731d91449895a79e4bf2384dc3ac01809010ba88f6d5/seaborn-0.13.2-py3-none-any.whl", hash = "sha256:636f8336facf092165e27924f223d3c62ca560b1f2bb5dff7ab7fad265361987", size = 294914 },
 ]
 
 [[package]]

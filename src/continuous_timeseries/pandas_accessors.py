@@ -65,7 +65,7 @@ class DataFrameCTAccessor:
         self,
         time_units: str | pint.facets.plain.PlainUnit,
         interpolation: InterpolationOption,
-        unit_col: str = "units",
+        units_col: str = "units",
         ur: None = None,
         idx_separator: str = "__",
     ) -> Timeseries:
@@ -97,9 +97,9 @@ class DataFrameCTAccessor:
         x = self._df.columns.values * time_units
         # TODO: move to validation
         try:
-            units_idx = self._df.index.names.index(unit_col)
+            units_idx = self._df.index.names.index(units_col)
         except ValueError as exc:
-            msg = f"{unit_col} not available. {self._df.index.names=}"
+            msg = f"{units_col} not available. {self._df.index.names=}"
 
             raise KeyError(msg) from exc
 
@@ -121,16 +121,20 @@ class DataFrameCTAccessor:
                 x=x,
                 y=row_y,
                 interpolation=row_interpolation,
-                name=idx_separator.join(idx),
+                name=idx_separator.join(
+                    (v for i, v in enumerate(idx) if i != units_idx)
+                ),
             )
             ts_store.append((ts, idx))
 
+        res_index = pd.MultiIndex.from_tuples(
+            [v[1] for v in ts_store],
+            names=self._df.index.names,
+        ).droplevel(units_col)
+
         res = pd.Series(
             [v[0] for v in ts_store],
-            index=pd.MultiIndex.from_tuples(
-                [v[1] for v in ts_store],
-                names=self._df.index.names,
-            ),
+            index=res_index,
             name="ts",
         )
 
