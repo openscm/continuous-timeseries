@@ -67,6 +67,7 @@ docs = [
     "jupytext==1.16.6",
     "mkdocs-jupyter==0.25.1",
     "seaborn>=0.13.2",
+    "tqdm>=4.67.1",
 ]
 tests = [
     "ipython>=8.18.1",

@@ -191,3 +191,224 @@ sns.lineplot(
     hue="name",
     style="region",
 )
+
+# %%
+n_variables = 3
+n_yrs = 250
+n_runs = 10
+n_scenarios = 5
+
+n_variables = 1
+n_yrs = 550
+n_runs = 600
+n_scenarios = 100
+
+# # Too big, not really possible to do in memory
+# n_variables = 10
+# n_yrs = 550
+# n_runs = 600
+# n_scenarios = 2000
+
+# %%
+x = Q(np.arange(n_yrs) + 1750, "yr")
+x
+
+# %%
+y_ms = np.random.random((n_variables * n_runs * n_scenarios, n_yrs))
+y_ms.shape
+
+# %%
+import itertools
+
+# %%
+idx = pd.MultiIndex.from_tuples(
+    ((s, v, r, "Mt / yr") for s, v, r in itertools.product(
+    [f"variable_{i}" for i in range(n_variables)],
+    [f"scenario_{i}" for i in range(n_scenarios)],
+    [i for i in range(n_runs)],
+)
+), names=["scenario", "variable", "region", "units"])
+idx
+
+# %%
+df = pd.DataFrame(
+    y_ms,
+    columns=x.m,
+    index=idx,
+)
+df
+
+# %%
+import concurrent.futures
+import multiprocessing
+
+
+# %%
+def get_executor_and_futures(
+    in_iter,
+    func_to_call,
+    n_processes: int,
+    mp_context = None,
+    progress: bool = False,
+    *args,
+    **kwargs,
+):
+    if progress:
+        try:
+            from tqdm.auto import tqdm
+        except ImportError as exc:
+            raise MissingOptionalDependencyError(
+                "to_timeseries", requirement="pandas"
+            ) from exc
+
+        iterator = tqdm(in_iter, desc="submitting to parallel executor")
+            
+    else:
+        iterator = in_iter
+        
+    executor = concurrent.futures.ProcessPoolExecutor(
+        max_workers=n_processes, mp_context=mp_context
+    )
+
+    futures = tuple(
+        executor.submit(
+            func_to_call,
+            inv,
+            *args,
+            **kwargs,
+        )
+        for inv in iterator
+    )
+
+    return executor, futures
+
+
+# %%
+from continuous_timeseries import Timeseries
+
+def get_ts(inv, *args, **kwargs):
+    return inv[0], Timeseries.from_pandas_iterrows_value(inv, *args, **kwargs)
+    
+
+
+def to_timeseries(
+    self,
+    time_units, #: str | pint.facets.plain.PlainUnit,
+    interpolation, #: InterpolationOption,
+    units_col: str = "units",
+    ur: None = None,
+    idx_separator: str = "__",
+    progress: bool = False,
+    n_processes: int = 1,
+    mp_context = None,
+):
+    """
+    Convert to [`Timeseries`][(p)]
+
+    TODO: add parameters here
+
+    Returns
+    -------
+    :
+        Timeseries representation of the [`pd.DataFrame`][pandas.DataFrame]
+    """
+    # Late import to avoid hard dependency on pandas
+    try:
+        import pandas as pd
+    except ImportError as exc:
+        raise MissingOptionalDependencyError(
+            "to_timeseries", requirement="pandas"
+        ) from exc
+
+    if isinstance(time_units, str):
+        raise NotImplementedError
+
+    if ur is None:
+        ur = pint.get_application_registry()
+
+    # TODO: parallelise this
+    # df = self._df
+    df = self
+    x = df.columns.values * time_units
+    # TODO: move to validation
+    try:
+        units_idx = df.index.names.index(units_col)
+    except ValueError as exc:
+        msg = f"{units_col} not available. {df.index.names=}"
+
+        raise KeyError(msg) from exc
+
+    if n_processes == 1:
+        iterator = df.iterrows()
+            
+    else:
+        units_idx = df.index.names.index(units_col)
+        executor, futures = get_executor_and_futures(
+            tuple(v for v in df.iterrows()),
+            get_ts,
+            n_processes=n_processes,
+            mp_context=mp_context,
+            progress=progress,   
+            interpolation=InterpolationOption.Linear,
+            units_idx=units_idx,
+            time_units="yr",
+        )
+        iterator = concurrent.futures.as_completed(futures)
+
+    if progress:
+        try:
+            from tqdm.auto import tqdm
+        except ImportError as exc:
+            raise MissingOptionalDependencyError(
+                "to_timeseries", requirement="pandas"
+            ) from exc
+
+        iterator = tqdm(iterator, desc="rows", total=df.shape[0])
+
+    if n_processes == 1:
+        res = tuple(
+            get_ts(
+                v,
+                interpolation=InterpolationOption.Linear,
+                units_idx=units_idx,
+                time_units="yr",
+            )
+            for v in iterator
+            )
+
+    else:
+        try:
+            res = tuple(future.result() for future in iterator)
+        finally:
+            executor.shutdown()
+        
+    res = pd.Series(
+        (v[1] for v in res),
+        pd.MultiIndex.from_tuples((v[0] for v in res), names=df.index.names),
+        name="ts",
+    )
+
+    return res
+
+
+# %%
+from tqdm.auto import tqdm
+for _ in tqdm(df.iterrows()):
+    pass
+
+# %%
+to_timeseries(df, time_units=x.units, interpolation=InterpolationOption.Linear, progress=True, n_processes=16, mp_context=multiprocessing.get_context("spawn"))
+
+# %%
+to_timeseries(df, time_units=x.units, interpolation=InterpolationOption.Linear, progress=True, n_processes=16, mp_context=multiprocessing.get_context("fork"))
+
+# %%
+to_timeseries(df, time_units=x.units, interpolation=InterpolationOption.Linear, progress=True, n_processes=1)
+
+# %%
+to_timeseries(df, time_units=x.units, interpolation=InterpolationOption.Linear, n_processes=4)
+
+# %%
+to_timeseries(df, time_units=x.units, interpolation=InterpolationOption.Linear, n_processes=1)
+
+# %%
