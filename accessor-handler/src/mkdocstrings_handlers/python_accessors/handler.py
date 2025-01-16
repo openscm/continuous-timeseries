@@ -27,25 +27,22 @@ class PythonAccessorHandler(PythonRelXRefHandler):
         if not isinstance(data, griffe.Class):
             raise NotImplementedError(data)
 
-        if len(data.decorators) != 1:
-            raise NotImplementedError(data.decorators)
+        try:
+            namespace = config["namespace"]
+        except KeyError:
+            msg = f"Please specify the namespace to use with {data.name}. {data.path=}"
+            raise KeyError(msg)
 
-        decorator_act = data.decorators[0].callable_path
-        decorator_exp = "pandas.api.extensions.register_dataframe_accessor"
-        class_being_accessed = "pd.DataFrame"
-        if decorator_act != decorator_exp:
-            raise NotImplementedError(decorator_act)
-
-        accessor_key = (
-            data.decorators[0].value.arguments[0].replace("'", "").replace('"', "")
-        )
-        for name, member in data.members.items():
+        member_keys = list(data.members.keys())
+        for name in member_keys:
             if name.startswith("_"):
+                data.del_member(name)
                 continue
 
-            member.name = f"{class_being_accessed}.{accessor_key}.{name}"
+            member = data.members[name]
+            member.name = f"{namespace}.{name}"
 
-        data.name = f"{class_being_accessed}.{accessor_key}"
+        data.name = namespace
 
         try:
             return super().render(data, config)

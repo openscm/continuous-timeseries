@@ -137,7 +137,19 @@ class DataFrameCTAccessor:
         return res
 
 
-def register_pandas_accessor() -> None:
+def register_pandas_accessor(namespace: str = "ct") -> None:
+    """
+    Register the pandas accessors
+
+    For details, see
+    [pandas' docs](https://pandas.pydata.org/docs/development/extending.html#registering-custom-accessors).
+
+    Parameters
+    ----------
+    namespace
+        Namespace to use for the accessor
+    """
+    # Doing this because I really don't like imports having side effects
     try:
         import pandas
     except ImportError as exc:
@@ -145,4 +157,4 @@ def register_pandas_accessor() -> None:
             "register_pandas_accessor", requirement="pandas"
         ) from exc
 
-    pandas.api.extensions.register_dataframe_accessor("ct")(DataFrameCTAccessor)
+    pandas.api.extensions.register_dataframe_accessor(namespace)(DataFrameCTAccessor)
