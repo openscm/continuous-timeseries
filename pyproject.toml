@@ -18,6 +18,9 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+pandas = [
+    "pandas>=2.0.0",
+]
 plots = [
     "matplotlib>=3.7.1",
 ]
@@ -25,6 +28,7 @@ scipy = [
     "scipy>=1.13.1",
 ]
 full = [
+    "continuous-timeseries[pandas]",
     "continuous-timeseries[plots]",
     "continuous-timeseries[scipy]",
 ]
@@ -51,6 +55,7 @@ docs = [
     "mkdocs-material==9.5.49",
     "mkdocs-section-index==0.3.9",
     "mkdocs==1.6.1",
+    "mkdocstrings-python-accessors",
     "mkdocstrings-python-xref==1.6.2",
     "mkdocstrings-python==1.13.0",
     "openscm-units>=0.6.3",
@@ -61,6 +66,9 @@ docs = [
     "jupyterlab==4.3.4",
     "jupytext==1.16.6",
     "mkdocs-jupyter==0.25.1",
+    "seaborn>=0.13.2",
+    "tqdm>=4.67.1",
+    "ipywidgets>=8.1.5",
 ]
 tests = [
     "ipython>=8.18.1",
@@ -76,6 +84,9 @@ all-dev = [
     {include-group = "tests"},
 ]
 
+# Not sure what the pdm equivalent of this is
+[tool.uv.sources]
+mkdocstrings-python-accessors = { path = "./accessor-handler", editable = true }
 
 [build-system]
 requires = [
