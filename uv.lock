@@ -483,7 +483,7 @@ all-dev = [
     { name = "mkdocs-material", specifier = "==9.5.49" },
     { name = "mkdocs-section-index", specifier = "==0.3.9" },
     { name = "mkdocstrings-python", specifier = "==1.13.0" },
-    { name = "mkdocstrings-python-accessors", editable = "mkdocstrings-python-accessors" },
+    { name = "mkdocstrings-python-accessors", specifier = ">=0.1.1" },
     { name = "mkdocstrings-python-xref", specifier = "==1.6.2" },
     { name = "mypy", specifier = "==1.14.0" },
     { name = "openscm-units", specifier = ">=0.6.3" },
@@ -523,7 +523,7 @@ docs = [
     { name = "mkdocs-material", specifier = "==9.5.49" },
     { name = "mkdocs-section-index", specifier = "==0.3.9" },
     { name = "mkdocstrings-python", specifier = "==1.13.0" },
-    { name = "mkdocstrings-python-accessors", editable = "mkdocstrings-python-accessors" },
+    { name = "mkdocstrings-python-accessors", specifier = ">=0.1.1" },
     { name = "mkdocstrings-python-xref", specifier = "==1.6.2" },
     { name = "openscm-units", specifier = ">=0.6.3" },
     { name = "pymdown-extensions", specifier = "==10.13" },
@@ -1829,14 +1829,15 @@ wheels = [
 
 [[package]]
 name = "mkdocstrings-python-accessors"
-version = "0.3.4a1"
-source = { editable = "mkdocstrings-python-accessors" }
+version = "0.1.1"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mkdocstrings-python-xref" },
 ]
-
-[package.metadata]
-requires-dist = [{ name = "mkdocstrings-python-xref", specifier = ">=1.0" }]
+sdist = { url = "https://files.pythonhosted.org/packages/82/ca/2d3aee99c459d7b3ab55aa09b2ae71de1406c6736c858c41050d4faad481/mkdocstrings_python_accessors-0.1.1.tar.gz", hash = "sha256:3ea00463ac718ddf43e5f22c2f27477d01893fa09b9109ab52f507dba79ea9b2", size = 5727 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/72/19/c211d05c3f01e60ffe4aa8e77b9661560f1c30151a76cff74094fe3a8a7e/mkdocstrings_python_accessors-0.1.1-py3-none-any.whl", hash = "sha256:e04b3a29cba946ea46680adfcf78b4386fffa829e9d9803e3cf6ae881aa41e8c", size = 6031 },
+]
 
 [[package]]
 name = "mkdocstrings-python-xref"

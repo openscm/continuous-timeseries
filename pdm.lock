@@ -5,7 +5,7 @@
 groups = ["default", "all-dev", "dev", "docs", "full", "pandas", "plots", "progress", "scipy", "tests"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:7a17ee530c2202d6c7feb8f28fbb8dbb8bc498f29c6a6b4da7bca06ab4fc63a4"
+content_hash = "sha256:c4fa8bb6b1bdc7166d8bba275704bf839f6c947f2f4d95721b8ae6351809e8b6"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1908,6 +1908,20 @@ dependencies = [
 files = [
     {file = "mkdocstrings_python-1.13.0-py3-none-any.whl", hash = "sha256:b88bbb207bab4086434743849f8e796788b373bd32e7bfefbf8560ac45d88f97"},
     {file = "mkdocstrings_python-1.13.0.tar.gz", hash = "sha256:2dbd5757e8375b9720e81db16f52f1856bf59905428fd7ef88005d1370e2f64c"},
+]
+
+[[package]]
+name = "mkdocstrings-python-accessors"
+version = "0.1.1"
+requires_python = ">=3.9"
+summary = "Support for documenting accessors with mkdocstrings."
+groups = ["all-dev", "docs"]
+dependencies = [
+    "mkdocstrings-python-xref>=1.0",
+]
+files = [
+    {file = "mkdocstrings_python_accessors-0.1.1-py3-none-any.whl", hash = "sha256:e04b3a29cba946ea46680adfcf78b4386fffa829e9d9803e3cf6ae881aa41e8c"},
+    {file = "mkdocstrings_python_accessors-0.1.1.tar.gz", hash = "sha256:3ea00463ac718ddf43e5f22c2f27477d01893fa09b9109ab52f507dba79ea9b2"},
 ]
 
 [[package]]
