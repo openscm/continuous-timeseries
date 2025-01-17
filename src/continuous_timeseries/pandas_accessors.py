@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
+from continuous_timeseries.timeseries import Timeseries
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -20,7 +21,7 @@ class SeriesCTAccessor:
     [pandas' docs](https://pandas.pydata.org/docs/development/extending.html#registering-custom-accessors).
     """
 
-    def __init__(self, pandas_obj: pd.Series):
+    def __init__(self, pandas_obj: pd.Series[Timeseries]):  # type: ignore # pandas-stubs doesn't allow object even though it's fine
         """
         Initialise
 

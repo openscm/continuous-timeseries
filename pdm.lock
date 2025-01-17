@@ -5,7 +5,7 @@
 groups = ["default", "all-dev", "dev", "docs", "full", "pandas", "plots", "progress", "scipy", "tests"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:c4fa8bb6b1bdc7166d8bba275704bf839f6c947f2f4d95721b8ae6351809e8b6"
+content_hash = "sha256:6b7554152864de1951e99cae79d007c45025e0318b5bb4821847e35bbf1867f8"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1912,7 +1912,7 @@ files = [
 
 [[package]]
 name = "mkdocstrings-python-accessors"
-version = "0.1.1"
+version = "0.1.2"
 requires_python = ">=3.9"
 summary = "Support for documenting accessors with mkdocstrings."
 groups = ["all-dev", "docs"]
@@ -1920,8 +1920,8 @@ dependencies = [
     "mkdocstrings-python-xref>=1.0",
 ]
 files = [
-    {file = "mkdocstrings_python_accessors-0.1.1-py3-none-any.whl", hash = "sha256:e04b3a29cba946ea46680adfcf78b4386fffa829e9d9803e3cf6ae881aa41e8c"},
-    {file = "mkdocstrings_python_accessors-0.1.1.tar.gz", hash = "sha256:3ea00463ac718ddf43e5f22c2f27477d01893fa09b9109ab52f507dba79ea9b2"},
+    {file = "mkdocstrings_python_accessors-0.1.2-py3-none-any.whl", hash = "sha256:7136fd0a84d07f9148569f6cb78a432b6d3ebbe10096687b8ce26a632d848abe"},
+    {file = "mkdocstrings_python_accessors-0.1.2.tar.gz", hash = "sha256:5d00d04fe16d2b71f0f0b6c70fb6a9053389e75cdacd313494e574fc702eb964"},
 ]
 
 [[package]]
@@ -2094,7 +2094,7 @@ name = "numpy"
 version = "2.0.2"
 requires_python = ">=3.9"
 summary = "Fundamental package for array computing in Python"
-groups = ["default", "all-dev", "docs", "full", "pandas", "plots", "scipy", "tests"]
+groups = ["default", "all-dev", "dev", "docs", "full", "pandas", "plots", "scipy", "tests"]
 files = [
     {file = "numpy-2.0.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:51129a29dbe56f9ca83438b706e2e69a39892b5eda6cedcb6b0c9fdc9b0d3ece"},
     {file = "numpy-2.0.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:f15975dfec0cf2239224d80e32c3170b1d168335eaedee69da84fbe9f1f9cd04"},
@@ -2267,6 +2267,21 @@ files = [
     {file = "pandas-2.2.3-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:7eee9e7cea6adf3e3d24e304ac6b8300646e2a5d1cd3a3c2abed9101b0846761"},
     {file = "pandas-2.2.3-cp39-cp39-win_amd64.whl", hash = "sha256:4850ba03528b6dd51d6c5d273c46f183f39a9baf3f0143e566b89450965b105e"},
     {file = "pandas-2.2.3.tar.gz", hash = "sha256:4f18ba62b61d7e192368b84517265a99b4d7ee8912f8708660fb4a366cc82667"},
+]
+
+[[package]]
+name = "pandas-stubs"
+version = "2.2.2.240807"
+requires_python = ">=3.9"
+summary = "Type annotations for pandas"
+groups = ["all-dev", "dev"]
+dependencies = [
+    "numpy>=1.23.5",
+    "types-pytz>=2022.1.1",
+]
+files = [
+    {file = "pandas_stubs-2.2.2.240807-py3-none-any.whl", hash = "sha256:893919ad82be4275f0d07bb47a95d08bae580d3fdea308a7acfcb3f02e76186e"},
+    {file = "pandas_stubs-2.2.2.240807.tar.gz", hash = "sha256:64a559725a57a449f46225fbafc422520b7410bff9252b661a225b5559192a93"},
 ]
 
 [[package]]
@@ -3465,6 +3480,17 @@ groups = ["all-dev", "docs"]
 files = [
     {file = "types_python_dateutil-2.9.0.20241206-py3-none-any.whl", hash = "sha256:e248a4bc70a486d3e3ec84d0dc30eec3a5f979d6e7ee4123ae043eedbb987f53"},
     {file = "types_python_dateutil-2.9.0.20241206.tar.gz", hash = "sha256:18f493414c26ffba692a72369fea7a154c502646301ebfe3d56a04b3767284cb"},
+]
+
+[[package]]
+name = "types-pytz"
+version = "2024.2.0.20241221"
+requires_python = ">=3.8"
+summary = "Typing stubs for pytz"
+groups = ["all-dev", "dev"]
+files = [
+    {file = "types_pytz-2024.2.0.20241221-py3-none-any.whl", hash = "sha256:8fc03195329c43637ed4f593663df721fef919b60a969066e22606edf0b53ad5"},
+    {file = "types_pytz-2024.2.0.20241221.tar.gz", hash = "sha256:06d7cde9613e9f7504766a0554a270c369434b50e00975b3a4a0f6eed0f2c1a9"},
 ]
 
 [[package]]
