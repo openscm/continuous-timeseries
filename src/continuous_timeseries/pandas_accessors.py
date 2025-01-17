@@ -1,5 +1,11 @@
 """
 Accessors for pandas
+
+TODO:
+- convert_unit accessor too
+    - allow passing loc to only affect part of the DF (no need for mapping)
+    - groupby units
+    - allow parallelisation
 """
 
 from __future__ import annotations
