@@ -213,12 +213,13 @@ n_yrs = 550
 n_runs = 600
 n_scenarios = 100
 
-# n_variables = 1
-# n_yrs = 125
-# n_runs = 600
-# n_scenarios = 1000
+n_variables = 1
+n_yrs = 125
+n_runs = 600
+n_scenarios = 1000
 
 # # Too big, not really possible to do in memory
+# # (at this scale, probably would never use continuous timeseries anyway)
 # n_variables = 10
 # n_yrs = 550
 # n_runs = 600
@@ -236,13 +237,21 @@ y_ms.shape
 import itertools
 
 # %%
-idx = pd.MultiIndex.from_tuples(
-    ((s, v, r, "Mt / yr") for s, v, r in itertools.product(
-    [f"variable_{i}" for i in range(n_variables)],
-    [f"scenario_{i}" for i in range(n_scenarios)],
-    [i for i in range(n_runs)],
+idx = pd.MultiIndex.from_frame(
+    pd.DataFrame(
+        (
+            (s, v, r, "Mt / yr") 
+            for s, v, r in itertools.product(
+                [f"variable_{i}" for i in range(n_variables)],
+                [f"scenario_{i}" for i in range(n_scenarios)],
+                [i for i in range(n_runs)],
+            )
+        ),
+        columns=["scenario", "variable", "region", "units"],
+        # This makes updates later way way faster
+        dtype="category"
+    )
 )
-), names=["scenario", "variable", "region", "units"])
 idx
 
 # %%
@@ -254,24 +263,68 @@ df = pd.DataFrame(
 df
 
 # %%
+# tmp.index.set_levels(tmp.index.get_level_values("units").map(
+#     lambda x: str(UR.Unit(x) * UR.Unit("yr"))
+# ), level="units")
+
+# %%
+df.index
+
+# %%
+# TODO: move to some sort of pandas tricks module.
+# This is a much faster way of doing integration
+# if you have a piecewise constant assumption.
+# You obviously can't use this for extrapolation.
+time_steps = df.columns.values[1:] - df.columns.values[:-1]
+integration_constant = 10.0
+
+# Previous piecewise constant
+tmp = df.iloc[:, :-1] * time_steps + integration_constant
+tmp.columns = df.columns[1:]
+tmp[df.columns[0]] = integration_constant
+
+# # Next piecewise constant
+# tmp = df.iloc[:, 1:] * time_steps + integration_constant
+# tmp[df.columns[0]] = integration_constant
+
+# Result
+# If your index is categorical, this is fast.
+# If not, its super slow.
+# # Use this to help print user warnings
+# isinstance(df.index.get_level_values("units"), pd.CategoricalIndex)
+tmp.index = tmp.index.set_levels(
+    tmp.index.get_level_values("units").categories.map(
+        lambda x: str(UR.Unit(x) * UR.Unit("yr"))
+    ),
+    level="units"
+)
+
+tmp = tmp.sort_index(axis="columns")
+tmp
+
+# %%
 # TODO: drop nans when converting
 # TODO: test with a dataframe that has history and scenario, but no overlap
 
 # %%
-series_h = df.ct.to_timeseries_two(
-    time_units=x.units,
-    interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
-    progress=True,
-    n_processes=1, 
-)
-
-# %%
+# %%time
 series_h = df.ct.to_timeseries_two(
     time_units=x.units,
     interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
     progress=True,
     n_processes=multiprocessing.cpu_count(), 
+    # Fork is super important for progress bars to work,
+    # would suggest making it default (windows, whatever...)
     mp_context=multiprocessing.get_context("fork"),
+)
+
+# %%
+# %%time
+series_h = df.ct.to_timeseries_two(
+    time_units=x.units,
+    interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+    progress=True,
+    n_processes=1, 
 )
 
 # %%
