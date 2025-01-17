@@ -289,9 +289,10 @@ class Timeseries:
         cls,
         series: pd.Series,
         interpolation: InterpolationOption,
-        units: str | pint.facets.plain.PlainUnit,
+        units_idx: int,
         time_units: str | pint.facets.plain.PlainUnit,
-        name: str,
+        name: str | None = None,
+        idx_separator: str = "__",
         ur: pint.facets.PlainRegistry | None = None,
     ) -> Timeseries:
         """
@@ -306,14 +307,27 @@ class Timeseries:
             Interpolation to apply when converting
             the discrete values to a continuous representation
 
-        units
-            The units to attach to `row`'s values.
+        units_idx
+            The index of `series.name` (assumed to be a tuple)
+            which holds the units information.
 
         time_units
-            The units to attach to `row`'s columns to create a time axis.
+            The units to attach to `series`'s columns to create a time axis.
 
         name
             The value of the result's name attribute.
+
+            If not supplied, we automatically generate this based on the `series`
+            index values.
+
+        idx_separator
+            The separator to use to join the values of `idx_row[0]`
+            to get the result's name.
+
+            Only used if `name is None`.
+
+            All parts of `series.name` are included in the name
+            except the units information.
 
         ur
             Unit registry to use for the conversion.
@@ -332,11 +346,15 @@ class Timeseries:
         if isinstance(time_units, str):
             time_units = ur.Unit(time_units)
 
-        if isinstance(units, str):
-            units = ur.Unit(units)
+        index_values = series.name
+        units_str = index_values[units_idx]
+        units = ur.Unit(units_str)
 
         x = series.index.values * time_units
         y = series.values * units
+
+        if name is None:
+            name = idx_separator.join(str(v) for v in index_values if v != units_str)
 
         return cls.from_arrays(
             x=x,

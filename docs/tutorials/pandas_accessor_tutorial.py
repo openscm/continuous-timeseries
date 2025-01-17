@@ -56,6 +56,30 @@ df = pd.DataFrame(
 df
 
 # %%
+series = df.ct.to_timeseries_two(
+    time_units=x.units,
+    # interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed
+    interpolation=InterpolationOption.Linear
+)
+series
+
+# %%
+df.ct.to_timeseries_two(
+    time_units=x.units,
+    interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+    progress=True,
+)
+
+# %%
+df.ct.to_timeseries_two(
+    time_units=x.units,
+    interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+    progress=True,
+    n_processes=2,
+    mp_context=multiprocessing.get_context("fork"),
+)
+
+# %%
 series = df.ct.to_timeseries(
     time_units=x.units,
     # interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed
@@ -70,10 +94,21 @@ series.ct.metadata
 plot_points = get_plot_points(series.iloc[0].time_axis.bounds, res_increase=100)
 
 # %%
-series.ct.interpolate(plot_points, progress=False)
+series.ct.interpolate_two(plot_points, progress=False, n_processes=1)
 
 # %%
-series.ct.interpolate(plot_points, progress=True)
+series.ct.interpolate_two(plot_points, progress=True, n_processes=1)
+
+# %%
+series.ct.interpolate_two(plot_points, progress=True, n_processes=2)
+
+# %%
+series.ct.interpolate_two(
+    plot_points, 
+    progress=True, 
+    n_processes=2, 
+    mp_context=multiprocessing.get_context("fork"),
+)
 
 # %%
 # Would want to be able to do this in parallel too.
@@ -223,20 +258,101 @@ df
 # TODO: test with a dataframe that has history and scenario, but no overlap
 
 # %%
+series_h = df.ct.to_timeseries_two(
+    time_units=x.units,
+    interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+    progress=True,
+    n_processes=1, 
+)
+
+# %%
+series_h = df.ct.to_timeseries_two(
+    time_units=x.units,
+    interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+    progress=True,
+    n_processes=multiprocessing.cpu_count(), 
+    mp_context=multiprocessing.get_context("fork"),
+)
+
+# %%
 # Must be something smarter that can be done with chunking to make this faster, anyway
-series_h = df.ct.to_timeseries(time_units=x.units, interpolation=InterpolationOption.Linear, progress=True, n_processes=multiprocessing.cpu_count(), mp_context=multiprocessing.get_context("fork"))
+series_h = df.ct.to_timeseries(
+    time_units=x.units, 
+    interpolation=InterpolationOption.Linear, 
+    progress=True, 
+    n_processes=multiprocessing.cpu_count(), 
+    mp_context=multiprocessing.get_context("fork"),
+)
+
+# %%
+series_h.ct.integrate(
+    Q(0, "Mt"),
+    progress=True,
+    n_processes=1,
+)
+
+# %%
+# series_h.ct.integrate(
+#     Q(0, "Mt"), 
+#     progress=True, 
+#     n_processes=multiprocessing.cpu_count(),
+# )
+
+# %%
+series_h.ct.integrate(
+    Q(0, "Mt"), 
+    progress=True, 
+    # n_processes=multiprocessing.cpu_count(),
+    n_processes=3,
+    mp_context=multiprocessing.get_context("fork"),
+)
 
 # %%
 interp_points = get_plot_points(series_h.iloc[0].time_axis.bounds, res_increase=100)
 
 # %%
-# It could also be something to do with pint that makes the parallel processing slow...
-# Some links to think about re parallelisation:
-# - https://medium.com/@codewithnazam/pandas-in-a-parallel-universe-speeding-up-your-data-adventures-7696aa00eab8
-# - https://pypi.org/project/parallel-pandas/
-# - https://towardsdatascience.com/easily-parallelize-your-calculations-in-pandas-with-parallel-pandas-dc194b82d82f
-# - https://github.com/nalepae/pandarallel
-series_h.ct.interpolate(interp_points, progress=True, n_processes=multiprocessing.cpu_count())
+series_h.ct.interpolate_two(interp_points, progress=True, n_processes=1)
+
+# %%
+# series_h.ct.interpolate_two(
+#     interp_points, 
+#     progress=True, 
+#     n_processes=multiprocessing.cpu_count(),
+# )
+
+# %%
+# %%time
+series_h.ct.interpolate_two(
+    interp_points, 
+    progress=False, 
+    n_processes=1,
+)
+
+# %%
+# %%time
+series_h.ct.interpolate_two(
+    interp_points, 
+    progress=False, 
+    n_processes=multiprocessing.cpu_count() + 4,
+    mp_context=multiprocessing.get_context("fork"),
+)
+
+# %%
+series_h.ct.interpolate_two(
+    interp_points, 
+    progress=True, 
+    n_processes=multiprocessing.cpu_count(),
+    mp_context=multiprocessing.get_context("fork"),
+)
+
+# %%
+# # It could also be something to do with pint that makes the parallel processing slow...
+# # Some links to think about re parallelisation:
+# # - https://medium.com/@codewithnazam/pandas-in-a-parallel-universe-speeding-up-your-data-adventures-7696aa00eab8
+# # - https://pypi.org/project/parallel-pandas/
+# # - https://towardsdatascience.com/easily-parallelize-your-calculations-in-pandas-with-parallel-pandas-dc194b82d82f
+# # - https://github.com/nalepae/pandarallel
+# series_h.ct.interpolate(interp_points, progress=True, n_processes=multiprocessing.cpu_count())
 
 # %%
 series_h.ct.interpolate(interp_points, progress=True, n_processes=1)
