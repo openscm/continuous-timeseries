@@ -6,6 +6,7 @@ TODO:
     - allow passing loc to only affect part of the DF (no need for mapping)
     - groupby units
     - allow parallelisation
+    - use __finalize__ (also in other methods)
 """
 
 from __future__ import annotations
