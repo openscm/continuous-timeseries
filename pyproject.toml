@@ -18,14 +18,22 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+pandas = [
+    "pandas>=2.0.0",
+]
 plots = [
     "matplotlib>=3.7.1",
+]
+progress = [
+    "tqdm>=4.0.0",
 ]
 scipy = [
     "scipy>=1.13.1",
 ]
 full = [
+    "continuous-timeseries[pandas]",
     "continuous-timeseries[plots]",
+    "continuous-timeseries[progress]",
     "continuous-timeseries[scipy]",
 ]
 
@@ -58,9 +66,11 @@ docs = [
     "ruff==0.8.6",
     "scipy>=1.13.1",
     # Notebook deps
+    "ipywidgets>=8.1.5",
     "jupyterlab==4.3.4",
     "jupytext==1.16.6",
     "mkdocs-jupyter==0.25.1",
+    "seaborn>=0.13.2",
 ]
 tests = [
     "ipython>=8.18.1",

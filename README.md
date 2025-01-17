@@ -93,8 +93,14 @@ Additional dependencies can be installed using
 
 === "pip"
     ```sh
+    # To add pandas-related dependencies
+    pip install 'continuous-timeseries[pandas]'
+
     # To add plotting dependencies
     pip install 'continuous-timeseries[plots]'
+
+    # To add progress bar-related dependencies
+    pip install 'continuous-timeseries[progress]'
 
     # To add scipy-related dependencies
     pip install 'continuous-timeseries[scipy]'
