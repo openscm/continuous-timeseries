@@ -58,7 +58,7 @@ plugins:
       allow_errors: false
       # theme: dark
       include_source: True
-      ignore: ["*.ipynb", "*.md", "docs/gen_doc_stubs.py"]
+      ignore: ["*.ipynb", "*.md", "docs/gen_doc_stubs.py", "docs/griffe-ext.py"]
       remove_tag_config:
         remove_input_tags:
           - remove_input
@@ -68,7 +68,7 @@ plugins:
       default_handler: python_xref
       enable_inventory: true
       handlers:
-        python_xref: &pythonhandleroptions
+        python_xref:
           paths: [src]
           import:
             # Cross-ref helpers (lots included here, remove what you don't want)
@@ -91,6 +91,7 @@ plugins:
             - http://xarray.pydata.org/en/stable/objects.inv
           options:
             docstring_style: numpy
+            extensions:
             relative_crossrefs: yes
             separate_signature: true
             show_root_heading: false
@@ -102,7 +103,6 @@ plugins:
               classes: true
               functions: true
               modules: true
-        python_accessors: *pythonhandleroptions
 
   # https://squidfunk.github.io/mkdocs-material/plugins/search/
   - search

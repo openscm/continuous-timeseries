@@ -35,8 +35,10 @@ register_pandas_accessor()
 The full accessor API is documented below.
 
 ::: continuous_timeseries.pandas_accessors.SeriesCTAccessor
-    handler: python_accessors
     options:
-        namespace: "pd.Series.ct"
+        extensions:
+          - "docs/griffe-ext.py:AccessorNamespace":
+                class_to_apply_to: SeriesCTAccessor
+                namespace: "pd.Series.ct"
         show_root_full_path: false
         show_root_heading: true
