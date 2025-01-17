@@ -21,10 +21,12 @@ def test_import_does_not_register():
     # It's a bit annoying that there isn't a better way to do this.
     if hasattr(pd.Series, "ct"):
         del pd.Series.ct
+        pd.Series._accessors.discard("ct")
 
     import continuous_timeseries.pandas_accessors
 
     assert not hasattr(pd.Series, "ct")
+    assert "ct" not in pd.Series._accessors
 
     # Make sure that registering then brings this back
     continuous_timeseries.pandas_accessors.register_pandas_accessor()
