@@ -31,6 +31,7 @@ def test_import_does_not_register():
 
     assert hasattr(pd.Series, "ct")
 
+    pd.Series._accessors.discard("ct")
     del pd.Series.ct
 
 
@@ -58,5 +59,6 @@ def test_registering(sys_modules_patch, expectation):
             continuous_timeseries.pandas_accessors.register_pandas_accessor()
 
     # Tidy up
+    pd.Series._accessors.discard("ct")
     if hasattr(pd.Series, "ct"):
         del pd.Series.ct

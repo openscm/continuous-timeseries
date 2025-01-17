@@ -19,5 +19,7 @@ def setup_pandas_accessor() -> None:
 
     yield None
 
+    # Surprising and a bit annoying that there isn't a safer way to do this
+    pd.Series._accessors.discard("ct")
     if hasattr(pd.Series, "ct"):
         del pd.Series.ct
