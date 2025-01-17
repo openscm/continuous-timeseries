@@ -134,6 +134,6 @@ For the rest of our developer docs, please see [development][development].
 ## Original template
 
 This project was generated from this template:
-[copier core python repository](https://gitlab.com/znicholls/copier-core-python-repository).
+[copier core python repository](https://gitlab.com/openscm/copier-core-python-repository).
 [copier](https://copier.readthedocs.io/en/stable/) is used to manage and
 distribute this template.
