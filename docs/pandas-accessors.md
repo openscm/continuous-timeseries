@@ -33,3 +33,10 @@ register_pandas_accessor()
 ```
 
 The full accessor API is documented below.
+
+::: continuous_timeseries.pandas_accessors.SeriesCTAccessor
+    handler: python_accessors
+    options:
+        namespace: "pd.Series.ct"
+        show_root_full_path: false
+        show_root_heading: true

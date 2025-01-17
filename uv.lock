@@ -392,6 +392,7 @@ all-dev = [
     { name = "mkdocs-material" },
     { name = "mkdocs-section-index" },
     { name = "mkdocstrings-python" },
+    { name = "mkdocstrings-python-accessors" },
     { name = "mkdocstrings-python-xref" },
     { name = "mypy" },
     { name = "openscm-units" },
@@ -432,6 +433,7 @@ docs = [
     { name = "mkdocs-material" },
     { name = "mkdocs-section-index" },
     { name = "mkdocstrings-python" },
+    { name = "mkdocstrings-python-accessors" },
     { name = "mkdocstrings-python-xref" },
     { name = "openscm-units" },
     { name = "pymdown-extensions" },
@@ -481,6 +483,7 @@ all-dev = [
     { name = "mkdocs-material", specifier = "==9.5.49" },
     { name = "mkdocs-section-index", specifier = "==0.3.9" },
     { name = "mkdocstrings-python", specifier = "==1.13.0" },
+    { name = "mkdocstrings-python-accessors", editable = "mkdocstrings-python-accessors" },
     { name = "mkdocstrings-python-xref", specifier = "==1.6.2" },
     { name = "mypy", specifier = "==1.14.0" },
     { name = "openscm-units", specifier = ">=0.6.3" },
@@ -520,6 +523,7 @@ docs = [
     { name = "mkdocs-material", specifier = "==9.5.49" },
     { name = "mkdocs-section-index", specifier = "==0.3.9" },
     { name = "mkdocstrings-python", specifier = "==1.13.0" },
+    { name = "mkdocstrings-python-accessors", editable = "mkdocstrings-python-accessors" },
     { name = "mkdocstrings-python-xref", specifier = "==1.6.2" },
     { name = "openscm-units", specifier = ">=0.6.3" },
     { name = "pymdown-extensions", specifier = "==10.13" },
@@ -1822,6 +1826,17 @@ sdist = { url = "https://files.pythonhosted.org/packages/ab/ae/32703e35d74040051
 wheels = [
     { url = "https://files.pythonhosted.org/packages/51/23/d02d86553327296c3bf369d444194ea83410cce8f0e690565264f37f3261/mkdocstrings_python-1.13.0-py3-none-any.whl", hash = "sha256:b88bbb207bab4086434743849f8e796788b373bd32e7bfefbf8560ac45d88f97", size = 112254 },
 ]
+
+[[package]]
+name = "mkdocstrings-python-accessors"
+version = "0.3.4a1"
+source = { editable = "mkdocstrings-python-accessors" }
+dependencies = [
+    { name = "mkdocstrings-python-xref" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "mkdocstrings-python-xref", specifier = ">=1.0" }]
 
 [[package]]
 name = "mkdocstrings-python-xref"
