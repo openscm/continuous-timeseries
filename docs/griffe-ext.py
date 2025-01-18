@@ -43,11 +43,11 @@ class AccessorNamespace(griffe.Extension):
         modules = self.class_to_apply_to.split(".")[:-1]
         class_of_interest = self.class_to_apply_to.split(".")[0]
 
-        if isinstance(obj, griffe.Module) and obj.name in modules:
-            breakpoint()
-
-        if isinstance(obj, griffe.Class) and obj.name == class_of_interest:
-            breakpoint()
+        # if isinstance(obj, griffe.Module) and obj.name in modules:
+        #     breakpoint()
+        #
+        # if isinstance(obj, griffe.Class) and obj.name == class_of_interest:
+        #     breakpoint()
 
     def on_package_loaded(
         self, *, pkg: griffe.Module, loader: griffe.GriffeLoader, **kwargs: Any
@@ -65,10 +65,11 @@ class AccessorNamespace(griffe.Extension):
         #     self.namespace,
         #     loader.modules_collection.get_member(self.class_to_apply_to_root_package),
         # )
+        # breakpoint()
 
-        # Delete what it thinks it has loaded from modules_collection
-        # so it knows to re-load this module next time.
-        loader.modules_collection.del_member(self.class_to_apply_to_root_package)
+        # # Delete what it thinks it has loaded from modules_collection
+        # # so it knows to re-load this module next time.
+        # loader.modules_collection.del_member(self.class_to_apply_to_root_package)
 
     def on_class_members(
         self,
