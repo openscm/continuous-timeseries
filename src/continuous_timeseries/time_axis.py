@@ -180,3 +180,72 @@ class TimeAxis:
         res: PINT_NUMPY_ARRAY = np.vstack([starts, ends]).T  # type: ignore # mypy confused by pint
 
         return res
+
+
+# TODO: make this support TimeAxis input too
+# TODO: add check that input is sorted if input is a plain numpy array
+def increase_time_axis_resolution(
+    time_axis: PINT_NUMPY_ARRAY, res_increase: int
+) -> PINT_NUMPY_ARRAY:
+    """
+    Get a higher resolution time axis
+
+    Parameters
+    ----------
+    time_axis
+        Time axis of which to increase the resolution
+
+    res_increase
+        The increase in resolution we want.
+
+        In each window defined by `time_axis[n]` to `time_axis[n + 1]`,
+        we create `res_increase - 1` evenly spaced points
+        between `time_axis[n]` and `time_axis[n + 1]`.
+        The points defined by `time_axis` are also included.
+        As a result, the total number of plotted points is equal to
+        `time_axis.size + (res_increase - 1) * (time_axis.size - 1)`.
+
+    Returns
+    -------
+    :
+        Time axis with higher resolution
+
+    Examples
+    --------
+    >>> import pint
+    >>> UR = pint.get_application_registry()
+    >>> Q = UR.Quantity
+    >>>
+    >>> time_axis = Q([2000, 2010, 2020, 2025], "yr")
+    >>>
+    >>> # Passing in res_increase equal to 1 simply returns the input values
+    >>> increase_time_axis_resolution(time_axis, res_increase=1)
+    <Quantity([2000. 2010. 2020. 2025.], 'year')>
+    >>>
+    >>> # 'Double' the resolution
+    >>> increase_time_axis_resolution(time_axis, res_increase=2)
+    <Quantity([2000.  2005.  2010.  2015.  2020.  2022.5 2025. ], 'year')>
+    >>>
+    >>> # 'Triple' the resolution
+    >>> increase_time_axis_resolution(time_axis, res_increase=3)
+    <Quantity([2000.         2003.33333333 2006.66666667 2010.         2013.33333333
+     2016.66666667 2020.         2021.66666667 2023.33333333 2025.        ], 'year')>
+    """
+    time_axis_internal = time_axis[:-1]
+    step_fractions = np.linspace(0.0, (res_increase - 1) / res_increase, res_increase)
+    time_deltas = time_axis[1:] - time_axis[:-1]
+
+    time_axis_rep = (
+        np.repeat(time_axis_internal.m, step_fractions.size) * time_axis_internal.u
+    )
+    step_fractions_rep = np.tile(step_fractions, time_axis_internal.size)
+    time_axis_deltas_rep = np.repeat(time_deltas.m, step_fractions.size) * time_deltas.u
+
+    res: PINT_NUMPY_ARRAY = np.hstack(  # type: ignore # mypy confused by numpy and pint
+        [
+            time_axis_rep + time_axis_deltas_rep * step_fractions_rep,
+            time_axis[-1],
+        ]
+    )
+
+    return res

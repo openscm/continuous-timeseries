@@ -34,7 +34,7 @@ from continuous_timeseries.exceptions import (
     MissingOptionalDependencyError,
 )
 from continuous_timeseries.plotting_helpers import get_plot_vals
-from continuous_timeseries.time_axis import TimeAxis
+from continuous_timeseries.time_axis import TimeAxis, increase_time_axis_resolution
 from continuous_timeseries.typing import NP_FLOAT_OR_INT, PINT_NUMPY_ARRAY, PINT_SCALAR
 from continuous_timeseries.values_at_bounds import ValuesAtBounds
 
@@ -489,6 +489,76 @@ class TimeseriesContinuous:
 
         return res
 
+    def differentiate(self, name_res: str | None = None) -> TimeseriesContinuous:
+        """
+        Differentiate
+
+        Parameters
+        ----------
+        name_res
+            Name to use for the output.
+
+            If not supplied, we use f"{self.name}_derivative".
+
+        Returns
+        -------
+        :
+            Integral of `self`.
+        """
+        if name_res is None:
+            name_res = f"{self.name}_derivative"
+
+        derivative_values_units = self.values_units / self.time_units
+
+        derivative = self.function.differentiate()
+
+        return type(self)(
+            name=name_res,
+            time_units=self.time_units,
+            values_units=derivative_values_units,
+            function=derivative,
+            domain=self.domain,
+        )
+
+    def integrate(
+        self, integration_constant: PINT_SCALAR, name_res: str | None = None
+    ) -> TimeseriesContinuous:
+        """
+        Integrate
+
+        Parameters
+        ----------
+        integration_constant
+            Integration constant to use when performing the integration
+
+        name_res
+            Name to use for the output.
+
+            If not supplied, we use f"{self.name}_integral".
+
+        Returns
+        -------
+        :
+            Integral of `self`.
+        """
+        if name_res is None:
+            name_res = f"{self.name}_integral"
+
+        integral_values_units = self.values_units * self.time_units
+
+        integral = self.function.integrate(
+            integration_constant=integration_constant.to(integral_values_units).m,
+            domain_start=self.domain[0].to(self.time_units).m,
+        )
+
+        return type(self)(
+            name=name_res,
+            time_units=self.time_units,
+            values_units=integral_values_units,
+            function=integral,
+            domain=self.domain,
+        )
+
     def interpolate(
         self, time_axis: TimeAxis | PINT_NUMPY_ARRAY, allow_extrapolation: bool = False
     ) -> PINT_NUMPY_ARRAY:
@@ -542,76 +612,6 @@ class TimeseriesContinuous:
         res: PINT_NUMPY_ARRAY = values_m * self.values_units
 
         return res
-
-    def integrate(
-        self, integration_constant: PINT_SCALAR, name_res: str | None = None
-    ) -> TimeseriesContinuous:
-        """
-        Integrate
-
-        Parameters
-        ----------
-        integration_constant
-            Integration constant to use when performing the integration
-
-        name_res
-            Name to use for the output.
-
-            If not supplied, we use f"{self.name}_integral".
-
-        Returns
-        -------
-        :
-            Integral of `self`.
-        """
-        if name_res is None:
-            name_res = f"{self.name}_integral"
-
-        integral_values_units = self.values_units * self.time_units
-
-        integral = self.function.integrate(
-            integration_constant=integration_constant.to(integral_values_units).m,
-            domain_start=self.domain[0].to(self.time_units).m,
-        )
-
-        return type(self)(
-            name=name_res,
-            time_units=self.time_units,
-            values_units=integral_values_units,
-            function=integral,
-            domain=self.domain,
-        )
-
-    def differentiate(self, name_res: str | None = None) -> TimeseriesContinuous:
-        """
-        Differentiate
-
-        Parameters
-        ----------
-        name_res
-            Name to use for the output.
-
-            If not supplied, we use f"{self.name}_derivative".
-
-        Returns
-        -------
-        :
-            Integral of `self`.
-        """
-        if name_res is None:
-            name_res = f"{self.name}_derivative"
-
-        derivative_values_units = self.values_units / self.time_units
-
-        derivative = self.function.differentiate()
-
-        return type(self)(
-            name=name_res,
-            time_units=self.time_units,
-            values_units=derivative_values_units,
-            function=derivative,
-            domain=self.domain,
-        )
 
     def plot(
         self,
@@ -687,7 +687,9 @@ class TimeseriesContinuous:
         # Then plot interpolated using linear joins
         # (as far as I can tell, this is the only general way to do this,
         # although it is slower than using e.g. step for piecewise constant stuff).)
-        plot_points = get_plot_points(time_axis, res_increase=res_increase)
+        plot_points = increase_time_axis_resolution(
+            time_axis, res_increase=res_increase
+        )
         plot_values = self.interpolate(plot_points)
 
         x_vals = get_plot_vals(
@@ -704,68 +706,3 @@ class TimeseriesContinuous:
         ax.plot(x_vals, y_vals, label=label, **kwargs)
 
         return ax
-
-
-def get_plot_points(time_axis: PINT_NUMPY_ARRAY, res_increase: int) -> PINT_NUMPY_ARRAY:
-    """
-    Get points to plot
-
-    Parameters
-    ----------
-    time_axis
-        Time axis to use for plotting
-
-    res_increase
-        The increase in resolution we want to use when plotting.
-
-        In each window defined by `time_axis[n]` to `time_axis[n + 1]`,
-        `res_increase - 1` evenly spaced points
-        between `time_axis[n]` and `time_axis[n + 1]` will be generated.
-        The points defined by `time_axis` are also included.
-        As a result, the total number of plotted points is equal to
-        `time_axis.size + (res_increase - 1) * (time_axis.size - 1)`.
-
-    Returns
-    -------
-    :
-        Points to plot
-
-    Examples
-    --------
-    >>> import pint
-    >>> UR = pint.get_application_registry()
-    >>> Q = UR.Quantity
-    >>>
-    >>> time_axis = Q([2000, 2010, 2020, 2025], "yr")
-    >>>
-    >>> # Passing in res_increase equal to 1 simply returns the input values
-    >>> get_plot_points(time_axis, res_increase=1)
-    <Quantity([2000. 2010. 2020. 2025.], 'year')>
-    >>>
-    >>> # 'Double' the resolution
-    >>> get_plot_points(time_axis, res_increase=2)
-    <Quantity([2000.  2005.  2010.  2015.  2020.  2022.5 2025. ], 'year')>
-    >>>
-    >>> # 'Triple' the resolution
-    >>> get_plot_points(time_axis, res_increase=3)
-    <Quantity([2000.         2003.33333333 2006.66666667 2010.         2013.33333333
-     2016.66666667 2020.         2021.66666667 2023.33333333 2025.        ], 'year')>
-    """
-    time_axis_internal = time_axis[:-1]
-    step_fractions = np.linspace(0.0, (res_increase - 1) / res_increase, res_increase)
-    time_deltas = time_axis[1:] - time_axis[:-1]
-
-    time_axis_rep = (
-        np.repeat(time_axis_internal.m, step_fractions.size) * time_axis_internal.u
-    )
-    step_fractions_rep = np.tile(step_fractions, time_axis_internal.size)
-    time_axis_deltas_rep = np.repeat(time_deltas.m, step_fractions.size) * time_deltas.u
-
-    res: PINT_NUMPY_ARRAY = np.hstack(  # type: ignore # mypy confused by numpy and pint
-        [
-            time_axis_rep + time_axis_deltas_rep * step_fractions_rep,
-            time_axis[-1],
-        ]
-    )
-
-    return res

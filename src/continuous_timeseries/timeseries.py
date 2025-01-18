@@ -31,7 +31,7 @@ from continuous_timeseries.exceptions import (
     ExtrapolationNotAllowedError,
     MissingOptionalDependencyError,
 )
-from continuous_timeseries.time_axis import TimeAxis
+from continuous_timeseries.time_axis import TimeAxis, increase_time_axis_resolution
 from continuous_timeseries.timeseries_continuous import TimeseriesContinuous
 from continuous_timeseries.timeseries_discrete import TimeseriesDiscrete
 from continuous_timeseries.typing import PINT_NUMPY_ARRAY, PINT_SCALAR
@@ -294,6 +294,34 @@ class Timeseries:
             name=name,
         )
 
+    def to_pandas_series(
+        self,
+        time_units: str | pint.facets.plain.PlainUnit | None = None,
+        out_units: str | pint.facets.plain.PlainUnit | None = None,
+    ) -> pd.Series[np.floating]:
+        # Late import to avoid hard dependency on pandas
+        try:
+            import pandas as pd
+        except ImportError as exc:
+            raise MissingOptionalDependencyError(
+                "to_pandas_series", requirement="pandas"
+            ) from exc
+
+        if time_units is None:
+            time_units = self.timeseries_continuous.time_units
+
+        discrete = self.discrete
+        columns = discrete.time_axis.bounds.to(time_units).m
+        values = discrete.values_at_bounds.values
+        if out_units is not None:
+            values = values.to(out_units)
+            units = out_units
+
+        else:
+            units = str(values.u)
+
+        return pd.Series(values.m, index=columns, name=units)
+
     def differentiate(
         self,
         name_res: str | None = None,
@@ -324,6 +352,19 @@ class Timeseries:
             time_axis=self.time_axis,
             timeseries_continuous=derivative,
         )
+
+    def increase_resolution(self, res_increase: int) -> TimeseriesContinuous:
+        res = type(self)(
+            time_axis=TimeAxis(
+                increase_time_axis_resolution(
+                    self.time_axis.bounds, res_increase=res_increase
+                )
+            ),
+            # TODO: copy here?
+            timeseries_continuous=self.timeseries_continuous,
+        )
+
+        return res
 
     def integrate(
         self,

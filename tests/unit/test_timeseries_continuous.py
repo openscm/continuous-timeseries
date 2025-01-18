@@ -19,7 +19,7 @@ from continuous_timeseries.exceptions import (
 from continuous_timeseries.timeseries_continuous import (
     ContinuousFunctionScipyPPoly,
     TimeseriesContinuous,
-    get_plot_points,
+    get_higher_resolution_points,
 )
 
 UR = pint.get_application_registry()
@@ -128,7 +128,7 @@ def test_integrate_no_scipy(sys_modules_patch, expectation):
     ),
 )
 def test_get_plot_points(time_axis, res_increase, exp):
-    res = get_plot_points(time_axis, res_increase)
+    res = get_higher_resolution_points(time_axis, res_increase)
 
     pint.testing.assert_allclose(res, exp)
 

@@ -17,6 +17,7 @@ from continuous_timeseries.exceptions import MissingOptionalDependencyError
 from continuous_timeseries.timeseries import Timeseries
 
 if TYPE_CHECKING:
+    import matplotlib
     import pandas as pd
 
     P = TypeVar("P", bound=pd.DataFrame | pd.Series[Any])
@@ -50,6 +51,110 @@ class SeriesCTAccessor:
         """
         return self._series.index.to_frame(index=False)
 
+    def to_df(self, increase_resolution: int | None = None) -> pd.DataFrame:
+        # Late import to avoid hard dependency on pandas
+        try:
+            import pandas as pd
+        except ImportError as exc:
+            raise MissingOptionalDependencyError(
+                "to_pandas_series", requirement="pandas"
+            ) from exc
+
+        series_l = []
+        indexes_l = []
+        # TODO: progress bar and parallelisation
+        for idx, value in self._series.items():
+            # TODO: time_units and out_units passing
+            if increase_resolution is not None:
+                value_use = value.increase_resolution(increase_resolution)
+            else:
+                value_use = value
+
+            pd_series = value_use.to_pandas_series()
+            series_l.append(pd_series)
+            indexes_l.append((*idx, pd_series.name))
+
+        idx = pd.MultiIndex.from_frame(
+            pd.DataFrame(
+                indexes_l,
+                columns=[*self._series.index.names, "units"],
+                dtype="category",
+            )
+        )
+        df = pd.DataFrame(
+            series_l,
+            index=idx,
+        )
+
+        return df
+
+    # TODO: add this to DataFrame accessor to allow for time filtering in the middle
+    def to_sns_df(self, increase_resolution: int = 100):
+        # TODO: progress bar and parallelisation
+        # TODO: time_units and out_units passing
+        return (
+            self.to_df(increase_resolution=increase_resolution)
+            # Will become `.ct.to_sns_df`
+            .melt(
+                var_name="time",
+                ignore_index=False,
+            )
+            .reset_index()
+        )
+
+    def plot(
+        self,
+        label: str | tuple[str, ...] | None = None,
+        show_continuous: bool = True,
+        continuous_plot_kwargs: dict[str, Any] | None = None,
+        show_discrete: bool = False,
+        discrete_plot_kwargs: dict[str, Any] | None = None,
+        ax: matplotlib.axes.Axes | None = None,
+        progress: bool = False,
+    ) -> matplotlib.axes.Axes:
+        iterator = self._series.items()
+        if progress:
+            try:
+                from tqdm.auto import tqdm
+            except ImportError as exc:
+                raise MissingOptionalDependencyError(  # noqa: TRY003
+                    "get_timeseries_parallel_helper(..., progress=True)",
+                    requirement="tdqm",
+                ) from exc
+
+            iterator = tqdm(iterator, desc="Timeseries to plot")
+
+        if label is not None:
+            if isinstance(label, tuple):
+                raise NotImplementedError()
+
+            label_idx: int | None = get_index_level_idx(self._series, index_level=label)
+
+        else:
+            label_idx = None
+
+        for idx, ts in iterator:
+            if label_idx is not None:
+                label = idx[label_idx]
+                if "label" in continuous_plot_kwargs:
+                    # clash (could just warn here instead)
+                    raise KeyError
+
+                continuous_plot_kwargs_use = continuous_plot_kwargs | dict(label=label)
+
+            else:
+                continuous_plot_kwargs_use = continuous_plot_kwargs
+
+            ax = ts.plot(
+                show_continuous=show_continuous,
+                continuous_plot_kwargs=continuous_plot_kwargs_use,
+                show_discrete=show_discrete,
+                discrete_plot_kwargs=discrete_plot_kwargs,
+                ax=ax,
+            )
+
+        return ax
+
 
 def get_chunks(pd_obj: P, n_chunks: int) -> Iterator[P]:
     # Late import to avoid hard dependency on pandas
@@ -77,6 +182,16 @@ def get_chunks(pd_obj: P, n_chunks: int) -> Iterator[P]:
             yield pd_obj.iloc[start:end, :]
         else:
             yield pd_obj.iloc[start:end]
+
+
+def get_index_level_idx(obj: pd.DataFrame | pd.Series, index_level: str) -> int:
+    try:
+        level_idx = obj.index.names.index(index_level)
+    except ValueError as exc:
+        msg = f"{index_level} not available. {obj.index.names=}"
+        raise KeyError(msg) from exc
+
+    return level_idx
 
 
 def get_timeseries_parallel_helper(
@@ -107,12 +222,7 @@ def get_timeseries_parallel_helper(
     else:
         meth_to_call = "apply"
 
-    try:
-        units_idx = df.index.names.index(units_col)
-    except ValueError as exc:
-        msg = f"{units_col} not available. {df.index.names=}"
-
-        raise KeyError(msg) from exc
+    units_idx = get_index_level_idx(df, index_level=units_col)
 
     res = getattr(df, meth_to_call)(
         # TODO: make this injectable too
@@ -125,6 +235,8 @@ def get_timeseries_parallel_helper(
         idx_separator=idx_separator,
         ur=ur,
     )
+    # Units now handled by timeseries
+    res = res.reset_index(units_col, drop=True)
 
     return res
 

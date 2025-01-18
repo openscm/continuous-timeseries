@@ -35,7 +35,9 @@ import traceback
 import numpy as np
 import openscm_units
 import pandas as pd
+import pandas_indexing as pix
 import pint
+import seaborn as sns
 
 import continuous_timeseries as ct
 import continuous_timeseries.pandas_accessors
@@ -115,19 +117,21 @@ def create_df(
             (
                 (s, v, r, units)
                 for s, v, r in itertools.product(
-                    [f"variable_{i}" for i in range(n_variables)],
                     [f"scenario_{i}" for i in range(n_scenarios)],
+                    [f"variable_{i}" for i in range(n_variables)],
                     [i for i in range(n_runs)],
                 )
             ),
-            columns=["scenario", "variable", "region", "units"],
-            # This makes updates later way way faster
+            columns=["scenario", "variable", "run", "units"],
+            # This makes updates and general handling later way way faster.
+            # TODO: make this tip clearer.
             dtype="category",
         )
     )
 
+    n_ts = n_scenarios * n_variables * n_runs
     df = pd.DataFrame(
-        np.random.random((n_variables * n_runs * n_scenarios, timepoints.size)),
+        50.0 * np.linspace(0.3, 1, n_ts)[:,  np.newaxis] * np.linspace(0, 1, timepoints.size)[np.newaxis, :] + np.random.random((n_ts, timepoints.size)),
         columns=timepoints,
         index=idx,
     )
@@ -150,9 +154,9 @@ def create_df(
 
 # %%
 small_df = create_df(
-    n_scenarios=25,
-    n_variables=10,
-    n_runs=30,
+    n_scenarios=3,
+    n_variables=2,
+    n_runs=5,
     timepoints=np.arange(250) + 1850.0,
 )
 small_df
@@ -161,21 +165,36 @@ small_df
 # Then we convert it time series.
 
 # %%
-small_df.ct.to_timeseries(
+small_ts = small_df.ct.to_timeseries(
     time_units="yr",
     interpolation=ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed,
 )
+small_ts
 
 # %% [markdown]
 # Then we can use standard Continuous timeseries APIs,
 # e.g. plotting.
 
 # %%
+small_ts.ct.plot(continuous_plot_kwargs=dict(alpha=0.3))
+# # TODO: move this to plotting
+# small_ts.ct.plot(continuous_plot_kwargs=dict(alpha=0.3), progress=True)
 
 # %% [markdown]
-# If we have a bigger `pd.DataFrame`, this process can be much slower.
-# If you're not sure what's happening, you can activate the progress bar if you have
-# [`tdqm`](https://tqdm.github.io/) installed.
+# When combined with [pandas-indexing](https://pandas-indexing.readthedocs.io/en/latest/index.html),
+# this can be quite powerful for quick plots.
+
+# %%
+ax = small_ts.loc[pix.isin(variable="variable_0")].ct.plot(continuous_plot_kwargs=dict(alpha=0.3))
+ax.legend(ncols=3, loc="upper center", bbox_to_anchor=(0.5, -0.15))
+
+# %%
+# TODO: move this to plotting section
+ax = small_ts.loc[pix.isin(variable="variable_0", run=0)].ct.plot(label="scenario", continuous_plot_kwargs=dict(alpha=0.9))
+ax.legend()
+
+# %% [markdown]
+# If we have a bigger `pd.DataFrame`, the conversion process can be much slower.
 
 # %%
 bigger_df = create_df(
@@ -184,7 +203,12 @@ bigger_df = create_df(
     n_runs=300,
     timepoints=np.arange(351) + 1850.0,
 )
-bigger_df
+bigger_df.shape
+
+# %% [markdown]
+# If want to see the conversion's progress,
+# you can activate the progress bar if you have
+# [`tdqm`](https://tqdm.github.io/) installed.
 
 # %%
 bigger_df.ct.to_timeseries(
@@ -224,7 +248,8 @@ bigger_df.ct.to_timeseries(
 # If you want nested progress bars in parallel,
 # we support that too
 # (although we're not sure if this works on windows
-# because of the need for forking...).
+# because of the need for forking, for details see
+# [here](https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods)).
 
 # %%
 bigger_df.ct.to_timeseries(
@@ -241,11 +266,55 @@ bigger_df.ct.to_timeseries(
 )
 
 # %% [markdown]
-# - filtering with pandas-indexing
-# - bigger df
-# - convert more rows (progress, parallel, parallel with progress)
+# On big `pd.DataFrame`'s the combination with
+# [pandas indexing](https://pandas-indexing.readthedocs.io/)
+# becomes particularly powerful.
+
+# %%
+ax = (
+    bigger_df
+    .loc[pix.isin(variable="variable_1")]
+    .groupby(["scenario", "variable", "units"], observed=True)
+    .median()
+    .loc[pix.ismatch(scenario="scenario_1*")]
+    .ct.to_timeseries(
+        time_units="yr",
+        interpolation=ct.InterpolationOption.Quadratic,
+    )
+    .ct.plot()
+)
+ax.legend()
+
+# %%
+# # Units don't round trip
+# pd.testing.assert_frame_equal(
+#     small_df,
+#     small_ts.ct.to_df()
+# )
+small_ts.ct.to_df()
+
+# %%
+small_ts.ct.to_df(increase_resolution=3)
+
+# %%
+sns_df = small_ts.loc[pix.isin(scenario=[f"scenario_{i}" for i in range(2)])].ct.to_sns_df(increase_resolution=100)
+sns_df
+
+# %%
+sns.lineplot(
+    data=sns_df[sns_df["time"] <= 1855],
+    x="time",
+    y="value",
+    hue="scenario",
+    style="variable",
+    estimator=None,
+    units="run",
+)
+
+# %% [markdown]
 # - other operations, also with progress, parallel, parallel with progress
-# - convert to seaborn df for more fine-grained plotting control
-#   - also requires adding a `increase_resolution` method to `Timeseries`
+# - plot with basic control over labels
+# - plot with grouping and plumes for ranges
 # - convert with more fine-grained control over interpolation
+#   (e.g. interpolation being passed as pd.Series)
 # - unit conversion
