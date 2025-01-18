@@ -131,7 +131,10 @@ def create_df(
 
     n_ts = n_scenarios * n_variables * n_runs
     df = pd.DataFrame(
-        50.0 * np.linspace(0.3, 1, n_ts)[:,  np.newaxis] * np.linspace(0, 1, timepoints.size)[np.newaxis, :] + np.random.random((n_ts, timepoints.size)),
+        50.0
+        * np.linspace(0.3, 1, n_ts)[:, np.newaxis]
+        * np.linspace(0, 1, timepoints.size)[np.newaxis, :]
+        + np.random.random((n_ts, timepoints.size)),
         columns=timepoints,
         index=idx,
     )
@@ -185,12 +188,16 @@ small_ts.ct.plot(continuous_plot_kwargs=dict(alpha=0.3))
 # this can be quite powerful for quick plots.
 
 # %%
-ax = small_ts.loc[pix.isin(variable="variable_0")].ct.plot(continuous_plot_kwargs=dict(alpha=0.3))
+ax = small_ts.loc[pix.isin(variable="variable_0")].ct.plot(
+    continuous_plot_kwargs=dict(alpha=0.3)
+)
 ax.legend(ncols=3, loc="upper center", bbox_to_anchor=(0.5, -0.15))
 
 # %%
 # TODO: move this to plotting section
-ax = small_ts.loc[pix.isin(variable="variable_0", run=0)].ct.plot(label="scenario", continuous_plot_kwargs=dict(alpha=0.9))
+ax = small_ts.loc[pix.isin(variable="variable_0", run=0)].ct.plot(
+    label="scenario", continuous_plot_kwargs=dict(alpha=0.9)
+)
 ax.legend()
 
 # %% [markdown]
@@ -272,8 +279,7 @@ bigger_df.ct.to_timeseries(
 
 # %%
 ax = (
-    bigger_df
-    .loc[pix.isin(variable="variable_1")]
+    bigger_df.loc[pix.isin(variable="variable_1")]
     .groupby(["scenario", "variable", "units"], observed=True)
     .median()
     .loc[pix.ismatch(scenario="scenario_1*")]
@@ -297,7 +303,9 @@ small_ts.ct.to_df()
 small_ts.ct.to_df(increase_resolution=3)
 
 # %%
-sns_df = small_ts.loc[pix.isin(scenario=[f"scenario_{i}" for i in range(2)])].ct.to_sns_df(increase_resolution=100)
+sns_df = small_ts.loc[
+    pix.isin(scenario=[f"scenario_{i}" for i in range(2)])
+].ct.to_sns_df(increase_resolution=100)
 sns_df
 
 # %%
