@@ -38,7 +38,9 @@ The full accessor API is documented below.
     options:
         extensions:
           - "docs/griffe-ext.py:AccessorNamespace":
-                class_to_apply_to: SeriesCTAccessor
+                class_to_apply_to: continuous_timeseries.pandas_accessors.SeriesCTAccessor
                 namespace: "pd.Series.ct"
+        preload_modules:
+          - continuous_timeseries.pandas_accessors.SeriesCTAccessor
         show_root_full_path: false
         show_root_heading: true

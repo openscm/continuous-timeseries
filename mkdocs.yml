@@ -91,7 +91,7 @@ plugins:
             - http://xarray.pydata.org/en/stable/objects.inv
           options:
             docstring_style: numpy
-            extensions:
+            extensions: []
             relative_crossrefs: yes
             separate_signature: true
             show_root_heading: false
