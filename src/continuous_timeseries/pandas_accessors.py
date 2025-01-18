@@ -4,13 +4,22 @@ API for [`pandas`][pandas] accessors.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import concurrent.futures
+from collections.abc import Iterator
+from multiprocessing.context import BaseContext
+from typing import TYPE_CHECKING, Any, TypeVar
 
+import numpy as np
+import pint
+
+from continuous_timeseries.discrete_to_continuous import InterpolationOption
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
 from continuous_timeseries.timeseries import Timeseries
 
 if TYPE_CHECKING:
     import pandas as pd
+
+    P = TypeVar("P", bound=pd.DataFrame | pd.Series[Any])
 
 
 class SeriesCTAccessor:
@@ -42,6 +51,185 @@ class SeriesCTAccessor:
         return self._series.index.to_frame(index=False)
 
 
+def get_chunks(pd_obj: P, n_chunks: int) -> Iterator[P]:
+    # Late import to avoid hard dependency on pandas
+    try:
+        import pandas as pd
+    except ImportError as exc:
+        raise MissingOptionalDependencyError(
+            "interpolate", requirement="pandas"
+        ) from exc
+
+    if isinstance(pd_obj, pd.DataFrame):
+        total = pd_obj.shape[0]
+    else:
+        # Series
+        total = pd_obj.size
+
+    chunk_size = int(np.ceil(total / n_chunks))
+    for i in range(n_chunks):
+        start = i * chunk_size
+        end = (i + 1) * chunk_size
+        if end >= total:
+            end = None
+
+        if isinstance(pd_obj, pd.DataFrame):
+            yield pd_obj.iloc[start:end, :]
+        else:
+            yield pd_obj.iloc[start:end]
+
+
+def get_timeseries_parallel_helper(
+    df: pd.DataFrame,
+    interpolation: InterpolationOption,
+    time_units: str | pint.facets.plain.PlainUnit,
+    units_col: str,
+    idx_separator: str,
+    ur: pint.facets.PlainRegistry | None = None,
+    progress: bool = False,
+    progress_bar_position: int = 0,
+) -> pd.Series[Timeseries]:
+    if progress:
+        try:
+            from tqdm.auto import tqdm
+        except ImportError as exc:
+            raise MissingOptionalDependencyError(  # noqa: TRY003
+                "get_timeseries_parallel_helper(..., progress=True)", requirement="tdqm"
+            ) from exc
+
+        tqdm_kwargs = dict(position=progress_bar_position)
+        tqdm.pandas(**tqdm_kwargs)
+        meth_to_call = "progress_apply"
+        # No-one knows why this is needed, but it is
+        # jupyter notebooks
+        print(end=" ")
+
+    else:
+        meth_to_call = "apply"
+
+    try:
+        units_idx = df.index.names.index(units_col)
+    except ValueError as exc:
+        msg = f"{units_col} not available. {df.index.names=}"
+
+        raise KeyError(msg) from exc
+
+    res = getattr(df, meth_to_call)(
+        # TODO: make this injectable too
+        Timeseries.from_pandas_series,
+        axis="columns",
+        interpolation=interpolation,
+        units_idx=units_idx,
+        time_units=time_units,
+        # name="injectable?",
+        idx_separator=idx_separator,
+        ur=ur,
+    )
+
+    return res
+
+
+class DataFrameCTAccessor:
+    """
+    [`pd.DataFrame`][pandas.DataFrame] accessors
+
+    For details, see
+    [pandas' docs](https://pandas.pydata.org/docs/development/extending.html#registering-custom-accessors).
+    """
+
+    def __init__(self, pandas_obj: pd.DataFrame):
+        """
+        Initialise
+
+        Parameters
+        ----------
+        pandas_obj
+            Pandas object to use via the accessor
+        """
+        # TODO: consider adding validation
+        # validate_series(pandas_obj)
+        self._df = pandas_obj
+
+    def to_timeseries(  # noqa: PLR0913
+        self,
+        interpolation: InterpolationOption,
+        time_units: str | pint.facets.plain.PlainUnit,
+        units_col: str = "units",
+        ur: None = None,
+        idx_separator: str = "__",
+        res_name: str = "ts",
+        progress: bool = False,
+        progress_nested: bool = False,
+        n_processes: int = 1,
+        mp_context: BaseContext | None = None,
+    ) -> pd.Series[Timeseries]:
+        if n_processes == 1:
+            res = get_timeseries_parallel_helper(
+                self._df,
+                interpolation=interpolation,
+                time_units=time_units,
+                units_col=units_col,
+                idx_separator=idx_separator,
+                ur=ur,
+                progress=progress,
+            )
+
+            return res
+
+        # I think it should be possible to split out a
+        # `apply_pandas_op_parallel` or similar function.
+        iterator = get_chunks(self._df, n_chunks=n_processes)
+        if progress:
+            try:
+                from tqdm.auto import tqdm
+            except ImportError as exc:
+                raise MissingOptionalDependencyError(  # noqa: TRY003
+                    "to_timeseries(..., progress=True)", requirement="tdqm"
+                ) from exc
+
+            iterator = tqdm(iterator, desc="submitting to pool")
+
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=n_processes, mp_context=mp_context
+        ) as pool:
+            futures = [
+                pool.submit(
+                    get_timeseries_parallel_helper,
+                    chunk,
+                    interpolation=interpolation,
+                    time_units=time_units,
+                    units_col=units_col,
+                    idx_separator=idx_separator,
+                    ur=ur,
+                    progress=progress_nested,
+                    progress_bar_position=i,
+                )
+                for i, chunk in enumerate(iterator)
+            ]
+
+            iterator_results = concurrent.futures.as_completed(futures)
+            if progress:
+                iterator_results = tqdm(
+                    iterator_results,
+                    desc="Retrieving parallel results",
+                    total=len(futures),
+                )
+
+            res_l = [future.result() for future in iterator_results]
+
+        # Late import to avoid hard dependency on pandas
+        try:
+            import pandas as pd
+        except ImportError as exc:
+            raise MissingOptionalDependencyError(
+                "interpolate", requirement="pandas"
+            ) from exc
+
+        res = pd.concat(res_l)
+
+        return res
+
+
 def register_pandas_accessor(namespace: str = "ct") -> None:
     """
     Register the pandas accessors
@@ -66,3 +254,4 @@ def register_pandas_accessor(namespace: str = "ct") -> None:
         ) from exc
 
     pd.api.extensions.register_series_accessor(namespace)(SeriesCTAccessor)
+    pd.api.extensions.register_dataframe_accessor(namespace)(DataFrameCTAccessor)

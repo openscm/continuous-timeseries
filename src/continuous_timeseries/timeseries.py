@@ -43,6 +43,7 @@ from continuous_timeseries.warnings import (
 if TYPE_CHECKING:
     import IPython.lib.pretty
     import matplotlib.axes
+    import pandas as pd
 
 
 class UnreachableIntegralPreservingInterpolationTarget(ValueError):
@@ -212,6 +213,85 @@ class Timeseries:
         return cls(
             time_axis=TimeAxis(x),
             timeseries_continuous=continuous,
+        )
+
+    @classmethod
+    def from_pandas_series(  # noqa: PLR0913
+        cls,
+        series: pd.Series,
+        interpolation: InterpolationOption,
+        units_idx: int,
+        time_units: str | pint.facets.plain.PlainUnit,
+        name: str | None = None,
+        idx_separator: str = "__",
+        ur: pint.facets.PlainRegistry | None = None,
+    ) -> Timeseries:
+        """
+        Initialise from a [`pd.Series`][pandas.Series]
+
+        Parameters
+        ----------
+        series
+            [`pd.Series`][pandas.Series] from which to initialise.
+
+        interpolation
+            Interpolation to apply when converting
+            the discrete values to a continuous representation
+
+        units_idx
+            The index of `series.name` (assumed to be a tuple)
+            which holds the units information.
+
+        time_units
+            The units to attach to `series`'s columns to create a time axis.
+
+        name
+            The value of the result's name attribute.
+
+            If not supplied, we automatically generate this based on the `series`
+            index values.
+
+        idx_separator
+            The separator to use to join the values of `idx_row[0]`
+            to get the result's name.
+
+            Only used if `name is None`.
+
+            All parts of `series.name` are included in the name
+            except the units information.
+
+        ur
+            Unit registry to use for the conversion.
+
+            If not supplied, we use the result of calling
+            [`pint.get_application_registry`][].
+
+        Returns
+        -------
+        :
+            Initialised [`Timeseries`][(m)].
+        """
+        if ur is None:
+            ur = pint.get_application_registry()
+
+        if isinstance(time_units, str):
+            time_units = ur.Unit(time_units)
+
+        index_values = series.name
+        units_str = index_values[units_idx]
+        units = ur.Unit(units_str)
+
+        x = series.index.values * time_units
+        y = series.values * units
+
+        if name is None:
+            name = idx_separator.join(str(v) for v in index_values if v != units_str)
+
+        return cls.from_arrays(
+            x=x,
+            y=y,
+            interpolation=interpolation,
+            name=name,
         )
 
     def differentiate(
