@@ -5,7 +5,7 @@
 groups = ["default", "all-dev", "dev", "docs", "full", "pandas", "plots", "progress", "scipy", "tests"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:6b7554152864de1951e99cae79d007c45025e0318b5bb4821847e35bbf1867f8"
+content_hash = "sha256:09de0eb7b4aa4119ae610f7454c781a77500cc4b943ed04c67f74998ebda0d00"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
