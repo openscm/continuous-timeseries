@@ -32,6 +32,7 @@ import itertools
 import multiprocessing
 import traceback
 
+import matplotlib.pyplot as plt
 import numpy as np
 import openscm_units
 import pandas as pd
@@ -170,7 +171,7 @@ small_df
 # %%
 small_ts = small_df.ct.to_timeseries(
     time_units="yr",
-    interpolation=ct.InterpolationOption.PiecewiseConstantPreviousLeftClosed,
+    interpolation=ct.InterpolationOption.Quadratic,
 )
 small_ts
 
@@ -280,7 +281,7 @@ bigger_df.ct.to_timeseries(
 # %%
 ax = (
     bigger_df.loc[pix.isin(variable="variable_1")]
-    .groupby(["scenario", "variable", "units"], observed=True)
+    .groupby(bigger_df.index.names.difference(["run"]), observed=True)
     .median()
     .loc[pix.ismatch(scenario="scenario_1*")]
     .ct.to_timeseries(
@@ -292,12 +293,12 @@ ax = (
 ax.legend()
 
 # %%
-# # Units don't round trip
 # pd.testing.assert_frame_equal(
 #     small_df,
-#     small_ts.ct.to_df()
+#     # Units don't round trip by default
+#     small_ts.ct.to_df(out_units="Mt / yr")
 # )
-small_ts.ct.to_df()
+small_ts.ct
 
 # %%
 small_ts.ct.to_df(increase_resolution=3)
@@ -305,6 +306,7 @@ small_ts.ct.to_df(increase_resolution=3)
 # %%
 sns_df = small_ts.loc[
     pix.isin(scenario=[f"scenario_{i}" for i in range(2)])
+# Rename to `to_tidy_df`
 ].ct.to_sns_df(increase_resolution=100)
 sns_df
 
@@ -319,10 +321,50 @@ sns.lineplot(
     units="run",
 )
 
+# %%
+plumes_over = ["run"]
+increase_resolution = 100
+quantiles_plumes = (
+    (0.5, 0.8),
+    ((0.05, 0.95), 0.5),
+)
+
+fig, ax = plt.subplots()
+for scenario, s_ts in small_ts.loc[pix.isin(variable="variable_0")].groupby("scenario", observed=True):
+    for quantiles, alpha in quantiles_plumes:
+        s_quants = s_ts.ct.to_df(increase_resolution=increase_resolution).groupby(small_ts.index.names.difference(plumes_over), observed=True).quantile(quantiles)
+        if isinstance(quantiles, tuple):
+            ax.fill_between(
+                s_quants.columns.values.squeeze(),
+                # As long as there are only two rows,
+                # doesn't matter which way around you do this.
+                s_quants.iloc[0, :].values.squeeze(),
+                s_quants.iloc[1, :].values.squeeze(),
+                alpha=alpha,
+                # label=scenario,
+            )
+        else:
+            ax.plot(
+                s_quants.columns.values.squeeze(),
+                s_quants.values.squeeze(),
+                alpha=alpha,
+                label=scenario,
+            )
+
+ax.legend()
+
+# %%
+(
+    small_ts
+    .ct.to_df(increase_resolution=5)
+    .groupby(small_ts.index.names.difference(["run"]), observed=True)
+    .quantile([0.05, 0.5, 0.95])
+)
+
 # %% [markdown]
 # - other operations, also with progress, parallel, parallel with progress
 # - plot with basic control over labels
-# - plot with grouping and plumes for ranges
+# - plot with grouping and plumes for ranges (basically reproduce scmdata API)
 # - convert with more fine-grained control over interpolation
 #   (e.g. interpolation being passed as pd.Series)
 # - unit conversion
