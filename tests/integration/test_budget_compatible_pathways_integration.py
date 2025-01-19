@@ -319,7 +319,7 @@ def test_convert_to_annual_constant_emissions(
     if res.time_axis.bounds.m[0] == int(res.time_axis.bounds.m[0]):
         # Make sure that simply adding up values gives back our budget
         np.testing.assert_allclose(
-            exp_integral,
+            exp_integral.m,
             np.cumsum(res.discrete.values_at_bounds.values)
             .to(exp_integral.u / res.time_axis.bounds.u)
             .m[-1],

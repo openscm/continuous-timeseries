@@ -120,10 +120,16 @@ def test_pretty(bounds):
         pytest.param(
             Q(np.linspace(1750, 2000 + 1, 1000), "yr"),
             id="big_array",
+            marks=pytest.mark.xfail(
+                int(np.__version__[0]) < 2, reason="numpy 1.x formatting is different"
+            ),
         ),
         pytest.param(
             Q(np.linspace(1750, 2000 + 1, int(1e5)), "yr"),
             id="really_big_array",
+            marks=pytest.mark.xfail(
+                int(np.__version__[0]) < 2, reason="numpy 1.x formatting is different"
+            ),
         ),
     ),
 )

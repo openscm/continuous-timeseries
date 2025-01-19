@@ -34,6 +34,11 @@ formatting_check_cases = pytest.mark.parametrize(
                 values_at_bounds=ValuesAtBounds(Q([10.0, 20.0, 5.0], "kg")),
             ),
             id="basic",
+            marks=pytest.mark.xfail(
+                int(pint.__version__.split(".")[0]) == 0
+                and int(pint.__version__.split(".")[1]) < 24,
+                reason="pint <0.24 formatting is different",
+            ),
         ),
         pytest.param(
             TimeseriesDiscrete(
@@ -42,6 +47,9 @@ formatting_check_cases = pytest.mark.parametrize(
                 values_at_bounds=ValuesAtBounds(Q(np.arange(1000), "kg")),
             ),
             id="big_array",
+            marks=pytest.mark.xfail(
+                int(np.__version__[0]) < 2, reason="numpy 1.x formatting is different"
+            ),
         ),
         pytest.param(
             TimeseriesDiscrete(
@@ -50,6 +58,9 @@ formatting_check_cases = pytest.mark.parametrize(
                 values_at_bounds=ValuesAtBounds(Q(np.arange(1e5), "kg")),
             ),
             id="really_big_array",
+            marks=pytest.mark.xfail(
+                int(np.__version__[0]) < 2, reason="numpy 1.x formatting is different"
+            ),
         ),
     ),
 )
