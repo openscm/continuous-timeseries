@@ -21,6 +21,25 @@ from the examples given in that link.
 
 <!-- towncrier release notes start -->
 
+## Continuous Timeseries v0.4.0 (2025-01-20)
+
+### 🆕 Features
+
+- Added the skeleton for a pandas accessor ([#26](https://github.com/openscm/continuous-timeseries/pull/26))
+
+### 🐛 Bug Fixes
+
+- Fixed the minimum versions of our requirements (also tested that installation with minimum versions works). ([#29](https://github.com/openscm/continuous-timeseries/pull/29))
+
+### 📚 Improved Documentation
+
+- Added documentation on our dependency pinning and testing strategy. ([#29](https://github.com/openscm/continuous-timeseries/pull/29))
+
+### 🔧 Trivial/Internal Changes
+
+- [#27](https://github.com/openscm/continuous-timeseries/pull/27), [#29](https://github.com/openscm/continuous-timeseries/pull/29), [#30](https://github.com/openscm/continuous-timeseries/pull/30)
+
+
 ## Continuous Timeseries v0.3.3 (2025-01-08)
 
 ### 🔧 Trivial/Internal Changes
