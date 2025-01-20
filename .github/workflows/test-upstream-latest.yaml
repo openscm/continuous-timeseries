@@ -50,8 +50,8 @@ jobs:
       - name: Install dependencies
         run: |
           uv pip install --requirements requirements-only-tests-locked.txt --requirements requirements-only-tests-min-locked.txt
-          uv pip install --all-extras pyproject.toml
-          uv pip install -r requirements-upstream-dev.txt
+          uv pip install --requirements pyproject.toml --all-extras
+          uv pip install --requirements requirements-upstream-dev.txt
       - name: Run tests
         run: |
           uv run --no-sync pytest tests -r a -v
