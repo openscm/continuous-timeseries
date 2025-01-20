@@ -73,7 +73,7 @@ changelog-draft:  ## compile a draft of the next changelog
 licence-check:  ## Check that licences of the dependencies are suitable
 	# Will likely fail on Windows, but Makefiles are in general not Windows
 	# compatible so we're not too worried
-	uv export --no-dev > $(TEMP_FILE)
+	uv export --no-emit-project --no-hashes --no-dev > $(TEMP_FILE)
 	uv run liccheck -r $(TEMP_FILE) -R licence-check.txt
 	rm -f $(TEMP_FILE)
 

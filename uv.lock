@@ -460,6 +460,15 @@ tests = [
     { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "scipy", version = "1.15.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
 ]
+tests-full = [
+    { name = "ipython", version = "8.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "ipython", version = "8.31.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "openscm-units" },
+    { name = "pandas" },
+    { name = "pytest-cov" },
+    { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "scipy", version = "1.15.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+]
 tests-min = [
     { name = "packaging" },
     { name = "pytest" },
@@ -557,6 +566,13 @@ tests = [
     { name = "pytest", specifier = "==8.3.4" },
     { name = "pytest-cov", specifier = "==6.0.0" },
     { name = "pytest-regressions", specifier = ">=2.6.0" },
+    { name = "scipy", specifier = ">=1.13.1" },
+]
+tests-full = [
+    { name = "ipython", specifier = ">=8.18.1" },
+    { name = "openscm-units", specifier = ">=0.6.3" },
+    { name = "pandas", specifier = ">=2.0.0" },
+    { name = "pytest-cov", specifier = "==6.0.0" },
     { name = "scipy", specifier = ">=1.13.1" },
 ]
 tests-min = [
