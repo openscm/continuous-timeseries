@@ -165,7 +165,7 @@ jobs:
         os: [ "ubuntu-latest" ]
         # TODO: consider what versions to use here
         # (maybe the bugfix python versions..?)
-        python-version: [ "3.12", "3.13" ]
+        python-version: [ "3.11", "3.12" ]
     runs-on: "${{ matrix.os }}"
     defaults:
       run:
