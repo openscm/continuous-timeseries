@@ -30,6 +30,10 @@
 #   (see https://github.com/hgrecco/pint/blob/74b708661577623c0c288933d8ed6271f32a4b8b/pint/util.py#L1004)
 #
 # In short, we try and have as nice an experience for developers as possible.
+#
+# (As one other note/trick for representation of objects,
+# you can control how numpy represents its objects using
+# [numpy.set_printoptions](https://numpy.org/doc/stable/reference/generated/numpy.set_printoptions.html)).
 
 # %% [markdown]
 # ## Imports
