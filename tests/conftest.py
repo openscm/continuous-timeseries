@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import importlib
 
-import pandas as pd
 import pytest
 
 import continuous_timeseries.pandas_accessors
@@ -35,6 +34,8 @@ def pytest_report_header(config):
 
 @pytest.fixture()
 def setup_pandas_accessor() -> None:
+    pd = pytest.importorskip("pandas")
+
     # Not parallel safe, but good enough
     continuous_timeseries.pandas_accessors.register_pandas_accessor()
 

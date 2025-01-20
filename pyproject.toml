@@ -106,6 +106,7 @@ tests-min = [
 tests = [
     "ipython>=8.18.1",
     "openscm-units>=0.6.3",
+    "pandas>=2.0.0",
     "pytest-cov==6.0.0",
     "scipy>=1.13.1",
     {include-group = "tests-min"},
