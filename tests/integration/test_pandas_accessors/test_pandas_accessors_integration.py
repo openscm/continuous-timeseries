@@ -8,12 +8,13 @@ import sys
 from contextlib import nullcontext as does_not_raise
 from unittest.mock import patch
 
-import pandas as pd
 import pytest
 
 from continuous_timeseries.exceptions import (
     MissingOptionalDependencyError,
 )
+
+pd = pytest.importorskip("pandas")
 
 
 def test_import_does_not_register():

@@ -4,7 +4,9 @@ Tests of our pandas series accessors
 
 from __future__ import annotations
 
-import pandas as pd
+import pytest
+
+pd = pytest.importorskip("pandas")
 
 
 def test_metadata(setup_pandas_accessor):
