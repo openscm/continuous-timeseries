@@ -185,7 +185,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Setup compilation dependencies
         run: |
-          sudo apt-get install -y libopenblas-dev python3-dev
+          echo "python${{ matrix.python-version }}-dev"
+          sudo apt-get install -y libopenblas-dev "python${{ matrix.python-version }}-dev"
       - name: Create venv
         run: |
           uv venv --seed
