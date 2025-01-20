@@ -118,8 +118,9 @@ jobs:
         # have set their minimum support dependencies correctly,
         # which isn't our problem to solve.
         resolution-strategy: [ "lowest-direct" ]
-        # Only test against the oldest python version
-        # because python is itself a direct dependency.
+        # Only test against the oldest supported python version
+        # because python is itself a direct dependency
+        # (so we're testing against the lowest direct python too).
         python-version: [ "3.9" ]
     runs-on: "${{ matrix.os }}"
     defaults:
@@ -144,7 +145,6 @@ jobs:
       - name: Install dependencies
         run: |
           uv pip install --requirements requirements-only-tests-locked.txt
-          uv pip install '.[full]'
           uv pip compile --python ${{ matrix.python-version }} --resolution ${{ matrix.resolution-strategy }} --all-extras pyproject.toml -o requirements-tmp.txt
           uv pip install -r requirements-tmp.txt
       - name: Run tests
