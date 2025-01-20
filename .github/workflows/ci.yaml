@@ -165,7 +165,7 @@ jobs:
         os: [ "ubuntu-latest" ]
         # TODO: consider what versions to use here
         # (maybe the bugfix python versions..?)
-        python-version: [ "3.11", "3.12" ]
+        python-version: [ "3.11", "3.12", "3.13" ]
     runs-on: "${{ matrix.os }}"
     defaults:
       run:
@@ -186,7 +186,9 @@ jobs:
       - name: Setup compilation dependencies
         run: |
           echo "python${{ matrix.python-version }}-dev"
-          sudo apt-get install -y libopenblas-dev "python${{ matrix.python-version }}-dev"
+          sudo add-apt-repository ppa:deadsnakes/ppa -y
+          sudo apt update
+          sudo apt install -y libopenblas-dev "python${{ matrix.python-version }}-dev"
       - name: Create venv
         run: |
           uv venv --seed
