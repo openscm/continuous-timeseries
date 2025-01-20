@@ -17,6 +17,7 @@ See https://oprypin.github.io/mkdocs-literate-nav/
     - [Why this API?](further-background/why-this-api.py)
     - [Discrete to continuous conversions](further-background/discrete_to_continuous_conversions.py)
     - [Representations](further-background/representations.py)
+    - [Dependency pinning and testing strategy](further-background/dependency-pinning-and-testing.md)
 - [Development](development.md)
 - [Pandas accessors](pandas-accessors.md)
 - [API reference](api/continuous_timeseries/)

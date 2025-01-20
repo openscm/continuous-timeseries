@@ -22,7 +22,8 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        python-version: [ "3.9", "3.10", "3.11" ]
+        # Test against all security and bugfix versions: https://devguide.python.org/versions/
+        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
         # Check both 'library' install and the 'application' (i.e. locked) install
         install-target: ["continuous-timeseries", "continuous-timeseries[locked]"]
     runs-on: "${{ matrix.os }}"
@@ -67,7 +68,7 @@ jobs:
         python scripts/test-install.py
     - name: Install min test dependencies
       run: |
-        pip install pytest pytest-regressions
+        pip install -r requirements-only-tests-min-locked.txt
     - name: Run tests
       run: |
         # Can't run doctests here because the paths are different.

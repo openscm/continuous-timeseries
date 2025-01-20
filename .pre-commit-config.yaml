@@ -4,7 +4,7 @@ ci:
   autoupdate_schedule: quarterly
   autoupdate_branch: pre-commit-autoupdate
   # Currently network access isn't supported in the pre-commit CI product.
-  skip: [uv-lock, uv-export, pdm-lock-check]
+  skip: [uv-sync, uv-lock, uv-export, pdm-lock-check]
 
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
@@ -39,9 +39,9 @@ repos:
         args: [ --fix, --exit-non-zero-on-fix ]
       - id: ruff-format
   - repo: https://github.com/astral-sh/uv-pre-commit
-    # uv version.
-    rev: 0.5.11
+    rev: 0.5.21
     hooks:
+      - id: uv-sync
       - id: uv-lock
         name: uv-lock-check
         args: ["--check"]
@@ -56,10 +56,11 @@ repos:
         name: export-requirements-docs
         args: ["-o", "requirements-docs-locked.txt", "--no-hashes", "--no-dev", "--no-emit-project", "--all-extras", "--group", "docs"]
       - id: uv-export
+        name: export-requirements-only-tests-min
+        args: ["-o", "requirements-only-tests-min-locked.txt", "--no-hashes", "--no-dev", "--no-emit-project", "--only-group", "tests-min"]
+      - id: uv-export
         name: export-requirements-only-tests
         args: ["-o", "requirements-only-tests-locked.txt", "--no-hashes", "--no-dev", "--no-emit-project", "--only-group", "tests"]
-      # # Not released yet
-      # - id: uv-sync
   - repo: https://github.com/pdm-project/pdm
     rev: 2.22.1
     hooks:

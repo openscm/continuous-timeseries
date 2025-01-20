@@ -8,9 +8,9 @@ authors = [
 license = { text = "3-Clause BSD License" }
 requires-python = ">=3.9"
 dependencies = [
-    "attrs>=24.3.0",
-    "numpy>=2.0.0",
-    "pint>=0.24.4",
+    "attrs>=22.1.0",
+    "numpy>=1.25.0",
+    "pint>=0.22.0",
 ]
 readme = "README.md"
 classifiers = [
@@ -46,10 +46,10 @@ plots = [
     "matplotlib>=3.7.1",
 ]
 progress = [
-    "tqdm>=4.0.0",
+    "tqdm>=4.1.0",
 ]
 scipy = [
-    "scipy>=1.13.1",
+    "scipy>=1.11.1",
 ]
 full = [
     "continuous-timeseries[pandas]",
@@ -95,13 +95,27 @@ docs = [
     "mkdocs-jupyter==0.25.1",
     "seaborn>=0.13.2",
 ]
-tests = [
-    "ipython>=8.18.1",
-    "openscm-units>=0.6.3",
-    "pytest-cov==6.0.0",
+# For minimum test dependencies.
+# These are used when running our minimum PyPI install tests.
+tests-min = [
+    "packaging>=24.2",
     "pytest==8.3.4",
     "pytest-regressions>=2.6.0",
+]
+# Full test dependencies.
+tests-full = [
+    "ipython>=8.18.1",
+    "openscm-units>=0.6.3",
+    "pandas>=2.0.0",
+    "pytest-cov==6.0.0",
     "scipy>=1.13.1",
+]
+# Test dependencies
+# (partly split because liccheck uses toml,
+# which doesn't support inhomogeneous arrays).
+tests = [
+    {include-group = "tests-min"},
+    {include-group = "tests-full"},
 ]
 all-dev = [
     {include-group = "dev"},

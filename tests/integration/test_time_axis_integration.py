@@ -10,6 +10,7 @@ import numpy as np
 import pint
 import pint.testing
 import pytest
+from packaging.version import Version
 
 from continuous_timeseries.time_axis import TimeAxis
 
@@ -120,10 +121,18 @@ def test_pretty(bounds):
         pytest.param(
             Q(np.linspace(1750, 2000 + 1, 1000), "yr"),
             id="big_array",
+            marks=pytest.mark.xfail(
+                Version(np.__version__) < Version("2.2"),
+                reason="numpy <2.2 formatting is different",
+            ),
         ),
         pytest.param(
             Q(np.linspace(1750, 2000 + 1, int(1e5)), "yr"),
             id="really_big_array",
+            marks=pytest.mark.xfail(
+                Version(np.__version__) < Version("2.2"),
+                reason="numpy <2.2 formatting is different",
+            ),
         ),
     ),
 )
