@@ -401,9 +401,7 @@ all-dev = [
     { name = "pip" },
     { name = "pre-commit" },
     { name = "pymdown-extensions" },
-    { name = "pytest" },
     { name = "pytest-cov" },
-    { name = "pytest-regressions" },
     { name = "ruff" },
     { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "scipy", version = "1.14.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
@@ -449,11 +447,13 @@ docs = [
 tests = [
     { name = "ipython" },
     { name = "openscm-units" },
-    { name = "pytest" },
     { name = "pytest-cov" },
-    { name = "pytest-regressions" },
     { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "scipy", version = "1.14.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+]
+tests-min = [
+    { name = "pytest" },
+    { name = "pytest-regressions" },
 ]
 
 [package.metadata]
@@ -495,9 +495,7 @@ all-dev = [
     { name = "pip", specifier = "==24.3.1" },
     { name = "pre-commit", specifier = "==4.0.1" },
     { name = "pymdown-extensions", specifier = "==10.13" },
-    { name = "pytest", specifier = "==8.3.4" },
     { name = "pytest-cov", specifier = "==6.0.0" },
-    { name = "pytest-regressions", specifier = ">=2.6.0" },
     { name = "ruff", specifier = "==0.8.6" },
     { name = "scipy", specifier = ">=1.13.1" },
     { name = "scipy-stubs", marker = "python_full_version >= '3.10'", specifier = ">=1.14.1.6" },
@@ -540,10 +538,12 @@ docs = [
 tests = [
     { name = "ipython", specifier = ">=8.18.1" },
     { name = "openscm-units", specifier = ">=0.6.3" },
-    { name = "pytest", specifier = "==8.3.4" },
     { name = "pytest-cov", specifier = "==6.0.0" },
-    { name = "pytest-regressions", specifier = ">=2.6.0" },
     { name = "scipy", specifier = ">=1.13.1" },
+]
+tests-min = [
+    { name = "pytest", specifier = "==8.3.4" },
+    { name = "pytest-regressions", specifier = ">=2.6.0" },
 ]
 
 [[package]]

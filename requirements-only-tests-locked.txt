@@ -29,11 +29,8 @@ pure-eval==0.2.3
 pygments==2.19.1
 pytest==8.3.4
 pytest-cov==6.0.0
-pytest-datadir==1.5.0
-pytest-regressions==2.6.0
 python-dateutil==2.9.0.post0
 pytz==2024.2
-pyyaml==6.0.2
 scipy==1.13.1 ; python_full_version < '3.10'
 scipy==1.14.1 ; python_full_version >= '3.10'
 six==1.17.0

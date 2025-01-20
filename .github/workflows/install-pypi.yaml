@@ -67,7 +67,7 @@ jobs:
         python scripts/test-install.py
     - name: Install min test dependencies
       run: |
-        pip install pytest pytest-regressions
+        pip install -r requirements-only-tests-min-locked.txt
     - name: Run tests
       run: |
         # Can't run doctests here because the paths are different.

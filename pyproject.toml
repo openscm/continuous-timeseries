@@ -95,12 +95,17 @@ docs = [
     "mkdocs-jupyter==0.25.1",
     "seaborn>=0.13.2",
 ]
+# For minimum test dependencies.
+# These are used when running our minimum PyPI install tests.
+tests-min = [
+    "pytest==8.3.4",
+    "pytest-regressions>=2.6.0",
+]
+# Full test dependencies.
 tests = [
     "ipython>=8.18.1",
     "openscm-units>=0.6.3",
     "pytest-cov==6.0.0",
-    "pytest==8.3.4",
-    "pytest-regressions>=2.6.0",
     "scipy>=1.13.1",
 ]
 all-dev = [
