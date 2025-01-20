@@ -146,7 +146,7 @@ jobs:
         run: |
           uv pip install --requirements requirements-only-tests-locked.txt
           uv pip compile --python ${{ matrix.python-version }} --resolution ${{ matrix.resolution-strategy }} --all-extras pyproject.toml -o requirements-tmp.txt
-          uv pip install -r requirements-tmp.txt .
+          uv pip install --requirements requirements-tmp.txt .
       - name: Run tests
         run: |
           uv run --no-sync pytest tests -r a -v
