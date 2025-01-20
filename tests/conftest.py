@@ -18,6 +18,7 @@ def pytest_report_header(config):
     for dep in [
         "attrs",
         "continuous_timeseries",
+        "matplotlib",
         "numpy",
         "pandas",
         "pint",
