@@ -13,6 +13,7 @@ import numpy as np
 import pint
 import pint.testing
 import pytest
+from packaging.version import Version
 
 from continuous_timeseries.discrete_to_continuous import InterpolationOption
 from continuous_timeseries.exceptions import MissingOptionalDependencyError
@@ -34,6 +35,10 @@ formatting_check_cases = pytest.mark.parametrize(
                 values_at_bounds=ValuesAtBounds(Q([10.0, 20.0, 5.0], "kg")),
             ),
             id="basic",
+            marks=pytest.mark.xfail(
+                Version(pint.__version__) < Version("0.24"),
+                reason="pint <0.24 formatting is different",
+            ),
         ),
         pytest.param(
             TimeseriesDiscrete(
@@ -42,6 +47,10 @@ formatting_check_cases = pytest.mark.parametrize(
                 values_at_bounds=ValuesAtBounds(Q(np.arange(1000), "kg")),
             ),
             id="big_array",
+            marks=pytest.mark.xfail(
+                Version(np.__version__) < Version("2.2"),
+                reason="numpy <2.2 formatting is different",
+            ),
         ),
         pytest.param(
             TimeseriesDiscrete(
@@ -50,6 +59,10 @@ formatting_check_cases = pytest.mark.parametrize(
                 values_at_bounds=ValuesAtBounds(Q(np.arange(1e5), "kg")),
             ),
             id="really_big_array",
+            marks=pytest.mark.xfail(
+                Version(np.__version__) < Version("2.2"),
+                reason="numpy <2.2 formatting is different",
+            ),
         ),
     ),
 )

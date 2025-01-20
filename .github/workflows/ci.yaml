@@ -104,6 +104,53 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  tests-resolution-strategies:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Only test on ubuntu here for now.
+        # We could consider doing this on different platforms too,
+        # although that probably belongs better with the PyPI tests.
+        os: [ "ubuntu-latest" ]
+        # Tests with lowest direct resolution.
+        # We don't do lowest because that is essentially testing
+        # whether downstream dependencies
+        # have set their minimum support dependencies correctly,
+        # which isn't our problem to solve.
+        resolution-strategy: [ "lowest-direct" ]
+        # Only test against the oldest python version
+        # because python is itself a direct dependency.
+        python-version: [ "3.9" ]
+    runs-on: "${{ matrix.os }}"
+    defaults:
+      run:
+        # This might be needed for Windows
+        # and doesn't seem to affect unix-based systems so we include it.
+        # If you have better proof of whether this is needed or not,
+        # feel free to update.
+        shell: bash
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Setup uv
+        id: setup-uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.5.11"
+          python-version: ${{ matrix.python-version }}
+      - name: Create venv
+        run: |
+          uv venv --seed
+      - name: Install dependencies
+        run: |
+          uv pip install --requirements requirements-only-tests-locked.txt
+          uv pip install '.[full]'
+          uv pip compile --python ${{ matrix.python-version }} --resolution ${{ matrix.resolution-strategy }} --all-extras pyproject.toml -o requirements-tmp.txt
+          uv pip install -r requirements-tmp.txt
+      - name: Run tests
+        run: |
+          uv run --no-sync pytest tests -r a -v
+
   tests-without-extras:
     # Run the tests without installing extras.
     # This is just a test to make sure to avoid

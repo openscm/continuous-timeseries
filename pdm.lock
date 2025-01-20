@@ -5,7 +5,7 @@
 groups = ["default", "all-dev", "dev", "docs", "full", "pandas", "plots", "progress", "scipy", "tests", "tests-min"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:9ec276f0845a985d025c9a085356b920332eeede1798b68c8f09bb17a9c0f149"
+content_hash = "sha256:d05d2becbb54635e4e170a23a57d293a49006a2b6fdd3a6194afcd06b71621be"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -2629,7 +2629,7 @@ name = "pytest-datadir"
 version = "1.5.0"
 requires_python = ">=3.8"
 summary = "pytest plugin for test data directories and files"
-groups = ["tests-min"]
+groups = ["all-dev", "tests", "tests-min"]
 dependencies = [
     "pytest>=5.0",
 ]
@@ -2643,7 +2643,7 @@ name = "pytest-regressions"
 version = "2.7.0"
 requires_python = ">=3.9"
 summary = "Easy to use fixtures to write regression tests."
-groups = ["tests-min"]
+groups = ["all-dev", "tests", "tests-min"]
 dependencies = [
     "pytest-datadir>=1.2.0",
     "pytest>=6.2.0",
@@ -2736,7 +2736,7 @@ name = "pyyaml"
 version = "6.0.2"
 requires_python = ">=3.8"
 summary = "YAML parser and emitter for Python"
-groups = ["all-dev", "dev", "docs", "tests-min"]
+groups = ["all-dev", "dev", "docs", "tests", "tests-min"]
 files = [
     {file = "PyYAML-6.0.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0a9a2848a5b7feac301353437eb7d5957887edbf81d56e903999a75a3d743086"},
     {file = "PyYAML-6.0.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:29717114e51c84ddfba879543fb232a6ed60086602313ca38cce623c1d62cfbf"},
