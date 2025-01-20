@@ -916,13 +916,13 @@ files = [
 
 [[package]]
 name = "identify"
-version = "2.6.5"
+version = "2.6.6"
 requires_python = ">=3.9"
 summary = "File identification library for Python"
 groups = ["all-dev", "dev"]
 files = [
-    {file = "identify-2.6.5-py2.py3-none-any.whl", hash = "sha256:14181a47091eb75b337af4c23078c9d09225cd4c48929f521f3bf16b09d02566"},
-    {file = "identify-2.6.5.tar.gz", hash = "sha256:c10b33f250e5bba374fae86fb57f3adcebf1161bce7cdf92031915fd480c13bc"},
+    {file = "identify-2.6.6-py2.py3-none-any.whl", hash = "sha256:cbd1810bce79f8b671ecb20f53ee0ae8e86ae84b557de31d89709dc2a48ba881"},
+    {file = "identify-2.6.6.tar.gz", hash = "sha256:7bec12768ed44ea4761efb47806f0a41f86e7c0a5fdf5950d4648c90eca7e251"},
 ]
 
 [[package]]
@@ -2492,7 +2492,7 @@ files = [
 
 [[package]]
 name = "prompt-toolkit"
-version = "3.0.49"
+version = "3.0.50"
 requires_python = ">=3.8.0"
 summary = "Library for building powerful interactive command lines in Python"
 groups = ["all-dev", "dev", "docs", "tests", "tests-full"]
@@ -2500,8 +2500,8 @@ dependencies = [
     "wcwidth",
 ]
 files = [
-    {file = "prompt_toolkit-3.0.49-py3-none-any.whl", hash = "sha256:03b25a442496d1aeabcb4b8b8e94563ac6a8eff56467837367206a733c61c2de"},
-    {file = "prompt_toolkit-3.0.49.tar.gz", hash = "sha256:372cfcbff483cd5fac6f7870d21face30f1e2f217c6906721616fb1be778774d"},
+    {file = "prompt_toolkit-3.0.50-py3-none-any.whl", hash = "sha256:9b6427eb19e479d98acff65196a307c555eb567989e6d88ebbb1b509d9779198"},
+    {file = "prompt_toolkit-3.0.50.tar.gz", hash = "sha256:544748f3860a2623ca5cd6d2795e7a14f3d0e1c3c9728359013f79877fc89bab"},
 ]
 
 [[package]]
