@@ -117,12 +117,14 @@ jobs:
         # We could consider doing this on different platforms too,
         # although that probably belongs better with the PyPI tests.
         os: [ "ubuntu-latest" ]
-        # Only test against the oldest and newest
-        # security and bugfix versions (https://devguide.python.org/versions/).
-        # We could consider other versions,
-        # but that probably belongs better with the PyPI tests.
-        python-version: [ "3.9", "3.13" ]
-        resolution-strategy: [ "lowest", "lowest-direct" ]
+        # Only test against the oldest python version
+        # because python is itself too a direct dependency.
+        python-version: [ "3.9" ]
+        # Don't do lowest because that is essentially testing
+        # whether downstream dependencies have set their minimum
+        # support dependencies correctly, 
+        # which isn't our problem to solve.
+        resolution-strategy: [ "lowest" ]
     runs-on: "${{ matrix.os }}"
     defaults:
       run:
@@ -142,8 +144,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run tests
         run: |
-          # might need --isolated here to avoid locking the lock file
-          uv run --extra full --group tests --resolution ${{ matrix.resolution-strategy }} pytest tests -r a
+          uv run --python ${{ matrix.python-version }} --all-extras --group tests --group tests-full --resolution ${{ matrix.resolution-strategy }} pytest tests -r a
 
   tests-without-extras:
     # Run the tests without installing extras.

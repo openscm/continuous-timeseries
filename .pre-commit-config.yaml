@@ -58,6 +58,9 @@ repos:
       - id: uv-export
         name: export-requirements-only-tests
         args: ["-o", "requirements-only-tests-locked.txt", "--no-hashes", "--no-dev", "--no-emit-project", "--only-group", "tests"]
+      - id: uv-export
+        name: export-requirements-only-tests-full
+        args: ["-o", "requirements-only-tests-full-locked.txt", "--no-hashes", "--no-dev", "--no-emit-project", "--only-group", "tests-full"]
       # # Not released yet
       # - id: uv-sync
   - repo: https://github.com/pdm-project/pdm
