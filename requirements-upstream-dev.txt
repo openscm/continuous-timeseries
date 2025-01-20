@@ -12,3 +12,4 @@ pint@git+https://github.com/hgrecco/pint
 #   - `export PKG_CONFIG_PATH="/opt/homebrew/opt/openblas/lib/pkgconfig"`
 # )
 scipy@git+https://github.com/scipy/scipy
+tqdm@git+https://github.com/tqdm/tqdm
