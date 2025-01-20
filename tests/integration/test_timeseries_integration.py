@@ -16,6 +16,7 @@ import pint
 import pint.testing
 import pytest
 from attrs import define, field, validators
+from packaging.version import Version
 
 from continuous_timeseries.discrete_to_continuous import InterpolationOption
 from continuous_timeseries.exceptions import (
@@ -51,6 +52,10 @@ formatting_check_cases = pytest.mark.parametrize(
                 interpolation=InterpolationOption.PiecewiseConstantPreviousLeftClosed,
                 name="piecewise_constant",
             ),
+            marks=pytest.mark.xfail(
+                Version(np.__version__[0]) < Version("2.2"),
+                reason="numpy <2.2 formatting is different",
+            ),
             id="piecewise_constant",
         ),
         pytest.param(
@@ -60,6 +65,10 @@ formatting_check_cases = pytest.mark.parametrize(
                 interpolation=InterpolationOption.Linear,
                 name="piecewise_linear",
             ),
+            marks=pytest.mark.xfail(
+                Version(np.__version__[0]) < Version("2.2"),
+                reason="numpy <2.2 formatting is different",
+            ),
             id="piecewise_linear",
         ),
         pytest.param(
@@ -68,6 +77,10 @@ formatting_check_cases = pytest.mark.parametrize(
                 y=Q(10.0 + np.arange(1251.0), "Mt / yr"),
                 interpolation=InterpolationOption.Linear,
                 name="piecewise_linear_heaps_of_windows",
+            ),
+            marks=pytest.mark.xfail(
+                Version(np.__version__[0]) < Version("2.2"),
+                reason="numpy <2.2 formatting is different",
             ),
             id="piecewise_linear_heaps_of_windows",
         ),

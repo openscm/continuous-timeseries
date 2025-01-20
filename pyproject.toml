@@ -9,8 +9,10 @@ license = { text = "3-Clause BSD License" }
 requires-python = ">=3.9"
 dependencies = [
     "attrs>=22.1.0",
-    "numpy>=1.25.0",
-    "pint>=0.22.0",
+    "numpy>=1.25.0 ; python_full_version < '3.13'",
+    "numpy>=2.1.0 ; python_full_version >= '3.13'",
+    "pint>=0.22.0 ; python_full_version < '3.13'",
+    "pint>=0.24.4 ; python_full_version >= '3.13'",
 ]
 readme = "README.md"
 classifiers = [
@@ -40,7 +42,8 @@ Issues = "https://github.com/openscm/continuous-timeseries/issues"
 
 [project.optional-dependencies]
 pandas = [
-    "pandas>=2.0.0",
+    "pandas>=2.0.0 ; python_full_version < '3.13'",
+    "pandas>=2.2.2 ; python_full_version >= '3.13'",
 ]
 plots = [
     "matplotlib>=3.7.1",
@@ -49,7 +52,8 @@ progress = [
     "tqdm>=4.0.0",
 ]
 scipy = [
-    "scipy>=1.11.0",
+    "scipy>=1.11.0 ; python_full_version < '3.13'",
+    "scipy>=1.15.0 ; python_full_version >= '3.13'",
 ]
 full = [
     "continuous-timeseries[pandas]",
@@ -62,6 +66,8 @@ full = [
 dev = [
     # Needed for type checking
     "ipython>=8.18.1",
+    # Implied by ipython but not pinned properly
+    "decorator>=5.0",
     "liccheck==0.9.2",
     "mypy==1.14.0",
     "pandas-stubs>=2.2.2.240807",
@@ -96,17 +102,19 @@ docs = [
     "seaborn>=0.13.2",
 ]
 tests = [
-    "ipython>=8.18.1",
-    "openscm-units>=0.6.3",
-    "pytest-cov==6.0.0",
+    "packaging>=24.2",
     "pytest==8.3.4",
     "pytest-regressions>=2.6.0",
-    "scipy>=1.13.1",
+]
+tests-full = [
+    "ipython>=8.18.1",
+    "pytest-cov==6.0.0",
 ]
 all-dev = [
     {include-group = "dev"},
     {include-group = "docs"},
     {include-group = "tests"},
+    {include-group = "tests-full"},
 ]
 
 [build-system]

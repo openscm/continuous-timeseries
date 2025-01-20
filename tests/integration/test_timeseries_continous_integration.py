@@ -14,6 +14,7 @@ import pint
 import pint.testing
 import pytest
 from attrs import define
+from packaging.version import Version
 
 from continuous_timeseries.exceptions import (
     ExtrapolationNotAllowedError,
@@ -136,10 +137,17 @@ def test_str_continuous_function_scipy_ppoly(continuous_function_scipy_ppoly, ex
                 "        x=array([0.000e+00, 1.000e+00, 2.000e+00, ..., 9.998e+03, 9.999e+03,\n"  # noqa: E501
                 "               1.000e+04], shape=(10001,))))"
             ),
-            marks=pytest.mark.xfail(
-                condition=not (sys.version_info >= (3, 10)),
-                reason="shape info only in Python>=3.10",
-            ),
+            marks=[
+                pytest.mark.xfail(
+                    condition=not (sys.version_info >= (3, 10)),
+                    reason="shape info only in Python>=3.10",
+                ),
+                pytest.mark.xfail(
+                    int(np.__version__[0]) < 2,
+                    Version(np.__version__[0]) < Version("2.2"),
+                    reason="numpy <2.2 formatting is different",
+                ),
+            ],
             id="heaps_of_windows",
         ),
     ),
@@ -336,6 +344,10 @@ def test_str(ts, file_regression):
 @pytest.mark.xfail(
     condition=not (sys.version_info >= (3, 10)),
     reason="shape info only in Python>=3.10",
+)
+@pytest.mark.xfail(
+    Version(np.__version__[0]) < Version("2.2"),
+    reason="numpy <2.2 formatting is different",
 )
 @formatting_check_cases
 def test_pretty(ts, file_regression):
