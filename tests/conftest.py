@@ -17,6 +17,7 @@ def pytest_report_header(config):
     dep_info = []
     for dep in [
         "attrs",
+        "continuous_timeseries",
         "numpy",
         "pandas",
         "pint",
