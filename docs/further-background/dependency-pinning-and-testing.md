@@ -133,7 +133,7 @@ which is why we don't run them in CI.
 
 Through this combination of CI testing and installation testing,
 we get a pretty good coverage of the different ways in which our package can be used.
-It is not perfect, largely because the combinatorics become unfriendly.
+It is not perfect, largely because the combinatorics don't allow for testing everything.
 If we find a particular, key, use case failing often,
 then we would happily discuss whether this should be included in the CI too,
 to catch issues earlier than at user time.
