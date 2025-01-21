@@ -9,8 +9,7 @@ license = { text = "3-Clause BSD License" }
 requires-python = ">=3.9"
 dependencies = [
     "attrs>=22.1.0",
-    "numpy>=1.25.0; python_version < '3.13' or sys_platform != 'win32'",
-    "numpy>=2.2.2; python_version >= '3.13' and sys_platform == 'win32'",
+    "numpy>=1.25.0",
     "pint>=0.22.0",
 ]
 readme = "README.md"
