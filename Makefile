@@ -81,11 +81,11 @@ licence-check:  ## Check that licences of the dependencies are suitable
 pdm-lock: pdm.lock  ## create/update the `pdm.lock` file
 
 pdm.lock: pyproject.toml
-	pdm lock --group :all --strategy inherit_metadata
 	# Solve for >=3.10 separately from the rest to deal with
 	# packages dropping 3.9 support.
 	# Docs on this trick are here:
 	# https://pdm-project.org/en/latest/usage/lock-targets/#lock-for-specific-platforms-or-python-versions
+	pdm lock --strategy inherit_metadata --group :all --python="<3.10"
 	pdm lock --group :all --python=">=3.10" --append
 
 .PHONY: virtual-environment
