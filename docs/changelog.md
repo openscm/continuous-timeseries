@@ -21,6 +21,17 @@ from the examples given in that link.
 
 <!-- towncrier release notes start -->
 
+## Continuous Timeseries v0.4.1 (2025-01-21)
+
+### 🐛 Bug Fixes
+
+- Fixed up dependency pinning to allow the locked version to install on windows with Python 3.13 (failing test run: https://github.com/openscm/continuous-timeseries/actions/runs/12875459495/job/35897080123). ([#33](https://github.com/openscm/continuous-timeseries/pull/33))
+
+### 🔧 Trivial/Internal Changes
+
+- [#31](https://github.com/openscm/continuous-timeseries/pull/31)
+
+
 ## Continuous Timeseries v0.4.0 (2025-01-20)
 
 ### 🆕 Features
