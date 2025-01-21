@@ -1,8 +1,13 @@
 attrs@git+https://github.com/python-attrs/attrs
+# Upstream packages can be listed in here.
+# The basic pattern is
+# <package-name>@git+<git-repo-url>
+#
+attrs@git+https://github.com/python-attrs/attrs
 numpy@git+https://github.com/numpy/numpy
 pandas@git+https://github.com/pandas-dev/pandas
 pint@git+https://github.com/hgrecco/pint
-# Building scipy from source
+# --- Building scipy from source ---
 # requires a specific compiler and openblas
 # so it's definitely less easy than the rest
 # (
