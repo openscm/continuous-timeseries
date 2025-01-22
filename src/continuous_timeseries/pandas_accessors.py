@@ -218,6 +218,16 @@ class SeriesCTAccessor:
 
         return res
 
+    def groupby_except(
+        self, non_groupers: str | list[str], observed: bool = True
+    ) -> pd.core.groupby.generic.SeriesGroupBy:
+        if isinstance(non_groupers, str):
+            non_groupers = [non_groupers]
+
+        return self._series.groupby(
+            self._series.index.names.difference(non_groupers), observed=observed
+        )
+
     def plot(
         self,
         label: str | tuple[str, ...] | None = None,
@@ -341,6 +351,9 @@ def get_timeseries_parallel_helper(
 
     res = getattr(df, meth_to_call)(
         # TODO: make this injectable too
+        # This will also allow us to introduce an extra layer
+        # to handle the case when interpolation is a Series,
+        # rather than the same across all rows.
         Timeseries.from_pandas_series,
         axis="columns",
         interpolation=interpolation,
@@ -418,6 +431,23 @@ class DataFrameCTAccessor:
             progress_nested=progress_nested,
             mp_context=mp_context,
         )
+
+        return res
+
+    def groupby_except(
+        self, non_groupers: str | list[str], observed: bool = True
+    ) -> pd.core.groupby.generic.DataFrameGroupBy:
+        if isinstance(non_groupers, str):
+            non_groupers = [non_groupers]
+
+        return self._df.groupby(
+            self._df.index.names.difference(non_groupers), observed=observed
+        )
+
+    def fix_index_name_after_groupby_quantile(self) -> pd.DataFrame:
+        # TODO: think about doing in place
+        res = self._df.copy()
+        res.index = res.index.rename({None: "quantile"})
 
         return res
 
