@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import concurrent.futures
 from collections.abc import Iterator
+from functools import partial
 from multiprocessing.context import BaseContext
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -21,6 +22,94 @@ if TYPE_CHECKING:
     import pandas as pd
 
     P = TypeVar("P", bound=pd.DataFrame | pd.Series[Any])
+
+
+def apply_pandas_op_parallel(
+    obj,
+    op,
+    n_processes: int,
+    progress: bool = False,
+    progress_nested: bool = False,
+    mp_context: BaseContext | None = None,
+):
+    iterator = get_chunks(obj, n_chunks=n_processes)
+    if progress:
+        try:
+            from tqdm.auto import tqdm
+        except ImportError as exc:
+            raise MissingOptionalDependencyError(  # noqa: TRY003
+                "apply_pandas_op_parallel(..., progress=True)", requirement="tdqm"
+            ) from exc
+
+        iterator = tqdm(iterator, desc="submitting to pool")
+
+    with concurrent.futures.ProcessPoolExecutor(
+        max_workers=n_processes, mp_context=mp_context
+    ) as pool:
+        futures = [
+            pool.submit(
+                op,
+                chunk,
+                progress=progress_nested,
+                progress_bar_position=i,
+            )
+            for i, chunk in enumerate(iterator)
+        ]
+
+        iterator_results = concurrent.futures.as_completed(futures)
+        if progress:
+            iterator_results = tqdm(
+                iterator_results,
+                desc="Retrieving parallel results",
+                total=len(futures),
+            )
+
+        res_l = [future.result() for future in iterator_results]
+
+    # Late import to avoid hard dependency on pandas
+    try:
+        import pandas as pd
+    except ImportError as exc:
+        raise MissingOptionalDependencyError(
+            "apply_pandas_op_parallel", requirement="pandas"
+        ) from exc
+
+    # This assumes that the index isn't mangled.
+    # Using pix.concat might be safer,
+    # or we make the concatenation injectable.
+    res = pd.concat(res_l)
+
+    return res
+
+
+def differentiate_parallel_helper(
+    series: pd.Series[Timeseries],
+    progress: bool = False,
+    progress_bar_position: int = 0,
+) -> pd.Series[Timeseries]:
+    if progress:
+        try:
+            from tqdm.auto import tqdm
+        except ImportError as exc:
+            raise MissingOptionalDependencyError(  # noqa: TRY003
+                "dist(..., progress=True)", requirement="tdqm"
+            ) from exc
+
+        tqdm_kwargs = dict(position=progress_bar_position)
+        tqdm.pandas(**tqdm_kwargs)
+        meth_to_call = "progress_map"
+        # No-one knows why this is needed, but it is in jupyter notebooks
+        print(end=" ")
+
+    else:
+        meth_to_call = "map"
+
+    res = getattr(series, meth_to_call)(
+        lambda x: x.differentiate(),
+        # name="injectable?",
+    )
+
+    return res
 
 
 class SeriesCTAccessor:
@@ -89,7 +178,7 @@ class SeriesCTAccessor:
         return df
 
     # TODO: add this to DataFrame accessor to allow for time filtering in the middle
-    def to_sns_df(self, increase_resolution: int = 100):
+    def to_sns_df(self, increase_resolution: int = 100) -> pd.DataFrame:
         # TODO: progress bar and parallelisation
         # TODO: time_units and out_units passing
         return (
@@ -101,6 +190,33 @@ class SeriesCTAccessor:
             )
             .reset_index()
         )
+
+    def differentiate(
+        self,
+        # res_name: str = "ts",
+        progress: bool = False,
+        progress_nested: bool = False,
+        n_processes: int = 1,
+        mp_context: BaseContext | None = None,
+    ) -> pd.Series[Timeseries]:  # type: ignore
+        if n_processes == 1:
+            res = differentiate_parallel_helper(
+                self._series,
+                progress=progress,
+            )
+
+            return res
+
+        res = apply_pandas_op_parallel(
+            self._series,
+            op=differentiate_parallel_helper,
+            n_processes=n_processes,
+            progress=progress,
+            progress_nested=progress_nested,
+            mp_context=mp_context,
+        )
+
+        return res
 
     def plot(
         self,
@@ -215,8 +331,7 @@ def get_timeseries_parallel_helper(
         tqdm_kwargs = dict(position=progress_bar_position)
         tqdm.pandas(**tqdm_kwargs)
         meth_to_call = "progress_apply"
-        # No-one knows why this is needed, but it is
-        # jupyter notebooks
+        # No-one knows why this is needed, but it is in jupyter notebooks
         print(end=" ")
 
     else:
@@ -288,56 +403,21 @@ class DataFrameCTAccessor:
 
             return res
 
-        # I think it should be possible to split out a
-        # `apply_pandas_op_parallel` or similar function.
-        iterator = get_chunks(self._df, n_chunks=n_processes)
-        if progress:
-            try:
-                from tqdm.auto import tqdm
-            except ImportError as exc:
-                raise MissingOptionalDependencyError(  # noqa: TRY003
-                    "to_timeseries(..., progress=True)", requirement="tdqm"
-                ) from exc
-
-            iterator = tqdm(iterator, desc="submitting to pool")
-
-        with concurrent.futures.ProcessPoolExecutor(
-            max_workers=n_processes, mp_context=mp_context
-        ) as pool:
-            futures = [
-                pool.submit(
-                    get_timeseries_parallel_helper,
-                    chunk,
-                    interpolation=interpolation,
-                    time_units=time_units,
-                    units_col=units_col,
-                    idx_separator=idx_separator,
-                    ur=ur,
-                    progress=progress_nested,
-                    progress_bar_position=i,
-                )
-                for i, chunk in enumerate(iterator)
-            ]
-
-            iterator_results = concurrent.futures.as_completed(futures)
-            if progress:
-                iterator_results = tqdm(
-                    iterator_results,
-                    desc="Retrieving parallel results",
-                    total=len(futures),
-                )
-
-            res_l = [future.result() for future in iterator_results]
-
-        # Late import to avoid hard dependency on pandas
-        try:
-            import pandas as pd
-        except ImportError as exc:
-            raise MissingOptionalDependencyError(
-                "interpolate", requirement="pandas"
-            ) from exc
-
-        res = pd.concat(res_l)
+        res = apply_pandas_op_parallel(
+            self._df,
+            op=partial(
+                get_timeseries_parallel_helper,
+                interpolation=interpolation,
+                time_units=time_units,
+                units_col=units_col,
+                idx_separator=idx_separator,
+                ur=ur,
+            ),
+            n_processes=n_processes,
+            progress=progress,
+            progress_nested=progress_nested,
+            mp_context=mp_context,
+        )
 
         return res
 

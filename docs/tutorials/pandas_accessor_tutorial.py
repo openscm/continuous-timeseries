@@ -175,6 +175,9 @@ small_ts = small_df.ct.to_timeseries(
 )
 small_ts
 
+# %%
+small_ts.ct.differentiate(progress=True)
+
 # %% [markdown]
 # Then we can use standard Continuous timeseries APIs,
 # e.g. plotting.
@@ -198,6 +201,15 @@ ax.legend(ncols=3, loc="upper center", bbox_to_anchor=(0.5, -0.15))
 # TODO: move this to plotting section
 ax = small_ts.loc[pix.isin(variable="variable_0", run=0)].ct.plot(
     label="scenario", continuous_plot_kwargs=dict(alpha=0.9)
+)
+ax.legend()
+
+# %%
+# TODO: move this to ops section
+ax = (
+    small_ts.loc[pix.isin(variable="variable_0", run=0)]
+    .ct.differentiate()
+    .ct.plot(label="scenario", continuous_plot_kwargs=dict(alpha=0.9))
 )
 ax.legend()
 
@@ -260,7 +272,7 @@ bigger_df.ct.to_timeseries(
 # [here](https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods)).
 
 # %%
-bigger_df.ct.to_timeseries(
+bigger_ts = bigger_df.ct.to_timeseries(
     time_units="yr",
     interpolation=ct.InterpolationOption.Linear,
     n_processes=n_processes,
@@ -272,6 +284,46 @@ bigger_df.ct.to_timeseries(
     progress_nested=True,
     mp_context=multiprocessing.get_context("fork"),
 )
+bigger_ts
+
+# %% [markdown]
+# The same logic can be applied to other operations.
+
+# %%
+diff_ts = create_df(
+    n_scenarios=50,
+    n_variables=1,
+    n_runs=600,
+    timepoints=np.arange(75) + 2025.0,
+).ct.to_timeseries(
+    time_units="yr",
+    interpolation=ct.InterpolationOption.Linear,
+    n_processes=n_processes,
+    progress=True,
+    progress_nested=True,
+    mp_context=multiprocessing.get_context("fork"),
+)
+diff_ts
+
+# %%
+diff_ts.ct.differentiate(progress=True)
+
+# %%
+diff_ts.ct.differentiate(n_processes=n_processes)
+
+# %%
+diff_ts.ct.differentiate(n_processes=n_processes, progress=True)
+
+# %%
+diff_ts.ct.differentiate(
+    n_processes=n_processes,
+    progress=True,
+    progress_nested=True,
+    mp_context=multiprocessing.get_context("fork"),
+)
+
+# %% [markdown]
+# Demonstrate how to control parallel etc. with global config.
 
 # %% [markdown]
 # On big `pd.DataFrame`'s the combination with
@@ -306,7 +358,7 @@ small_ts.ct.to_df(increase_resolution=3)
 # %%
 sns_df = small_ts.loc[
     pix.isin(scenario=[f"scenario_{i}" for i in range(2)])
-# Rename to `to_tidy_df`
+    # Rename to `to_tidy_df`
 ].ct.to_sns_df(increase_resolution=100)
 sns_df
 
@@ -330,9 +382,15 @@ quantiles_plumes = (
 )
 
 fig, ax = plt.subplots()
-for scenario, s_ts in small_ts.loc[pix.isin(variable="variable_0")].groupby("scenario", observed=True):
+for scenario, s_ts in small_ts.loc[pix.isin(variable="variable_0")].groupby(
+    "scenario", observed=True
+):
     for quantiles, alpha in quantiles_plumes:
-        s_quants = s_ts.ct.to_df(increase_resolution=increase_resolution).groupby(small_ts.index.names.difference(plumes_over), observed=True).quantile(quantiles)
+        s_quants = (
+            s_ts.ct.to_df(increase_resolution=increase_resolution)
+            .groupby(small_ts.index.names.difference(plumes_over), observed=True)
+            .quantile(quantiles)
+        )
         if isinstance(quantiles, tuple):
             ax.fill_between(
                 s_quants.columns.values.squeeze(),
@@ -355,14 +413,12 @@ ax.legend()
 
 # %%
 (
-    small_ts
-    .ct.to_df(increase_resolution=5)
+    small_ts.ct.to_df(increase_resolution=5)
     .groupby(small_ts.index.names.difference(["run"]), observed=True)
     .quantile([0.05, 0.5, 0.95])
 )
 
 # %% [markdown]
-# - other operations, also with progress, parallel, parallel with progress
 # - plot with basic control over labels
 # - plot with grouping and plumes for ranges (basically reproduce scmdata API)
 # - convert with more fine-grained control over interpolation
