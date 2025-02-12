@@ -23,3 +23,5 @@ def setup_pandas_accessor() -> None:
     pd.Series._accessors.discard("ct")
     if hasattr(pd.Series, "ct"):
         del pd.Series.ct
+
+    # Add DataFrame here too
