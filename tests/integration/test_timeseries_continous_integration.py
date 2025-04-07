@@ -581,6 +581,33 @@ def test_extrapolate(operations_test_case):
 
 @operations_test_cases
 @pytest.mark.parametrize(
+    "antidifferentiate_kwargs",
+    ({}, dict(name_res=None), dict(name_res="name_overwritten")),
+)
+def test_antidifferentiate(operations_test_case, antidifferentiate_kwargs):
+    # i.e. indefinite integration
+    antiderivative = operations_test_case.ts.antidifferentiate(
+        **antidifferentiate_kwargs
+    )
+
+    pint.testing.assert_allclose(
+        antiderivative.interpolate(operations_test_case.time_integral_check),
+        operations_test_case.exp_integral_values_excl_integration_constant,
+        rtol=1e-10,
+    )
+
+    if (
+        antidifferentiate_kwargs
+        and "name_res" in antidifferentiate_kwargs
+        and antidifferentiate_kwargs["name_res"] is not None
+    ):
+        assert antiderivative.name == antidifferentiate_kwargs["name_res"]
+    else:
+        assert antiderivative.name == f"{operations_test_case.ts.name}_antiderivative"
+
+
+@operations_test_cases
+@pytest.mark.parametrize(
     "integration_constant",
     (
         Q(0, "Gt yr"),
