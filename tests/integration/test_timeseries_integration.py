@@ -543,29 +543,34 @@ def test_antidifferentiate(operations_test_case, name_res):
     if name_res is not None:
         kwargs["name_res"] = name_res
 
-    integral = operations_test_case.ts.interpolate(
+    antiderivative = operations_test_case.ts.interpolate(
         operations_test_case.time_integral, allow_extrapolation=True
     ).antidifferentiate(**kwargs)
 
     if name_res is None:
-        assert integral.name == f"{operations_test_case.ts.name}_antiderivative"
+        assert antiderivative.name == f"{operations_test_case.ts.name}_antiderivative"
     else:
-        assert integral.name == name_res
+        assert antiderivative.name == name_res
 
-    assert isinstance(integral, Timeseries)
+    assert isinstance(antiderivative, Timeseries)
     pint.testing.assert_equal(
         operations_test_case.time_integral,
-        integral.time_axis.bounds,
+        antiderivative.time_axis.bounds,
     )
 
-    pint.testing.assert_allclose(
-        integral.interpolate(
-            time_axis=operations_test_case.time_integral
-        ).discrete.values_at_bounds.values
-        - operations_test_case.integration_constant_integral,
-        operations_test_case.exp_integral,
-        rtol=1e-10,
-    )
+    res_values = antiderivative.interpolate(
+        time_axis=operations_test_case.time_integral
+    ).discrete.values_at_bounds.values
+    exp_values_incl_offset = operations_test_case.exp_integral
+
+    # Offset
+    # (this is non-trivial to predict
+    # because of how scipy deals with the constants internally)
+    offset = res_values[0] - exp_values_incl_offset[0]
+
+    exp_values = exp_values_incl_offset + offset
+
+    pint.testing.assert_allclose(res_values, exp_values, rtol=1e-10)
 
 
 @operations_test_cases
@@ -1187,22 +1192,23 @@ def test_differentiate_then_integrate(integrate_method, start_interp, exp_result
 
     times_check = np.linspace((2 * x[0] - x[1]).m, (2 * x[-1] - x[-2]).m, 1000) * x.u
 
+    res_values_at_bounds = res.discrete.values_at_bounds.values
     res_check_vals = res.interpolate(
         times_check, allow_extrapolation=True
     ).discrete.values_at_bounds.values
+
     if integrate_method == "integrate":
         # Should recover our start exactly
         exp_check_vals = start.interpolate(
             times_check, allow_extrapolation=True
         ).discrete.values_at_bounds.values
+        exp_values_at_bounds = start.discrete.values_at_bounds.values
 
-    elif integrate_method == "integrate":
+    elif integrate_method == "antidifferentiate":
         # We lose the integration constant
         # @Flo, I think the logic here might be wrong
         # so don't be surprised if you need to update it
-        new_zero = start.interpolate(
-            x[0], allow_extrapolation=True
-        ).discrete.values_at_bounds.values
+        new_zero = start.timeseries_continuous.interpolate(x[0])
 
         exp_check_vals = (
             start.interpolate(
@@ -1210,23 +1216,30 @@ def test_differentiate_then_integrate(integrate_method, start_interp, exp_result
             ).discrete.values_at_bounds.values
             - new_zero
         )
+        exp_values_at_bounds = start.discrete.values_at_bounds.values - new_zero
 
     else:
         raise NotImplementedError(integrate_method)
 
     if exp_result:
         pint.testing.assert_allclose(
-            res.discrete.values_at_bounds.values,
-            start.discrete.values_at_bounds.values,
+            res_values_at_bounds,
+            exp_values_at_bounds,
             rtol=1e-10,
         )
 
         pint.testing.assert_allclose(res_check_vals, exp_check_vals, rtol=1e-10)
 
-    else:
-        # Differentiating a piecewise constant
-        # so we can't recover our original timeseries
+    # Differentiating a piecewise constant
+    # so we can't recover our original timeseries.
+    elif integrate_method == "integrate":
+        # Just get the integration constant back
         pint.testing.assert_allclose(res_check_vals, y[0], rtol=1e-10)
+    elif integrate_method == "antidifferentiate":
+        # All zeroes back
+        pint.testing.assert_allclose(res_check_vals, y[0] * 0.0, rtol=1e-10)
+    else:
+        raise NotImplementedError(integrate_method)
 
 
 @pytest.mark.parametrize(
