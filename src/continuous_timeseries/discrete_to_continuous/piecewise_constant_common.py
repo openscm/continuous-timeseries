@@ -110,6 +110,26 @@ class PiecewiseConstantLike(Protocol):
             Integral of the function
         """
 
+    def antidifferentiate(
+        self, domain_start: NP_FLOAT_OR_INT
+    ) -> ContinuousFunctionScipyPPoly:
+        """
+        Antidifferentiate
+
+        Parameters
+        ----------
+        domain_start
+            The start of the domain.
+
+            This is required to ensure that we start at the right point
+            when evaluating the indefinite integral.
+
+        Returns
+        -------
+        :
+            Indefinite integral of the function
+        """
+
 
 def piecewise_constant_y_validator(
     self: PiecewiseConstantLike,
