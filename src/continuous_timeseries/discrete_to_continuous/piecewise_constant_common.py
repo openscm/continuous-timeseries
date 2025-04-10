@@ -334,6 +334,79 @@ def integrate_piecewise_constant(
     return ContinuousFunctionScipyPPoly(ppoly_integral)
 
 
+def antidifferentiate_piecewise_constant(
+    self: PiecewiseConstantLike,
+    domain_start: NP_FLOAT_OR_INT,
+) -> ContinuousFunctionScipyPPoly:
+    """
+    Antidifferentiate a piecewise-constant instance
+
+    Parameters
+    ----------
+    self
+        Piecewise-constant instance to antidifferentiate
+
+    domain_start
+        Start of the domain of antidifferentiation
+
+    Returns
+    -------
+    :
+        Indefinite integral of `self`
+    """
+    # Late import to avoid circularity
+    from continuous_timeseries.timeseries_continuous import (
+        ContinuousFunctionScipyPPoly,
+    )
+
+    try:
+        import scipy.interpolate
+    except ImportError as exc:
+        raise MissingOptionalDependencyError(
+            "antidifferentiate_piecewise_constant",
+            requirement="scipy",
+        ) from exc
+
+    # We have to ensure that we get the gradient outside our bounds correct,
+    # in case the user wants to do extrapolation after integration.
+    # Hence also consider what happens either side of the bounds.
+    # We can pick points in the middle of our windows,
+    # because our function is piecewise constant
+    # and this helps us avoid the value at the bound headache.
+    out_gradient_eval_points = np.hstack(
+        [
+            2 * self.x[0] - self.x[1],
+            (self.x[1:] + self.x[:-1]) / 2.0,
+            2 * self.x[-1] - self.x[-2],
+        ]
+    )
+    out_gradients = self(out_gradient_eval_points, allow_extrapolation=True)
+
+    # Grab points on either side of our domain too,
+    # so that we give a correct representation,
+    # irrespective of whether we're doing next or previous logic.
+    x = np.hstack([out_gradient_eval_points[0], self.x, out_gradient_eval_points[-1]])
+
+    change_in_windows = out_gradients * (x[1:] - x[:-1])
+    tmp_constant_terms = np.hstack([0.0, np.cumsum(change_in_windows[:-1])])
+
+    c = np.vstack([out_gradients, tmp_constant_terms])
+
+    indefinite_integral = scipy.interpolate.PPoly(
+        x=x,
+        c=c,
+        extrapolate=True,
+    )
+
+    ppoly_antiderivative = scipy.interpolate.PPoly(
+        c=indefinite_integral.c,
+        x=indefinite_integral.x,
+        extrapolate=False,  # no extrapolation by default
+    )
+
+    return ContinuousFunctionScipyPPoly(ppoly_antiderivative)
+
+
 def discrete_to_continuous_piecewise_constant(
     x: PINT_NUMPY_ARRAY,
     y: PINT_NUMPY_ARRAY,

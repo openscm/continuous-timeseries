@@ -34,6 +34,7 @@ import numpy.typing as npt
 from attrs import define, field
 
 from continuous_timeseries.discrete_to_continuous.piecewise_constant_common import (
+    antidifferentiate_piecewise_constant,
     differentiate_piecewise_constant,
     discrete_to_continuous_piecewise_constant,
     get_values,
@@ -176,6 +177,32 @@ class PPolyPiecewiseConstantPreviousLeftClosed:
         res = integrate_piecewise_constant(
             self=self,
             integration_constant=integration_constant,
+            domain_start=domain_start,
+        )
+
+        return res
+
+    def antidifferentiate(
+        self, domain_start: NP_FLOAT_OR_INT
+    ) -> ContinuousFunctionScipyPPoly:
+        """
+        Antidifferentiate
+
+        Parameters
+        ----------
+        domain_start
+            The start of the domain.
+
+            This is required to ensure that we start at the right point
+            when evaluating the indefinite integral.
+
+        Returns
+        -------
+        :
+            Indefinite integral of the function
+        """
+        res = antidifferentiate_piecewise_constant(
+            self=self,
             domain_start=domain_start,
         )
 
