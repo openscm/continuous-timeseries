@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.9"
 resolution-markers = [
     "python_full_version >= '3.13' and sys_platform == 'win'",
@@ -343,7 +344,7 @@ wheels = [
 
 [[package]]
 name = "continuous-timeseries"
-version = "0.4.1"
+version = "0.4.3a1"
 source = { editable = "." }
 dependencies = [
     { name = "attrs" },
@@ -491,6 +492,7 @@ requires-dist = [
     { name = "scipy", marker = "extra == 'scipy'", specifier = ">=1.11.1" },
     { name = "tqdm", marker = "extra == 'progress'", specifier = ">=4.1.0" },
 ]
+provides-extras = ["pandas", "plots", "progress", "scipy", "full"]
 
 [package.metadata.requires-dev]
 all-dev = [
@@ -2155,7 +2157,6 @@ dependencies = [
     { name = "griffe" },
     { name = "mkdocstrings-python" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/75/79/3ee49ca07b55eb9d25fcfa38a3905cdc03af02cce5513f7a458e8211d5a9/mkdocstrings_python_xref-1.6.2.tar.gz", hash = "sha256:65e83fecc3a059d173aab9b06e4bcd50cc720b221b3cc3d6b35b11ffb6aa86d4", size = 11735 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/70/e0/dd595c056920b1cbdfd1af4372f5fc49f5fb4252072d9a07e1634146a8d1/mkdocstrings_python_xref-1.6.2-py3-none-any.whl", hash = "sha256:1492b822bcb04a9072a9b731ceabfed4b9d3f8cd23c62211cb8b22bab0cb7fc0", size = 19130 },
 ]
