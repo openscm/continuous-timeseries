@@ -283,6 +283,37 @@ class Timeseries:
             timeseries_continuous=integral,
         )
 
+    def antidifferentiate(
+        self,
+        name_res: str | None = None,
+    ) -> Timeseries:
+        """
+        Antidifferentiate the time series
+
+        Parameters
+        ----------
+        name_res
+            Name to apply to the result.
+
+            If not supplied, we use `f"{self.name}_antiderivative`.
+
+        Returns
+        -------
+        :
+            Indefinite integral of the time series
+        """
+        if name_res is None:
+            name_res = f"{self.name}_antiderivative"
+
+        antiderivative = self.timeseries_continuous.antidifferentiate(
+            name_res=name_res,
+        )
+
+        return type(self)(
+            time_axis=self.time_axis,
+            timeseries_continuous=antiderivative,
+        )
+
     def interpolate(
         self, time_axis: TimeAxis | PINT_NUMPY_ARRAY, allow_extrapolation: bool = False
     ) -> Timeseries:

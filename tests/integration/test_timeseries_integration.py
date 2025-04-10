@@ -538,6 +538,49 @@ def test_differentiate(operations_test_case, name_res):
         pytest.param("overwritten", id="name_res_supplied"),
     ),
 )
+def test_antidifferentiate(operations_test_case, name_res):
+    kwargs = {}
+    if name_res is not None:
+        kwargs["name_res"] = name_res
+
+    antiderivative = operations_test_case.ts.interpolate(
+        operations_test_case.time_integral, allow_extrapolation=True
+    ).antidifferentiate(**kwargs)
+
+    if name_res is None:
+        assert antiderivative.name == f"{operations_test_case.ts.name}_antiderivative"
+    else:
+        assert antiderivative.name == name_res
+
+    assert isinstance(antiderivative, Timeseries)
+    pint.testing.assert_equal(
+        operations_test_case.time_integral,
+        antiderivative.time_axis.bounds,
+    )
+
+    res_values = antiderivative.interpolate(
+        time_axis=operations_test_case.time_integral
+    ).discrete.values_at_bounds.values
+    exp_values_incl_offset = operations_test_case.exp_integral
+
+    # Offset
+    # (this is non-trivial to predict
+    # because of how scipy deals with the constants internally)
+    offset = res_values[0] - exp_values_incl_offset[0]
+
+    exp_values = exp_values_incl_offset + offset
+
+    pint.testing.assert_allclose(res_values, exp_values, rtol=1e-10)
+
+
+@operations_test_cases
+@pytest.mark.parametrize(
+    "name_res",
+    (
+        pytest.param(None, id="default_name_res"),
+        pytest.param("overwritten", id="name_res_supplied"),
+    ),
+)
 def test_integrate(operations_test_case, name_res):
     kwargs = {}
     if name_res is not None:
@@ -1065,7 +1108,18 @@ def test_update_interpolation_integral_preserving_kwarg_passing(kwargs, expectat
         (InterpolationOption.Quartic, True),
     ),
 )
-def test_integrate_then_differentiate(start_interp, exp_values_at_bounds_same):
+@pytest.mark.parametrize(
+    "integrate_method, integrate_method_kwargs",
+    (
+        pytest.param(
+            "integrate", dict(integration_constant=Q(23.0, "Gt yr")), id="integrate"
+        ),
+        pytest.param("antidifferentiate", {}, id="antidifferentiate"),
+    ),
+)
+def test_integrate_then_differentiate(
+    integrate_method, integrate_method_kwargs, start_interp, exp_values_at_bounds_same
+):
     x = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
 
     start = Timeseries.from_arrays(
@@ -1075,7 +1129,7 @@ def test_integrate_then_differentiate(start_interp, exp_values_at_bounds_same):
         name="start",
     )
 
-    res = start.integrate(Q(23.0, "Gt yr")).differentiate()
+    res = getattr(start, integrate_method)(**integrate_method_kwargs).differentiate()
 
     if exp_values_at_bounds_same:
         pint.testing.assert_allclose(
@@ -1110,7 +1164,14 @@ def test_integrate_then_differentiate(start_interp, exp_values_at_bounds_same):
         (InterpolationOption.Quartic, True),
     ),
 )
-def test_differentiate_then_integrate(start_interp, exp_result):
+@pytest.mark.parametrize(
+    "integrate_method ",
+    (
+        pytest.param("integrate", id="integrate"),
+        pytest.param("antidifferentiate", id="antidifferentiate"),
+    ),
+)
+def test_differentiate_then_integrate(integrate_method, start_interp, exp_result):
     x = Q([1.0, 10.0, 20.0, 30.0, 100.0], "yr")
     y = Q([10.0, 12.0, 32.0, 20.0, -3.0], "Gt")
 
@@ -1121,28 +1182,64 @@ def test_differentiate_then_integrate(start_interp, exp_result):
         name="start",
     )
 
-    res = start.differentiate().integrate(y[0])
+    integrate_method_kwargs = {}
+    if integrate_method == "integrate":
+        # Add the integration constant
+        integrate_method_kwargs["integration_constant"] = y[0]
+
+    derivative = start.differentiate()
+    res = getattr(derivative, integrate_method)(**integrate_method_kwargs)
 
     times_check = np.linspace((2 * x[0] - x[1]).m, (2 * x[-1] - x[-2]).m, 1000) * x.u
 
+    res_values_at_bounds = res.discrete.values_at_bounds.values
     res_check_vals = res.interpolate(
         times_check, allow_extrapolation=True
     ).discrete.values_at_bounds.values
-    start_check_vals = start.interpolate(
-        times_check, allow_extrapolation=True
-    ).discrete.values_at_bounds.values
+
+    if integrate_method == "integrate":
+        # Should recover our start exactly
+        exp_check_vals = start.interpolate(
+            times_check, allow_extrapolation=True
+        ).discrete.values_at_bounds.values
+        exp_values_at_bounds = start.discrete.values_at_bounds.values
+
+    elif integrate_method == "antidifferentiate":
+        # We lose the integration constant
+        # @Flo, I think the logic here might be wrong
+        # so don't be surprised if you need to update it
+        new_zero = start.timeseries_continuous.interpolate(x[0])
+
+        exp_check_vals = (
+            start.interpolate(
+                times_check, allow_extrapolation=True
+            ).discrete.values_at_bounds.values
+            - new_zero
+        )
+        exp_values_at_bounds = start.discrete.values_at_bounds.values - new_zero
+
+    else:
+        raise NotImplementedError(integrate_method)
 
     if exp_result:
         pint.testing.assert_allclose(
-            res.discrete.values_at_bounds.values,
-            start.discrete.values_at_bounds.values,
+            res_values_at_bounds,
+            exp_values_at_bounds,
             rtol=1e-10,
         )
 
-        pint.testing.assert_allclose(res_check_vals, start_check_vals, rtol=1e-10)
+        pint.testing.assert_allclose(res_check_vals, exp_check_vals, rtol=1e-10)
 
-    else:
+    # Differentiating a piecewise constant
+    # so we can't recover our original timeseries.
+    elif integrate_method == "integrate":
+        # Just get the integration constant back
         pint.testing.assert_allclose(res_check_vals, y[0], rtol=1e-10)
+    elif integrate_method == "antidifferentiate":
+        # All zeroes back
+        pint.testing.assert_allclose(res_check_vals, y[0] * 0.0, rtol=1e-10)
+    else:
+        raise NotImplementedError(integrate_method)
 
 
 @pytest.mark.parametrize(
