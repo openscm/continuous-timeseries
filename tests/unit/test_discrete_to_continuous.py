@@ -156,6 +156,35 @@ def test_differentiate_scipy_availability(
 @pytest.mark.parametrize(
     "sys_modules_patch, expectation",
     (
+        pytest.param({}, does_not_raise(), id="scipy_available"),
+        pytest.param(
+            {"scipy": None},
+            pytest.raises(
+                MissingOptionalDependencyError,
+                match=(
+                    "`antidifferentiate_piecewise_constant` "
+                    "requires scipy to be installed"
+                ),
+            ),
+            id="scipy_not_available",
+        ),
+    ),
+)
+@piecewise_constant_classes
+def test_antidifferentiate_scipy_availability(
+    piecewise_constant_class, sys_modules_patch, expectation
+):
+    pytest.importorskip("scipy")
+    with patch.dict(sys.modules, sys_modules_patch):
+        with expectation:
+            piecewise_constant_class(np.arange(10), np.arange(10)).antidifferentiate(
+                5.0
+            )
+
+
+@pytest.mark.parametrize(
+    "sys_modules_patch, expectation",
+    (
         pytest.param(
             {},
             does_not_raise(),

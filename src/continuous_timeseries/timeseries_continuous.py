@@ -108,6 +108,27 @@ class ContinuousFunctionLike(Protocol):
             Integral of the function
         """
 
+    def antidifferentiate(
+        self,
+        domain_start: NP_FLOAT_OR_INT,
+    ) -> ContinuousFunctionLike:
+        """
+        Antidifferentiate
+
+        Parameters
+        ----------
+        domain_start
+            The start of the domain.
+
+            This is required to ensure that we start at the right point
+            when evaluating the indefinite integral.
+
+        Returns
+        -------
+        :
+            Indefinite integral of the function
+        """
+
     def differentiate(self) -> ContinuousFunctionLike:
         """
         Differentiate
@@ -350,6 +371,31 @@ class ContinuousFunctionScipyPPoly:
 
         return type(self)(ppoly_integral)
 
+    def antidifferentiate(
+        self,
+        domain_start: NP_FLOAT_OR_INT,
+    ) -> ContinuousFunctionLike:
+        """
+        Antidifferentiate
+
+        Parameters
+        ----------
+        domain_start
+            The start of the domain.
+
+            This is not actually used here,
+            but is required to match the API expected
+            in other places.
+
+        Returns
+        -------
+        :
+            Indefinite integral of the function
+        """
+        indefinite_integral = self.ppoly.antiderivative()
+
+        return type(self)(indefinite_integral)
+
     def differentiate(self) -> ContinuousFunctionLike:
         """
         Differentiate
@@ -579,6 +625,39 @@ class TimeseriesContinuous:
             time_units=self.time_units,
             values_units=integral_values_units,
             function=integral,
+            domain=self.domain,
+        )
+
+    def antidifferentiate(self, name_res: str | None = None) -> TimeseriesContinuous:
+        """
+        Antidifferentiate
+
+        Parameters
+        ----------
+        name_res
+            Name to use for the output.
+
+            If not supplied, we use f"{self.name}_antiderivative".
+
+        Returns
+        -------
+        :
+            Antiderivative of `self`.
+        """
+        if name_res is None:
+            name_res = f"{self.name}_antiderivative"
+
+        antiderivative_values_units = self.values_units * self.time_units
+
+        antiderivative = self.function.antidifferentiate(
+            domain_start=self.domain[0].to(self.time_units).m,
+        )
+
+        return type(self)(
+            name=name_res,
+            time_units=self.time_units,
+            values_units=antiderivative_values_units,
+            function=antiderivative,
             domain=self.domain,
         )
 
