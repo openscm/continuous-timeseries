@@ -71,6 +71,34 @@ def test_validation_time_axis_values_same_shape(domain, expectation):
             pytest.raises(
                 MissingOptionalDependencyError,
                 match=(
+                    "`ContinuousFunctionScipyPPoly.antidifferentiate` "
+                    "requires scipy to be installed"
+                ),
+            ),
+            id="scipy_not_available",
+        ),
+    ),
+)
+def test_antidifferentiate_no_scipy(sys_modules_patch, expectation):
+    scipy_interpolate = pytest.importorskip("scipy.interpolate")
+
+    continuous_function_scipy_ppoly = ContinuousFunctionScipyPPoly(
+        scipy_interpolate.PPoly(x=[1, 10, 20], c=[[10, 12]])
+    )
+    with patch.dict(sys.modules, sys_modules_patch):
+        with expectation:
+            continuous_function_scipy_ppoly.antidifferentiate(0.0, domain_start=1.0)
+
+
+@pytest.mark.parametrize(
+    "sys_modules_patch, expectation",
+    (
+        pytest.param({}, does_not_raise(), id="scipy_available"),
+        pytest.param(
+            {"scipy": None},
+            pytest.raises(
+                MissingOptionalDependencyError,
+                match=(
                     "`ContinuousFunctionScipyPPoly.integrate` "
                     "requires scipy to be installed"
                 ),
