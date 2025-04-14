@@ -21,6 +21,17 @@ from the examples given in that link.
 
 <!-- towncrier release notes start -->
 
+## Continuous Timeseries v0.4.3 (2025-04-14)
+
+### 🆕 Features
+
+- Added anti-differentiation (indefinite integral), specifically [continuous_timeseries.timeseries.Timeseries.antidifferentiate][] and [continuous_timeseries.timeseries_continuous.TimeseriesContinuous.antidifferentiate][] ([#36](https://github.com/openscm/continuous-timeseries/pull/36))
+
+### 🔧 Trivial/Internal Changes
+
+- [#37](https://github.com/openscm/continuous-timeseries/pull/37)
+
+
 ## Continuous Timeseries v0.4.2 (2025-01-21)
 
 ### 🐛 Bug Fixes

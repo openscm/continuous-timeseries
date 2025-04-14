@@ -1,6 +1,6 @@
 [project]
 name = "continuous-timeseries"
-version = "0.4.3a1"
+version = "0.4.3"
 description = "Representation of continuous timeseries."
 authors = [
     { name = "Zebedee Nicholls", email = "zebedee.nicholls@climate-energy-college.org" },
