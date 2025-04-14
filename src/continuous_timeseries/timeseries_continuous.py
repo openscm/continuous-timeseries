@@ -383,30 +383,18 @@ class ContinuousFunctionScipyPPoly:
         domain_start
             The start of the domain.
 
-            This is required to ensure that we start at the right point
-            when evaluating the indefinite integral.
+            This is not actually used here,
+            but is required to match the API expected
+            in other places.
 
         Returns
         -------
         :
             Indefinite integral of the function
         """
-        try:
-            import scipy.interpolate
-        except ImportError as exc:
-            raise MissingOptionalDependencyError(
-                "ContinuousFunctionScipyPPoly.antidifferentiate", requirement="scipy"
-            ) from exc
-
         indefinite_integral = self.ppoly.antiderivative()
 
-        ppoly_integral = scipy.interpolate.PPoly(
-            c=indefinite_integral.c,
-            x=indefinite_integral.x,
-            extrapolate=False,  # no extrapolation by default
-        )
-
-        return type(self)(ppoly_integral)
+        return type(self)(indefinite_integral)
 
     def differentiate(self) -> ContinuousFunctionLike:
         """
