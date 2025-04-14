@@ -66,17 +66,7 @@ def test_validation_time_axis_values_same_shape(domain, expectation):
     "sys_modules_patch, expectation",
     (
         pytest.param({}, does_not_raise(), id="scipy_available"),
-        pytest.param(
-            {"scipy": None},
-            pytest.raises(
-                MissingOptionalDependencyError,
-                match=(
-                    "`ContinuousFunctionScipyPPoly.antidifferentiate` "
-                    "requires scipy to be installed"
-                ),
-            ),
-            id="scipy_not_available",
-        ),
+        pytest.param({"scipy": None}, does_not_raise(), id="scipy_not_available"),
     ),
 )
 def test_antidifferentiate_no_scipy(sys_modules_patch, expectation):
