@@ -177,7 +177,9 @@ def test_antidifferentiate_scipy_availability(
     pytest.importorskip("scipy")
     with patch.dict(sys.modules, sys_modules_patch):
         with expectation:
-            piecewise_constant_class(np.arange(10), np.arange(10)).antidifferentiate()
+            piecewise_constant_class(np.arange(10), np.arange(10)).antidifferentiate(
+                5.0
+            )
 
 
 @pytest.mark.parametrize(
